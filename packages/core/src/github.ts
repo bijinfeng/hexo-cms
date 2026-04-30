@@ -197,9 +197,70 @@ export class GitHubService {
   }
 
   /**
-   * 获取媒体文件列表
+   * 读取文件原始内容（用于 _config.yml 等配置文件）
    */
-  async getMediaFiles(directory: string = "source/images"): Promise<any[]> {
+  async getRawFile(path: string): Promise<{ content: string; sha: string } | null> {
+    try {
+      const { data } = await this.octokit.rest.repos.getContent({
+        owner: this.config.owner,
+        repo: this.config.repo,
+        path,
+        ref: this.config.branch,
+      });
+
+      if ("content" in data && data.type === "file") {
+        return {
+          content: Buffer.from(data.content, "base64").toString("utf-8"),
+          sha: data.sha,
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * 写入文件内容（用于 _config.yml 等配置文件）
+   */
+  async writeRawFile(path: string, content: string, commitMessage: string): Promise<boolean> {
+    try {
+      const existing = await this.getRawFile(path);
+      await this.octokit.rest.repos.createOrUpdateFileContents({
+        owner: this.config.owner,
+        repo: this.config.repo,
+        path,
+        message: commitMessage,
+        content: Buffer.from(content).toString("base64"),
+        branch: this.config.branch,
+        sha: existing?.sha,
+      });
+      return true;
+    } catch (error) {
+      console.error(`Failed to write file ${path}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 列出目录内容（不递归）
+   */
+  async listDirectory(path: string): Promise<Array<{ name: string; type: string; path: string }>> {
+    try {
+      const { data } = await this.octokit.rest.repos.getContent({
+        owner: this.config.owner,
+        repo: this.config.repo,
+        path,
+        ref: this.config.branch,
+      });
+
+      if (!Array.isArray(data)) return [];
+      return data.map((item) => ({ name: item.name, type: item.type, path: item.path }));
+    } catch {
+      return [];
+    }
+  }
+
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,

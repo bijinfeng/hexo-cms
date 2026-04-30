@@ -18,6 +18,7 @@ export { MediaPage } from "./pages/media";
 export { CommentsPage } from "./pages/comments";
 export { ThemesPage } from "./pages/themes";
 export { PagesPage } from "./pages/pages";
+export { NewPagePage } from "./pages/pages.new";
 export { DeployPage } from "./pages/deploy";
 export { SettingsPage } from "./pages/settings";
 export { LoginPage } from "./pages/login";

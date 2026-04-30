@@ -21,6 +21,7 @@ import { Route as CommentsRouteImport } from './routes/comments'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsNewRouteImport } from './routes/posts.new'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
+import { Route as PagesNewRouteImport } from './routes/pages.new'
 
 const ThemesRoute = ThemesRouteImport.update({
   id: '/themes',
@@ -82,6 +83,11 @@ const PostsSlugRoute = PostsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => PostsRoute,
 } as any)
+const PagesNewRoute = PagesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => PagesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,11 +95,12 @@ export interface FileRoutesByFullPath {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
-  '/pages': typeof PagesRoute
+  '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
 }
@@ -103,11 +110,12 @@ export interface FileRoutesByTo {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
-  '/pages': typeof PagesRoute
+  '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
 }
@@ -118,11 +126,12 @@ export interface FileRoutesById {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
-  '/pages': typeof PagesRoute
+  '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
 }
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
   fileRoutesByTo: FileRoutesByTo
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
   id:
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
   fileRoutesById: FileRoutesById
@@ -177,7 +189,7 @@ export interface RootRouteChildren {
   DeployRoute: typeof DeployRoute
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
-  PagesRoute: typeof PagesRoute
+  PagesRoute: typeof PagesRouteWithChildren
   PostsRoute: typeof PostsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   TagsRoute: typeof TagsRoute
@@ -270,8 +282,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof PostsRoute
     }
+    '/pages/new': {
+      id: '/pages/new'
+      path: '/new'
+      fullPath: '/pages/new'
+      preLoaderRoute: typeof PagesNewRouteImport
+      parentRoute: typeof PagesRoute
+    }
   }
 }
+
+interface PagesRouteChildren {
+  PagesNewRoute: typeof PagesNewRoute
+}
+
+const PagesRouteChildren: PagesRouteChildren = {
+  PagesNewRoute: PagesNewRoute,
+}
+
+const PagesRouteWithChildren = PagesRoute._addFileChildren(PagesRouteChildren)
 
 interface PostsRouteChildren {
   PostsSlugRoute: typeof PostsSlugRoute
@@ -291,7 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeployRoute: DeployRoute,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
-  PagesRoute: PagesRoute,
+  PagesRoute: PagesRouteWithChildren,
   PostsRoute: PostsRouteWithChildren,
   SettingsRoute: SettingsRoute,
   TagsRoute: TagsRoute,

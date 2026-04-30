@@ -13,6 +13,7 @@ import {
   Calendar,
   FileText,
   AlertTriangle,
+  Info,
 } from "lucide-react";
 
 const comments = [
@@ -147,6 +148,18 @@ export function CommentsPage() {
             批量通过
           </Button>
         )}
+      </div>
+
+      {/* Integration notice */}
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--status-info-bg)] border border-[var(--status-info)]">
+        <Info size={16} className="text-[var(--status-info)] flex-shrink-0 mt-0.5" />
+        <div className="text-sm">
+          <div className="font-medium text-[var(--text-primary)] mb-1">评论系统集成说明</div>
+          <div className="text-[var(--text-secondary)]">
+            评论管理需要在博客中集成第三方评论系统（如 Giscus、Gitalk、Waline 等）。
+            下方展示的是示例数据，实际评论数据需通过对应评论系统的 API 获取。
+          </div>
+        </div>
       </div>
 
       {/* Pending alert */}

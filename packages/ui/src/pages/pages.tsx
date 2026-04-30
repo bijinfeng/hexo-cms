@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -20,6 +21,7 @@ const statusConfig = {
 };
 
 export function PagesPage() {
+  const navigate = useNavigate();
   const [pages, setPages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -174,7 +176,7 @@ export function PagesPage() {
               )}
             </Button>
           )}
-          <Button>
+          <Button onClick={() => navigate({ to: "/pages/new" })}>
             <Plus size={16} />
             新建页面
           </Button>
