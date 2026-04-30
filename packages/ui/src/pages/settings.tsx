@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import {
@@ -150,6 +151,7 @@ function SiteSettings() {
 }
 
 function GitHubSettings() {
+  const dataProvider = useDataProvider();
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -171,18 +173,17 @@ function GitHubSettings() {
   useEffect(() => {
     async function loadConfig() {
       try {
-        const res = await fetch("/api/github/config");
-        const data = await res.json();
-        if (data.config) {
-          setConfig(data.config);
-          setOwner(data.config.owner || "");
-          setRepo(data.config.repo || "");
-          setBranch(data.config.branch || "main");
-          setPostsDir(data.config.posts_dir || "source/_posts");
-          setMediaDir(data.config.media_dir || "source/images");
-          setWorkflowFile(data.config.workflow_file || ".github/workflows/deploy.yml");
-          setAutoDeploy(data.config.auto_deploy === 1);
-          setDeployNotifications(data.config.deploy_notifications === 1);
+        const configData = await dataProvider.getConfig();
+        if (configData) {
+          setConfig(configData);
+          setOwner(configData.owner || "");
+          setRepo(configData.repo || "");
+          setBranch(configData.branch || "main");
+          setPostsDir(configData.posts_dir || "source/_posts");
+          setMediaDir(configData.media_dir || "source/images");
+          setWorkflowFile(configData.workflow_file || ".github/workflows/deploy.yml");
+          setAutoDeploy(configData.auto_deploy === 1);
+          setDeployNotifications(configData.deploy_notifications === 1);
         }
       } catch (error) {
         console.error("Failed to load config:", error);
@@ -246,26 +247,17 @@ function GitHubSettings() {
   async function handleSave() {
     setSaving(true);
     try {
-      const res = await fetch("/api/github/config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner,
-          repo,
-          branch,
-          posts_dir: postsDir,
-          media_dir: mediaDir,
-          workflow_file: workflowFile,
-          auto_deploy: autoDeploy,
-          deploy_notifications: deployNotifications,
-        }),
+      await dataProvider.saveConfig({
+        owner,
+        repo,
+        branch,
+        posts_dir: postsDir,
+        media_dir: mediaDir,
+        workflow_file: workflowFile,
+        auto_deploy: autoDeploy,
+        deploy_notifications: deployNotifications,
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          setTimeout(() => setSaving(false), 1000);
-        }
-      }
+      setTimeout(() => setSaving(false), 1000);
     } catch (error) {
       console.error("Failed to save config:", error);
       setSaving(false);

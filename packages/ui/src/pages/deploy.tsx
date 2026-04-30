@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -68,11 +69,10 @@ function formatRelativeTime(isoDate: string): string {
 }
 
 export function DeployPage() {
+  const dataProvider = useDataProvider();
   const [deployments, setDeployments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [githubConfig, setGithubConfig] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState("");
   const [siteUrl, setSiteUrl] = useState("");
   const [successCount, setSuccessCount] = useState(0);
   const [failedCount, setFailedCount] = useState(0);
@@ -89,57 +89,38 @@ export function DeployPage() {
       setLoading(true);
       setError("");
 
-      const configRes = await fetch("/api/github/config");
-      if (!configRes.ok) {
+      const config = await dataProvider.getConfig();
+      if (!config) {
         setError("请先在设置页面配置 GitHub 仓库");
         return;
       }
-      const configData = await configRes.json();
-      if (!configData.config) {
-        setError("请先在设置页面配置 GitHub 仓库");
-        return;
-      }
-      setGithubConfig(configData.config);
 
-      const tokenRes = await fetch("/api/auth/token");
-      if (!tokenRes.ok) {
-        setError("无法获取 GitHub 访问令牌");
-        return;
-      }
-      const tokenData = await tokenRes.json();
-      if (!tokenData.accessToken) {
-        setError("无法获取 GitHub 访问令牌");
-        return;
-      }
-      setAccessToken(tokenData.accessToken);
-
-      const { owner, repo } = configData.config;
-      const params = new URLSearchParams({ owner, repo, token: tokenData.accessToken });
-      const deployRes = await fetch(`/api/deploy?${params}`);
-      if (!deployRes.ok) {
-        const errData = await deployRes.json();
-        setError(errData.error || "加载部署历史失败");
-        return;
-      }
-
-      const deployData = await deployRes.json();
-      const formattedRuns = deployData.runs.map((run: any) => ({
-        id: run.sha,
-        name: run.name,
-        message: run.message,
-        branch: run.branch,
-        author: run.author,
+      const runs = await dataProvider.getDeployments();
+      const formattedRuns = runs.map((run: any) => ({
+        id: run.id,
+        name: run.status,
+        message: run.conclusion || run.status,
+        branch: "main",
+        author: "",
         time: formatRelativeTime(run.createdAt),
         duration: run.duration,
-        status: run.status,
-        url: run.url,
+        status: run.conclusion === "success" ? "success" : run.conclusion === "failure" ? "failed" : run.status === "in_progress" ? "running" : "pending",
+        url: `https://github.com/${config.owner}/${config.repo}/actions/runs/${run.id}`,
       }));
 
       setDeployments(formattedRuns);
-      setSiteUrl(deployData.siteUrl);
-      setSuccessCount(deployData.successCount);
-      setFailedCount(deployData.failedCount);
-      setAvgDuration(deployData.avgDurationMs ? `${Math.floor(deployData.avgDurationMs / 60000)}m ${Math.floor((deployData.avgDurationMs % 60000) / 1000)}s` : "—");
+      setSiteUrl(`https://${config.owner}.github.io/${config.repo}`);
+
+      const success = formattedRuns.filter((r: any) => r.status === "success").length;
+      const failed = formattedRuns.filter((r: any) => r.status === "failed").length;
+      setSuccessCount(success);
+      setFailedCount(failed);
+
+      const durations = formattedRuns.filter((r: any) => r.duration > 0).map((r: any) => r.duration);
+      if (durations.length > 0) {
+        const avg = durations.reduce((a: number, b: number) => a + b, 0) / durations.length;
+        setAvgDuration(`${Math.floor(avg / 60000)}m ${Math.floor((avg % 60000) / 1000)}s`);
+      }
     } catch (err: any) {
       setError(err.message || "加载失败");
     } finally {
@@ -148,25 +129,11 @@ export function DeployPage() {
   }
 
   async function handleManualDeploy() {
-    if (!githubConfig || !accessToken) return;
     try {
       setDeploying(true);
-      const res = await fetch("/api/deploy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          workflowFile: "pages.yml",
-          branch: githubConfig.branch || "main",
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "触发部署失败");
-        return;
-      }
+      const config = await dataProvider.getConfig();
+      if (!config) return;
+      await dataProvider.triggerDeploy(config.workflow_file || "pages.yml");
       alert("部署已触发，请稍后刷新查看状态");
       setTimeout(() => loadDeployments(), 3000);
     } catch (err: any) {

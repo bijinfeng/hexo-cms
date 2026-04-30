@@ -1,10 +1,13 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState } from "@tanstack/react-router";
-import { CMSLayout } from "@hexo-cms/ui";
+import { CMSLayout, DataProviderProvider } from "@hexo-cms/ui";
+import { WebDataProvider } from "../lib/web-data-provider";
 import appCss from "../styles.css?url";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
 
 const BARE_ROUTES = ["/login"];
+
+const webDataProvider = new WebDataProvider();
 
 export const Route = createRootRoute({
   head: () => ({
@@ -42,8 +45,10 @@ function RootComponent() {
   if (isBare) return <Outlet />;
 
   return (
-    <CMSLayout>
-      <Outlet />
-    </CMSLayout>
+    <DataProviderProvider provider={webDataProvider}>
+      <CMSLayout>
+        <Outlet />
+      </CMSLayout>
+    </DataProviderProvider>
   );
 }

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import CodeMirror from "@uiw/react-codemirror";
@@ -31,6 +32,7 @@ import {
 
 export function EditPagePage() {
   const navigate = useNavigate();
+  const dataProvider = useDataProvider();
   const { slug } = useParams({ strict: false }) as { slug: string };
 
   const [title, setTitle] = useState("");
@@ -41,8 +43,6 @@ export function EditPagePage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [githubConfig, setGithubConfig] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState("");
   const [postPath, setPostPath] = useState("");
   const [uploading, setUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -56,44 +56,9 @@ export function EditPagePage() {
       setLoading(true);
       setError("");
 
-      const [configRes, tokenRes] = await Promise.all([
-        fetch("/api/github/config"),
-        fetch("/api/auth/token"),
-      ]);
-
-      if (!configRes.ok || !tokenRes.ok) {
-        setError("请先在设置页面配置 GitHub 仓库并登录");
-        return;
-      }
-
-      const { config } = await configRes.json();
-      const { accessToken: token } = await tokenRes.json();
-
-      if (!config || !token) {
-        setError("请先在设置页面配置 GitHub 仓库并登录");
-        return;
-      }
-
-      setGithubConfig(config);
-      setAccessToken(token);
-
-      const { owner, repo } = config;
       const path = `source/${slug}/index.md`;
-      const params = new URLSearchParams({ owner, repo, token, path });
-      const res = await fetch(`/api/github/pages?${params}`);
+      const page = await dataProvider.getPage(path);
 
-      if (!res.ok) {
-        setError("加载页面失败");
-        return;
-      }
-
-      const data = await res.json();
-      if (!data.page) {
-        setError("页面不存在");
-        return;
-      }
-
-      const page = data.page;
       setTitle(page.title || "");
       setContent(page.content || "");
       setPostPath(page.path);
@@ -122,19 +87,14 @@ export function EditPagePage() {
   }
 
   async function handleImageUpload(file: File) {
-    if (!githubConfig || !accessToken) return;
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("owner", githubConfig.owner);
-      formData.append("repo", githubConfig.repo);
-      formData.append("token", accessToken);
-      const res = await fetch("/api/github/media", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok && data.path) {
-        insertMarkdown(`![${file.name}](/${data.path})`);
-      }
+      const config = await dataProvider.getConfig();
+      if (!config) return;
+      const dir = config.media_dir || "source/images";
+      const path = `${dir}/${file.name}`;
+      const result = await dataProvider.uploadMedia(file, path);
+      insertMarkdown(`![${file.name}](${result.url})`);
     } finally {
       setUploading(false);
       if (imageInputRef.current) imageInputRef.current.value = "";
@@ -146,7 +106,6 @@ export function EditPagePage() {
       setError("请输入页面标题");
       return;
     }
-    if (!githubConfig || !accessToken) return;
 
     setSaving(true);
     setError("");
@@ -158,25 +117,10 @@ export function EditPagePage() {
       if (status === "draft") frontmatter.draft = true;
 
       const page = { path: postPath, title, date: frontmatter.date, content, frontmatter };
-      const res = await fetch("/api/github/pages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          page,
-          commitMessage: `更新页面: ${title}`,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        navigate({ to: "/pages" });
-      } else {
-        setError(data.error || "保存失败");
-      }
-    } catch {
-      setError("保存失败，请检查网络连接");
+      await dataProvider.savePage(page as any);
+      navigate({ to: "/pages" });
+    } catch (err: any) {
+      setError(err.message || "保存失败");
     } finally {
       setSaving(false);
     }
@@ -184,28 +128,12 @@ export function EditPagePage() {
 
   async function handleDelete() {
     if (!confirm(`确定要删除页面「${title}」吗？此操作不可恢复。`)) return;
-    if (!githubConfig || !accessToken) return;
 
     try {
-      const res = await fetch("/api/github/pages", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          path: postPath,
-          commitMessage: `删除页面: ${title}`,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        navigate({ to: "/pages" });
-      } else {
-        setError(data.error || "删除失败");
-      }
-    } catch {
-      setError("删除失败，请检查网络连接");
+      await dataProvider.deletePage(postPath);
+      navigate({ to: "/pages" });
+    } catch (err: any) {
+      setError(err.message || "删除失败");
     }
   }
 

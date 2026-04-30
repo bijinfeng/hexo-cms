@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import CodeMirror from "@uiw/react-codemirror";
@@ -36,6 +37,7 @@ const availableCategories = ["前端开发", "后端开发", "系统设计", "�
 
 export function NewPostPage() {
   const navigate = useNavigate();
+  const dataProvider = useDataProvider();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState(`# 文章标题\n\n在这里开始写作...\n`);
   const [preview, setPreview] = useState(false);
@@ -47,35 +49,8 @@ export function NewPostPage() {
   const [isDarkMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [githubConfig, setGithubConfig] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState("");
   const [uploading, setUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    loadGitHubConfig();
-  }, []);
-
-  async function loadGitHubConfig() {
-    try {
-      const [configRes, tokenRes] = await Promise.all([
-        fetch("/api/github/config"),
-        fetch("/api/auth/token"),
-      ]);
-
-      if (configRes.ok) {
-        const configData = await configRes.json();
-        setGithubConfig(configData.config);
-      }
-
-      if (tokenRes.ok) {
-        const tokenData = await tokenRes.json();
-        setAccessToken(tokenData.accessToken);
-      }
-    } catch (err) {
-      console.error("Failed to load GitHub config:", err);
-    }
-  }
 
   const onChange = useCallback((value: string) => {
     setContent(value);
@@ -95,30 +70,13 @@ export function NewPostPage() {
   }
 
   async function handleImageUpload(file: File) {
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
-
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("owner", githubConfig.owner);
-      formData.append("repo", githubConfig.repo);
-      formData.append("token", accessToken);
-      formData.append("dir", githubConfig.media_dir || "source/images");
-
-      const res = await fetch("/api/github/media", { method: "POST", body: formData });
-      const data = await res.json();
-
-      if (res.ok && data.path) {
-        insertMarkdown(`![${file.name}](/${data.path})`);
-      } else {
-        setError(data.error || "图片上传失败");
-      }
-    } catch (err) {
-      setError("图片上传失败，请检查网络连接");
+      const path = `source/images/${file.name}`;
+      const result = await dataProvider.uploadMedia(file, path);
+      insertMarkdown(`![${file.name}](${result.url})`);
+    } catch (err: any) {
+      setError(err.message || "图片上传失败");
     } finally {
       setUploading(false);
       if (imageInputRef.current) imageInputRef.current.value = "";
@@ -128,11 +86,6 @@ export function NewPostPage() {
   async function handleSave(publish = false) {
     if (!title.trim()) {
       setError("请输入文章标题");
-      return;
-    }
-
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
       return;
     }
 
@@ -170,28 +123,11 @@ export function NewPostPage() {
         frontmatter,
       };
 
-      const res = await fetch("/api/github/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          post,
-          commitMessage: `${publish ? "发布" : "保存"}文章: ${title}`,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        navigate({ to: "/posts" });
-      } else {
-        setError(data.error || "保存失败");
-      }
-    } catch (err) {
+      await dataProvider.savePost(post);
+      navigate({ to: "/posts" });
+    } catch (err: any) {
       console.error("Failed to save post:", err);
-      setError("保存失败，请检查网络连接");
+      setError(err.message || "保存失败");
     } finally {
       setSaving(false);
     }
@@ -275,16 +211,6 @@ export function NewPostPage() {
       {error && (
         <div className="mx-6 mt-3 p-3 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)] text-sm text-[var(--status-error)]">
           {error}
-        </div>
-      )}
-
-      {/* GitHub config prompt */}
-      {!githubConfig && (
-        <div className="mx-6 mt-3 p-4 rounded-lg bg-[var(--status-warning-bg)] border border-[var(--status-warning)] text-sm">
-          <p className="text-[var(--text-primary)] font-medium mb-1">未配置 GitHub 仓库</p>
-          <p className="text-[var(--text-secondary)]">
-            请先在<a href="/settings" className="text-[var(--brand-primary)] hover:underline">设置页面</a>配置你的 GitHub 仓库信息
-          </p>
         </div>
       )}
 

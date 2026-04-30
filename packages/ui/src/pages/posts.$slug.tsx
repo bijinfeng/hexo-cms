@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import CodeMirror from "@uiw/react-codemirror";
@@ -38,6 +39,7 @@ const availableCategories = ["前端开发", "后端开发", "系统设计", "�
 export function EditPostPage() {
   const navigate = useNavigate();
   const { slug } = useParams({ strict: false }) as { slug: string };
+  const dataProvider = useDataProvider();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -50,84 +52,41 @@ export function EditPostPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [githubConfig, setGithubConfig] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState("");
   const [postPath, setPostPath] = useState("");
   const [uploading, setUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    loadData();
+    loadPost();
   }, [slug]);
 
-  async function loadData() {
+  async function loadPost() {
+    setLoading(true);
     try {
-      const [configRes, tokenRes] = await Promise.all([
-        fetch("/api/github/config"),
-        fetch("/api/auth/token"),
-      ]);
+      const path = `source/_posts/${slug}.md`;
+      setPostPath(path);
 
-      let config = null;
-      let token = "";
-
-      if (configRes.ok) {
-        const configData = await configRes.json();
-        config = configData.config;
-        setGithubConfig(config);
-      }
-
-      if (tokenRes.ok) {
-        const tokenData = await tokenRes.json();
-        token = tokenData.accessToken;
-        setAccessToken(token);
-      }
-
-      if (config && token && slug) {
-        await loadPost(config, token, slug);
-      }
-    } catch (err) {
-      console.error("Failed to load data:", err);
-      setError("加载失败");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadPost(config: any, token: string, slug: string) {
-    const path = `source/_posts/${slug}.md`;
-    setPostPath(path);
-
-    const params = new URLSearchParams({
-      owner: config.owner,
-      repo: config.repo,
-      token,
-      path,
-    });
-
-    const res = await fetch(`/api/github/posts?${params}`);
-    if (!res.ok) {
-      setError("文章不存在或加载失败");
-      return;
-    }
-
-    const data = await res.json();
-    if (data.post) {
-      const post = data.post;
+      const post = await dataProvider.getPost(path);
       setTitle(post.title || "");
       setContent(post.content || "");
       setDate(post.date || new Date().toISOString().split("T")[0]);
-      setStatus(post.frontmatter.draft ? "draft" : "published");
+      setStatus(post.frontmatter?.draft ? "draft" : "published");
 
-      const tags = post.frontmatter.tags;
+      const tags = post.frontmatter?.tags;
       if (Array.isArray(tags)) {
         setSelectedTags(tags);
       } else if (typeof tags === "string") {
         setSelectedTags([tags]);
       }
 
-      if (post.frontmatter.category) {
+      if (post.frontmatter?.category) {
         setCategory(post.frontmatter.category);
       }
+    } catch (err: any) {
+      console.error("Failed to load post:", err);
+      setError(err.message || "文章不存在或加载失败");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -153,11 +112,6 @@ export function EditPostPage() {
       return;
     }
 
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
-
     setSaving(true);
     setError("");
 
@@ -180,28 +134,11 @@ export function EditPostPage() {
         frontmatter,
       };
 
-      const res = await fetch("/api/github/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          post,
-          commitMessage: `${publish ? "发布" : "更新"}文章: ${title}`,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        navigate({ to: "/posts" });
-      } else {
-        setError(data.error || "保存失败");
-      }
-    } catch (err) {
+      await dataProvider.savePost(post);
+      navigate({ to: "/posts" });
+    } catch (err: any) {
       console.error("Failed to save post:", err);
-      setError("保存失败，请检查网络连接");
+      setError(err.message || "保存失败");
     } finally {
       setSaving(false);
     }
@@ -218,67 +155,28 @@ export function EditPostPage() {
       return;
     }
 
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
-
     setSaving(true);
     setError("");
 
     try {
-      const res = await fetch("/api/github/posts", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          path: postPath,
-          commitMessage: `删除文章: ${title}`,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        navigate({ to: "/posts" });
-      } else {
-        setError(data.error || "删除失败");
-      }
-    } catch (err) {
+      await dataProvider.deletePost(postPath);
+      navigate({ to: "/posts" });
+    } catch (err: any) {
       console.error("Failed to delete post:", err);
-      setError("删除失败，请检查网络连接");
+      setError(err.message || "删除失败");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleImageUpload(file: File) {
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
-
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("owner", githubConfig.owner);
-      formData.append("repo", githubConfig.repo);
-      formData.append("token", accessToken);
-      formData.append("dir", githubConfig.media_dir || "source/images");
-
-      const res = await fetch("/api/github/media", { method: "POST", body: formData });
-      const data = await res.json();
-
-      if (res.ok && data.path) {
-        insertMarkdown(`![${file.name}](/${data.path})`);
-      } else {
-        setError(data.error || "图片上传失败");
-      }
-    } catch (err) {
-      setError("图片上传失败，请检查网络连接");
+      const path = `source/images/${file.name}`;
+      const result = await dataProvider.uploadMedia(file, path);
+      insertMarkdown(`![${file.name}](${result.url})`);
+    } catch (err: any) {
+      setError(err.message || "图片上传失败");
     } finally {
       setUploading(false);
       if (imageInputRef.current) imageInputRef.current.value = "";

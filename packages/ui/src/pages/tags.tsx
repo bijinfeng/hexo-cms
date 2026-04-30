@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from "react";
+import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -31,6 +32,7 @@ interface DialogState {
 }
 
 export function TagsPage() {
+  const dataProvider = useDataProvider();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"tags" | "categories">("tags");
   const [tags, setTags] = useState<any[]>([]);
@@ -40,8 +42,6 @@ export function TagsPage() {
   const [processing, setProcessing] = useState(false);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [newName, setNewName] = useState("");
-  const [config, setConfig] = useState<any>(null);
-  const [token, setToken] = useState("");
 
   useEffect(() => {
     loadTagsAndCategories();
@@ -52,28 +52,7 @@ export function TagsPage() {
       setLoading(true);
       setError("");
 
-      const configRes = await fetch("/api/github/config");
-      if (!configRes.ok) {
-        setError("未配置 GitHub 仓库，请前往设置页面配置");
-        return;
-      }
-      const { config: cfg } = await configRes.json();
-      setConfig(cfg);
-
-      const tokenRes = await fetch("/api/auth/token");
-      if (!tokenRes.ok) {
-        setError("未获取到访问令牌，请重新登录");
-        return;
-      }
-      const { accessToken } = await tokenRes.json();
-      setToken(accessToken);
-
-      const res = await fetch(
-        `/api/github/tags?owner=${cfg.owner}&repo=${cfg.repo}&token=${accessToken}`
-      );
-      if (!res.ok) throw new Error("加载标签失败");
-
-      const data = await res.json();
+      const data = await dataProvider.getTags();
       setTags(data.tags.map((t: any, i: number) => ({ ...t, color: tagColors[i % tagColors.length] })));
       setCategories(data.categories);
     } catch (err: any) {
@@ -98,29 +77,11 @@ export function TagsPage() {
   }
 
   async function handleRename() {
-    if (!dialog || !config || !token || !newName.trim()) return;
+    if (!dialog || !newName.trim()) return;
 
     try {
       setProcessing(true);
-      const res = await fetch("/api/github/tags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: config.owner,
-          repo: config.repo,
-          token,
-          type: dialog.itemType,
-          oldName: dialog.itemName,
-          newName: newName.trim(),
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "重命名失败");
-      }
-
-      const data = await res.json();
+      await dataProvider.renameTag(dialog.itemType, dialog.itemName, newName.trim());
       closeDialog();
       await loadTagsAndCategories();
     } catch (err: any) {
@@ -131,28 +92,11 @@ export function TagsPage() {
   }
 
   async function handleDelete() {
-    if (!dialog || !config || !token) return;
+    if (!dialog) return;
 
     try {
       setProcessing(true);
-      const params = new URLSearchParams({
-        owner: config.owner,
-        repo: config.repo,
-        token,
-        type: dialog.itemType,
-        name: dialog.itemName,
-      });
-
-      const res = await fetch(`/api/github/tags?${params}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "删除失败");
-      }
-
-      const data = await res.json();
+      await dataProvider.deleteTag(dialog.itemType, dialog.itemName);
       closeDialog();
       await loadTagsAndCategories();
     } catch (err: any) {

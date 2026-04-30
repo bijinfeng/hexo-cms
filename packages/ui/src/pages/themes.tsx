@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -13,13 +14,12 @@ import {
 } from "lucide-react";
 
 export function ThemesPage() {
+  const dataProvider = useDataProvider();
   const [currentTheme, setCurrentTheme] = useState<string | null>(null);
   const [installedThemes, setInstalledThemes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [switching, setSwitching] = useState(false);
-  const [githubConfig, setGithubConfig] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState("");
 
   useEffect(() => {
     loadThemes();
@@ -30,42 +30,9 @@ export function ThemesPage() {
       setLoading(true);
       setError("");
 
-      const configRes = await fetch("/api/github/config");
-      if (!configRes.ok) {
-        setError("请先在设置页面配置 GitHub 仓库");
-        return;
-      }
-      const configData = await configRes.json();
-      if (!configData.config) {
-        setError("请先在设置页面配置 GitHub 仓库");
-        return;
-      }
-      setGithubConfig(configData.config);
-
-      const tokenRes = await fetch("/api/auth/token");
-      if (!tokenRes.ok) {
-        setError("无法获取 GitHub 访问令牌");
-        return;
-      }
-      const tokenData = await tokenRes.json();
-      if (!tokenData.accessToken) {
-        setError("无法获取 GitHub 访问令牌");
-        return;
-      }
-      setAccessToken(tokenData.accessToken);
-
-      const { owner, repo } = configData.config;
-      const params = new URLSearchParams({ owner, repo, token: tokenData.accessToken });
-      const themesRes = await fetch(`/api/github/themes?${params}`);
-      if (!themesRes.ok) {
-        const errData = await themesRes.json();
-        setError(errData.error || "加载主题失败");
-        return;
-      }
-
-      const themesData = await themesRes.json();
+      const themesData = await dataProvider.getThemes();
       setCurrentTheme(themesData.currentTheme);
-      setInstalledThemes(themesData.installedThemes || []);
+      setInstalledThemes(themesData.installedThemes.map((t) => t.name));
     } catch (err: any) {
       setError(err.message || "加载失败");
     } finally {
@@ -74,24 +41,10 @@ export function ThemesPage() {
   }
 
   async function handleSwitchTheme(themeName: string) {
-    if (!githubConfig || !accessToken || switching) return;
+    if (switching) return;
     try {
       setSwitching(true);
-      const res = await fetch("/api/github/themes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          theme: themeName,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "切换主题失败");
-        return;
-      }
+      await dataProvider.switchTheme(themeName);
       setCurrentTheme(themeName);
       alert(`已切换到主题「${themeName}」，请重新部署站点以生效`);
     } catch (err: any) {

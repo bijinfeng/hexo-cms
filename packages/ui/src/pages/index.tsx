@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -32,6 +33,7 @@ const statColorMap: Record<string, string> = {
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const dataProvider = useDataProvider();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPosts: 0,
@@ -41,7 +43,7 @@ export function DashboardPage() {
     totalCategories: 0,
   });
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
-  const [githubConfig, setGithubConfig] = useState<any>(null);
+  const [repoInfo, setRepoInfo] = useState<string>("");
 
   useEffect(() => {
     loadDashboard();
@@ -49,33 +51,35 @@ export function DashboardPage() {
 
   async function loadDashboard() {
     try {
-      const [configRes, tokenRes] = await Promise.all([
-        fetch("/api/github/config"),
-        fetch("/api/auth/token"),
+      const config = await dataProvider.getConfig();
+      if (config) {
+        setRepoInfo(`${config.owner}/${config.repo}`);
+      }
+
+      const [statsData, tagsData, postsData] = await Promise.all([
+        dataProvider.getStats(),
+        dataProvider.getTags(),
+        dataProvider.getPosts(),
       ]);
 
-      if (!configRes.ok || !tokenRes.ok) return;
-
-      const { config } = await configRes.json();
-      const { accessToken } = await tokenRes.json();
-
-      if (!config || !accessToken) return;
-
-      setGithubConfig(config);
-
-      const params = new URLSearchParams({ owner: config.owner, repo: config.repo, token: accessToken });
-      const res = await fetch(`/api/github/stats?${params}`);
-      if (!res.ok) return;
-
-      const data = await res.json();
       setStats({
-        totalPosts: data.totalPosts,
-        publishedPosts: data.publishedPosts,
-        draftPosts: data.draftPosts,
-        totalTags: data.totalTags,
-        totalCategories: data.totalCategories,
+        totalPosts: statsData.totalPosts,
+        publishedPosts: statsData.publishedPosts,
+        draftPosts: statsData.draftPosts,
+        totalTags: tagsData.tags.length,
+        totalCategories: tagsData.categories.length,
       });
-      setRecentPosts(data.recentPosts || []);
+
+      const recent = postsData
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 5)
+        .map((post) => ({
+          title: post.title,
+          slug: post.path.replace(/^source\/_posts\//, "").replace(/\.md$/, ""),
+          date: post.date,
+          status: post.frontmatter?.draft ? "draft" : "published",
+        }));
+      setRecentPosts(recent);
     } catch (err) {
       console.error("Failed to load dashboard:", err);
     } finally {
@@ -97,7 +101,7 @@ export function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">数据大盘</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            {githubConfig ? `${githubConfig.owner}/${githubConfig.repo}` : "欢迎回来"}
+            {repoInfo || "欢迎回来"}
           </p>
         </div>
         <Button onClick={() => navigate({ to: "/posts/new" })}>

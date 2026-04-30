@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -49,6 +50,7 @@ function formatSize(bytes: number): string {
 }
 
 export function MediaPage() {
+  const dataProvider = useDataProvider();
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeFilter, setActiveFilter] = useState("全部");
@@ -56,65 +58,21 @@ export function MediaPage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const [githubConfig, setGithubConfig] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState("");
   const [copiedPath, setCopiedPath] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    loadConfig();
+    loadMedia();
   }, []);
 
-  async function loadConfig() {
-    try {
-      const [configRes, tokenRes] = await Promise.all([
-        fetch("/api/github/config"),
-        fetch("/api/auth/token"),
-      ]);
-
-      let config = null;
-      let token = "";
-
-      if (configRes.ok) {
-        const data = await configRes.json();
-        config = data.config;
-        setGithubConfig(config);
-      }
-
-      if (tokenRes.ok) {
-        const data = await tokenRes.json();
-        token = data.accessToken;
-        setAccessToken(token);
-      }
-
-      if (config && token) {
-        await loadMedia(config, token);
-      }
-    } catch (err) {
-      console.error("Failed to load config:", err);
-    }
-  }
-
-  async function loadMedia(config: any, token: string) {
+  async function loadMedia() {
     setLoading(true);
     setError("");
     try {
-      const dir = config.media_dir || "source/images";
-      const params = new URLSearchParams({
-        owner: config.owner,
-        repo: config.repo,
-        token,
-        dir,
-      });
-      const res = await fetch(`/api/github/media?${params}`);
-      const data = await res.json();
-      if (res.ok && data.files) {
-        setMediaItems(data.files);
-      } else {
-        setError(data.error || "加载失败");
-      }
-    } catch (err) {
-      setError("加载失败，请检查网络连接");
+      const files = await dataProvider.getMediaFiles();
+      setMediaItems(files);
+    } catch (err: any) {
+      setError(err.message || "加载失败");
     } finally {
       setLoading(false);
     }
@@ -122,59 +80,36 @@ export function MediaPage() {
 
   async function handleUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
 
     setUploading(true);
     setError("");
 
     try {
-      for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("owner", githubConfig.owner);
-        formData.append("repo", githubConfig.repo);
-        formData.append("token", accessToken);
-        formData.append("dir", githubConfig.media_dir || "source/images");
-
-        const res = await fetch("/api/github/media", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          setError(data.error || `上传 ${file.name} 失败`);
-        }
+      const config = await dataProvider.getConfig();
+      if (!config) {
+        setError("请先在设置页面配置 GitHub 仓库");
+        return;
       }
-      await loadMedia(githubConfig, accessToken);
-    } catch (err) {
-      setError("上传失败，请检查网络连接");
+
+      const dir = config.media_dir || "source/images";
+      for (const file of Array.from(files)) {
+        const path = `${dir}/${file.name}`;
+        await dataProvider.uploadMedia(file, path);
+      }
+      await loadMedia();
+    } catch (err: any) {
+      setError(err.message || "上传失败");
     } finally {
       setUploading(false);
     }
   }
 
   async function handleDelete(path: string) {
-    if (!githubConfig || !accessToken) return;
     try {
-      const res = await fetch("/api/github/media", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          path,
-        }),
-      });
-      if (res.ok) {
-        setMediaItems((prev) => prev.filter((item) => item.path !== path));
-      }
-    } catch (err) {
-      setError("删除失败");
+      await dataProvider.deleteMedia(path);
+      setMediaItems((prev) => prev.filter((item) => item.path !== path));
+    } catch (err: any) {
+      setError(err.message || "删除失败");
     }
   }
 
@@ -232,15 +167,6 @@ export function MediaPage() {
         </div>
       )}
 
-      {/* GitHub config prompt */}
-      {!githubConfig && (
-        <div className="p-4 rounded-lg bg-[var(--status-warning-bg)] border border-[var(--status-warning)] text-sm">
-          <p className="text-[var(--text-primary)] font-medium mb-1">未配置 GitHub 仓库</p>
-          <p className="text-[var(--text-secondary)]">
-            请先在<a href="/settings" className="text-[var(--brand-primary)] hover:underline">设置页面</a>配置你的 GitHub 仓库信息
-          </p>
-        </div>
-      )}
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">

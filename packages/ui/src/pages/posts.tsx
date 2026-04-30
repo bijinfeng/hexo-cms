@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -22,74 +23,6 @@ import {
   Loader2,
 } from "lucide-react";
 
-const STATIC_POSTS = [
-  {
-    id: "1",
-    title: "TanStack Start 入门指南",
-    slug: "tanstack-start-guide",
-    date: "2026-04-28",
-    status: "published",
-    views: 234,
-    tags: ["React", "TanStack"],
-    category: "前端开发",
-    excerpt: "TanStack Start 是一个基于 Vite 的全栈 React 框架，本文介绍如何快速上手...",
-  },
-  {
-    id: "2",
-    title: "构建现代化的 CMS 系统",
-    slug: "modern-cms-system",
-    date: "2026-04-25",
-    status: "published",
-    views: 189,
-    tags: ["CMS", "架构"],
-    category: "系统设计",
-    excerpt: "探讨如何使用现代前端技术栈构建一个高效的内容管理系统...",
-  },
-  {
-    id: "3",
-    title: "Better Auth 实践经验",
-    slug: "better-auth-practice",
-    date: "2026-04-20",
-    status: "draft",
-    views: 0,
-    tags: ["Auth", "安全"],
-    category: "后端开发",
-    excerpt: "Better Auth 是一个现代化的认证库，本文分享在实际项目中的使用经验...",
-  },
-  {
-    id: "4",
-    title: "Tailwind CSS v4 新特性",
-    slug: "tailwind-v4-features",
-    date: "2026-04-18",
-    status: "published",
-    views: 412,
-    tags: ["CSS", "Tailwind"],
-    category: "前端开发",
-    excerpt: "Tailwind CSS v4 带来了全新的 @theme 指令和更强大的 CSS 变量支持...",
-  },
-  {
-    id: "5",
-    title: "GitHub Actions 自动化部署",
-    slug: "github-actions-deploy",
-    date: "2026-04-15",
-    status: "published",
-    views: 567,
-    tags: ["DevOps", "GitHub"],
-    category: "运维",
-    excerpt: "使用 GitHub Actions 实现博客的自动化构建和部署到 GitHub Pages...",
-  },
-  {
-    id: "6",
-    title: "TypeScript 高级类型技巧",
-    slug: "typescript-advanced-types",
-    date: "2026-04-10",
-    status: "archived",
-    views: 891,
-    tags: ["TypeScript"],
-    category: "前端开发",
-    excerpt: "深入探讨 TypeScript 中的条件类型、映射类型和模板字面量类型...",
-  },
-];
 
 const statusConfig = {
   published: { label: "已发布", variant: "success" as const },
@@ -108,11 +41,10 @@ const dateRangeOptions = [
 
 export function PostsPage() {
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<any[]>(STATIC_POSTS);
+  const dataProvider = useDataProvider();
+  const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [githubConfig, setGithubConfig] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState("");
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("全部");
   const [selectedCategory, setSelectedCategory] = useState("全部分类");
@@ -128,69 +60,30 @@ export function PostsPage() {
   const [showBatchUnpublishDialog, setShowBatchUnpublishDialog] = useState(false);
 
   useEffect(() => {
-    loadGitHubConfig();
+    loadPosts();
   }, []);
 
-  async function loadGitHubConfig() {
-    try {
-      const [configRes, tokenRes] = await Promise.all([
-        fetch("/api/github/config"),
-        fetch("/api/auth/token"),
-      ]);
-
-      if (configRes.ok) {
-        const configData = await configRes.json();
-        setGithubConfig(configData.config);
-      }
-
-      if (tokenRes.ok) {
-        const tokenData = await tokenRes.json();
-        setAccessToken(tokenData.accessToken);
-      }
-    } catch (err) {
-      console.error("Failed to load GitHub config:", err);
-    }
-  }
-
-  async function loadPostsFromGitHub() {
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
-
+  async function loadPosts() {
     setLoading(true);
     setError("");
-
     try {
-      const params = new URLSearchParams({
-        owner: githubConfig.owner,
-        repo: githubConfig.repo,
-        token: accessToken,
-      });
-
-      const res = await fetch(`/api/github/posts?${params}`);
-      const data = await res.json();
-
-      if (res.ok && data.posts) {
-        const formattedPosts = data.posts.map((post: any, index: number) => ({
-          id: String(index + 1),
-          title: post.title,
-          slug: post.path.replace(/^.*\//, "").replace(/\.md$/, ""),
-          path: post.path,
-          date: post.date || new Date().toISOString().split("T")[0],
-          status: post.frontmatter.draft ? "draft" : "published",
-          views: 0,
-          tags: Array.isArray(post.frontmatter.tags) ? post.frontmatter.tags : [],
-          category: post.frontmatter.category || "未分类",
-          excerpt: post.content.slice(0, 100) + "...",
-        }));
-        setPosts(formattedPosts);
-      } else {
-        setError(data.error || "加载文章失败");
-      }
-    } catch (err) {
+      const rawPosts = await dataProvider.getPosts();
+      const formattedPosts = rawPosts.map((post: any, index: number) => ({
+        id: String(index + 1),
+        title: post.title,
+        slug: post.path.replace(/^.*\//, "").replace(/\.md$/, ""),
+        path: post.path,
+        date: post.date || new Date().toISOString().split("T")[0],
+        status: post.frontmatter?.draft ? "draft" : "published",
+        views: 0,
+        tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter.tags : [],
+        category: post.frontmatter?.category || "未分类",
+        excerpt: (post.content || "").slice(0, 100) + "...",
+      }));
+      setPosts(formattedPosts);
+    } catch (err: any) {
       console.error("Failed to load posts:", err);
-      setError("加载文章失败，请检查网络连接");
+      setError(err.message || "加载文章失败");
     } finally {
       setLoading(false);
     }
@@ -201,34 +94,12 @@ export function PostsPage() {
       return;
     }
 
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
-
     try {
-      const res = await fetch("/api/github/posts", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner: githubConfig.owner,
-          repo: githubConfig.repo,
-          token: accessToken,
-          path: post.path,
-          commitMessage: `删除文章: ${post.title}`,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setPosts((prev) => prev.filter((p) => p.id !== post.id));
-      } else {
-        setError(data.error || "删除失败");
-      }
-    } catch (err) {
+      await dataProvider.deletePost(post.path);
+      setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    } catch (err: any) {
       console.error("Failed to delete post:", err);
-      setError("删除失败，请检查网络连接");
+      setError(err.message || "删除失败");
     }
   }
 
@@ -254,11 +125,6 @@ export function PostsPage() {
 
   // 批量删除
   async function handleBatchDelete() {
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
-
     const postsToDelete = posts.filter((p) => selectedPosts.has(p.id));
     setBatchProcessing(true);
     setBatchProgress({ current: 0, total: postsToDelete.length });
@@ -270,24 +136,8 @@ export function PostsPage() {
     for (let i = 0; i < postsToDelete.length; i++) {
       const post = postsToDelete[i];
       try {
-        const res = await fetch("/api/github/posts", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            owner: githubConfig.owner,
-            repo: githubConfig.repo,
-            token: accessToken,
-            path: post.path,
-            commitMessage: `删除文章: ${post.title}`,
-          }),
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-          successCount++;
-        } else {
-          failedPosts.push(post.title);
-        }
+        await dataProvider.deletePost(post.path);
+        successCount++;
       } catch (err) {
         failedPosts.push(post.title);
       }
@@ -310,11 +160,6 @@ export function PostsPage() {
 
   // 批量发布/取消发布
   async function handleBatchPublish(publish: boolean) {
-    if (!githubConfig || !accessToken) {
-      setError("请先在设置页面配置 GitHub 仓库");
-      return;
-    }
-
     const postsToUpdate = posts.filter((p) => selectedPosts.has(p.id));
     setBatchProcessing(true);
     setBatchProgress({ current: 0, total: postsToUpdate.length });
@@ -327,17 +172,7 @@ export function PostsPage() {
       const post = postsToUpdate[i];
       try {
         // 先获取完整文章内容
-        const getRes = await fetch(
-          `/api/github/posts?owner=${githubConfig.owner}&repo=${githubConfig.repo}&token=${accessToken}&path=${post.path}`
-        );
-        const getData = await getRes.json();
-
-        if (!getRes.ok || !getData.post) {
-          failedPosts.push(post.title);
-          continue;
-        }
-
-        const fullPost = getData.post;
+        const fullPost = await dataProvider.getPost(post.path);
 
         // 更新 draft 状态
         const updatedPost = {
@@ -349,17 +184,7 @@ export function PostsPage() {
         };
 
         // 保存更新
-        const saveRes = await fetch("/api/github/posts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            owner: githubConfig.owner,
-            repo: githubConfig.repo,
-            token: accessToken,
-            post: updatedPost,
-            commitMessage: `${publish ? "发布" : "取消发布"}文章: ${post.title}`,
-          }),
-        });
+        await dataProvider.savePost(updatedPost);
 
         const saveData = await saveRes.json();
         if (saveRes.ok && saveData.success) {
@@ -658,25 +483,23 @@ export function PostsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {githubConfig && accessToken && (
-            <Button
-              variant="outline"
-              onClick={loadPostsFromGitHub}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <RefreshCw size={16} className="animate-spin" />
-                  加载中...
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={16} />
-                  从 GitHub 加载
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            onClick={loadPosts}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <RefreshCw size={16} className="animate-spin" />
+                加载中...
+              </>
+            ) : (
+              <>
+                <RefreshCw size={16} />
+                从 GitHub 加载
+              </>
+            )}
+          </Button>
           <Button onClick={() => navigate({ to: "/posts/new" })}>
             <Plus size={16} />
             新建文章
@@ -691,15 +514,6 @@ export function PostsPage() {
         </div>
       )}
 
-      {/* GitHub config prompt */}
-      {!githubConfig && (
-        <div className="p-4 rounded-lg bg-[var(--status-warning-bg)] border border-[var(--status-warning)] text-sm">
-          <p className="text-[var(--text-primary)] font-medium mb-1">未配置 GitHub 仓库</p>
-          <p className="text-[var(--text-secondary)]">
-            请先在<a href="/settings" className="text-[var(--brand-primary)] hover:underline">设置页面</a>配置你的 GitHub 仓库信息
-          </p>
-        </div>
-      )}
 
       {/* Search Bar */}
       <div className="flex flex-col gap-3">

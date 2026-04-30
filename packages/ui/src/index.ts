@@ -26,3 +26,6 @@ export { LoginPage } from "./pages/login";
 
 // Utils
 export { cn } from "./utils";
+
+// Context
+export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";
