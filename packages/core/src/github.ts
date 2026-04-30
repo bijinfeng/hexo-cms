@@ -261,6 +261,10 @@ export class GitHubService {
     }
   }
 
+  /**
+   * 获取媒体文件列表
+   */
+  async getMediaFiles(directory: string = "source/images"): Promise<any[]> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,

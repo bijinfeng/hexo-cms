@@ -21,6 +21,32 @@ export default [
   // 基础配置
   js.configs.recommended,
 
+  // Test files configuration
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    languageOptions: {
+      parser: tsparser,
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly',
+        test: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
+
   // TypeScript 和 React 文件配置
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -67,6 +93,14 @@ export default [
         FileList: 'readonly',
         Blob: 'readonly',
         FormData: 'readonly',
+        // Web APIs
+        Response: 'readonly',
+        Request: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        Headers: 'readonly',
+        Event: 'readonly',
+        CustomEvent: 'readonly',
         // React
         React: 'readonly',
         JSX: 'readonly',
