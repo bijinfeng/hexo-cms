@@ -227,8 +227,9 @@ export const Route = createFileRoute("/xxx")({ component: XxxPage });
 | 标签/分类读取真实数据 | ✅ 已完成（/api/github/tags） |
 | 仪表板真实数据 | ✅ 已完成（/api/github/stats） |
 | 桌面端 GitHub token 管理 UI | ✅ 已完成（系统钥匙串存储） |
-| 页面管理（Pages） | ✅ 已完成（列表、删除，复用 posts API） |
+| 页面管理（Pages） | ✅ 已完成（列表、删除、新建，复用 posts API） |
 | 部署管理（Deploy） | ✅ 已完成（GitHub Actions API，手动触发） |
+| 主题管理（Themes） | ✅ 已完成（读取 _config.yml，列出 themes/ 目录，切换主题） |
 
 ## 已知问题
 
