@@ -1,0 +1,15 @@
+{
+  "name": "hexo-cms",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @hexo-cms/web dev",
+    "dev:desktop": "pnpm --filter @hexo-cms/desktop dev",
+    "build": "pnpm --filter @hexo-cms/web build",
+    "build:desktop": "pnpm --filter @hexo-cms/desktop build",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}
