@@ -27,22 +27,53 @@ function saveConfigToFile(config: GitHubConfig): void {
   writeFileSync(getConfigPath(), JSON.stringify(config, null, 2));
 }
 
-// ==================== GitHubService 工厂 ====================
+// ==================== GitHubService 工厂（带缓存）====================
 
-async function createGitHubService(): Promise<GitHubService | null> {
+let cachedGitHubService: GitHubService | null = null;
+let cachedToken: string | null = null;
+let cachedConfig: GitHubConfig | null = null;
+
+async function getGitHubService(): Promise<GitHubService | null> {
   const config = loadConfig();
-  if (!config) return null;
+  if (!config) {
+    cachedGitHubService = null;
+    return null;
+  }
 
   let token: string | null = null;
   try {
     const keytar = await import("keytar");
     token = await keytar.default.getPassword("hexo-cms", "github-token");
   } catch {
+    cachedGitHubService = null;
     return null;
   }
 
-  if (!token) return null;
-  return new GitHubService(token, config);
+  if (!token) {
+    cachedGitHubService = null;
+    return null;
+  }
+
+  // 返回缓存实例（如果 config 和 token 未变）
+  if (
+    cachedGitHubService &&
+    cachedToken === token &&
+    JSON.stringify(cachedConfig) === JSON.stringify(config)
+  ) {
+    return cachedGitHubService;
+  }
+
+  // 创建新实例并缓存
+  cachedToken = token;
+  cachedConfig = config;
+  cachedGitHubService = new GitHubService(token, config);
+  return cachedGitHubService;
+}
+
+function invalidateGitHubServiceCache(): void {
+  cachedGitHubService = null;
+  cachedToken = null;
+  cachedConfig = null;
 }
 
 
@@ -116,6 +147,7 @@ ipcMain.handle("set-token", async (_event, token: string) => {
   try {
     const keytar = await import("keytar");
     await keytar.default.setPassword("hexo-cms", "github-token", token);
+    invalidateGitHubServiceCache();
     return true;
   } catch {
     return false;
@@ -125,6 +157,7 @@ ipcMain.handle("set-token", async (_event, token: string) => {
 ipcMain.handle("delete-token", async () => {
   try {
     const keytar = await import("keytar");
+    invalidateGitHubServiceCache();
     return await keytar.default.deletePassword("hexo-cms", "github-token");
   } catch {
     return false;
@@ -138,62 +171,63 @@ ipcMain.handle("config:get", () => {
 
 ipcMain.handle("config:save", (_event, config: GitHubConfig) => {
   saveConfigToFile(config);
+  invalidateGitHubServiceCache();
   return true;
 });
 
 // 文章管理
 ipcMain.handle("github:get-posts", async () => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) return [];
   return github.getPosts();
 });
 
 ipcMain.handle("github:get-post", async (_event, path: string) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   return github.getPost(path);
 });
 
 ipcMain.handle("github:save-post", async (_event, post) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   return github.savePost(post);
 });
 
 ipcMain.handle("github:delete-post", async (_event, path: string) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   return github.deletePost(path);
 });
 
 // 页面管理（复用 posts API，路径前缀不同）
 ipcMain.handle("github:get-pages", async () => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) return [];
   return github.getPosts();
 });
 
 ipcMain.handle("github:get-page", async (_event, path: string) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   return github.getPost(path);
 });
 
 ipcMain.handle("github:save-page", async (_event, post) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   return github.savePost(post);
 });
 
 ipcMain.handle("github:delete-page", async (_event, path: string) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   return github.deletePost(path);
 });
 
 // 标签和分类管理
 ipcMain.handle("github:get-tags", async () => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) return { tags: [], categories: [], total: 0 };
 
   const posts = await github.getPosts();
@@ -230,7 +264,7 @@ ipcMain.handle("github:get-tags", async () => {
 });
 
 ipcMain.handle("github:rename-tag", async (_event, { type, oldName, newName }: { type: "tag" | "category"; oldName: string; newName: string }) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) return { updatedCount: 0 };
 
   const posts = await github.getPosts();
@@ -262,7 +296,7 @@ ipcMain.handle("github:rename-tag", async (_event, { type, oldName, newName }: {
 });
 
 ipcMain.handle("github:delete-tag", async (_event, { type, name }: { type: "tag" | "category"; name: string }) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) return { updatedCount: 0 };
 
   const posts = await github.getPosts();
@@ -295,7 +329,7 @@ ipcMain.handle("github:delete-tag", async (_event, { type, name }: { type: "tag"
 
 // 媒体管理
 ipcMain.handle("github:get-media", async () => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) return [];
 
   const config = loadConfig();
@@ -316,7 +350,7 @@ ipcMain.handle("github:get-media", async () => {
 });
 
 ipcMain.handle("github:upload-media", async (_event, { buffer, path, name, type }: { buffer: ArrayBuffer; path: string; name: string; type: string }) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
 
   // Convert ArrayBuffer to base64
@@ -329,14 +363,14 @@ ipcMain.handle("github:upload-media", async (_event, { buffer, path, name, type 
 });
 
 ipcMain.handle("github:delete-media", async (_event, path: string) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   await github.deleteMedia(path);
 });
 
 // 统计数据
 ipcMain.handle("github:get-stats", async () => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) return { totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 };
 
   const posts = await github.getPosts();
@@ -350,7 +384,7 @@ ipcMain.handle("github:get-stats", async () => {
 
 // 主题管理
 ipcMain.handle("github:get-themes", async () => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) return { currentTheme: "", installedThemes: [] };
 
   try {
@@ -369,7 +403,7 @@ ipcMain.handle("github:get-themes", async () => {
 });
 
 ipcMain.handle("github:switch-theme", async (_event, themeName: string) => {
-  const github = await createGitHubService();
+  const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
 
   const configFile = await github.getRawFile("_config.yml");
