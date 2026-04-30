@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -13,12 +13,22 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  X,
 } from "lucide-react";
 
 const tagColors = [
   "#61DAFB", "#3178C6", "#FF4154", "#1572B6", "#06B6D4", "#10B981",
   "#F59E0B", "#6B7280", "#8B5CF6", "#EF4444", "#F97316", "#84CC16",
 ];
+
+type DialogType = "rename" | "delete" | null;
+
+interface DialogState {
+  type: DialogType;
+  itemType: "tag" | "category";
+  itemName: string;
+  itemId: string;
+}
 
 export function TagsPage() {
   const [search, setSearch] = useState("");
@@ -27,6 +37,11 @@ export function TagsPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [dialog, setDialog] = useState<DialogState | null>(null);
+  const [newName, setNewName] = useState("");
+  const [config, setConfig] = useState<any>(null);
+  const [token, setToken] = useState("");
 
   useEffect(() => {
     loadTagsAndCategories();
@@ -42,7 +57,8 @@ export function TagsPage() {
         setError("未配置 GitHub 仓库，请前往设置页面配置");
         return;
       }
-      const { config } = await configRes.json();
+      const { config: cfg } = await configRes.json();
+      setConfig(cfg);
 
       const tokenRes = await fetch("/api/auth/token");
       if (!tokenRes.ok) {
@@ -50,9 +66,10 @@ export function TagsPage() {
         return;
       }
       const { accessToken } = await tokenRes.json();
+      setToken(accessToken);
 
       const res = await fetch(
-        `/api/github/tags?owner=${config.owner}&repo=${config.repo}&token=${accessToken}`
+        `/api/github/tags?owner=${cfg.owner}&repo=${cfg.repo}&token=${accessToken}`
       );
       if (!res.ok) throw new Error("加载标签失败");
 
@@ -63,6 +80,85 @@ export function TagsPage() {
       setError(err.message || "加载失败");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function openRenameDialog(type: "tag" | "category", name: string, id: string) {
+    setDialog({ type: "rename", itemType: type, itemName: name, itemId: id });
+    setNewName(name);
+  }
+
+  function openDeleteDialog(type: "tag" | "category", name: string, id: string) {
+    setDialog({ type: "delete", itemType: type, itemName: name, itemId: id });
+  }
+
+  function closeDialog() {
+    setDialog(null);
+    setNewName("");
+  }
+
+  async function handleRename() {
+    if (!dialog || !config || !token || !newName.trim()) return;
+
+    try {
+      setProcessing(true);
+      const res = await fetch("/api/github/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner: config.owner,
+          repo: config.repo,
+          token,
+          type: dialog.itemType,
+          oldName: dialog.itemName,
+          newName: newName.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "重命名失败");
+      }
+
+      const data = await res.json();
+      closeDialog();
+      await loadTagsAndCategories();
+    } catch (err: any) {
+      alert(err.message || "重命名失败");
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!dialog || !config || !token) return;
+
+    try {
+      setProcessing(true);
+      const params = new URLSearchParams({
+        owner: config.owner,
+        repo: config.repo,
+        token,
+        type: dialog.itemType,
+        name: dialog.itemName,
+      });
+
+      const res = await fetch(`/api/github/tags?${params}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "删除失败");
+      }
+
+      const data = await res.json();
+      closeDialog();
+      await loadTagsAndCategories();
+    } catch (err: any) {
+      alert(err.message || "删除失败");
+    } finally {
+      setProcessing(false);
     }
   }
 
@@ -91,8 +187,92 @@ export function TagsPage() {
     );
   }
 
+  const renderDialog = () => {
+    if (!dialog) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
+        <div className="bg-[var(--bg-surface)] rounded-xl shadow-[var(--shadow-lg)] border border-[var(--border-default)] w-full max-w-md mx-4 animate-scale-in">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-[var(--border-default)]">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+              {dialog.type === "rename" ? "重命名" : "删除"}
+              {dialog.itemType === "tag" ? "标签" : "分类"}
+            </h3>
+            <button
+              onClick={closeDialog}
+              disabled={processing}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors disabled:opacity-50"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-4 space-y-4">
+            {dialog.type === "rename" ? (
+              <>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  将 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 重命名为：
+                </p>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  disabled={processing}
+                  placeholder="输入新名称"
+                  className="w-full h-10 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--brand-primary)] transition-colors disabled:opacity-50"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newName.trim()) {
+                      handleRename();
+                    }
+                  }}
+                />
+              </>
+            ) : (
+              <p className="text-sm text-[var(--text-secondary)]">
+                确定要删除 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 吗？
+                此操作将从所有文章中移除该{dialog.itemType === "tag" ? "标签" : "分类"}。
+              </p>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--border-default)]">
+            <Button
+              variant="outline"
+              onClick={closeDialog}
+              disabled={processing}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={dialog.type === "rename" ? handleRename : handleDelete}
+              disabled={processing || (dialog.type === "rename" && !newName.trim())}
+              className={dialog.type === "delete" ? "bg-[var(--status-error)] hover:bg-[var(--status-error)]/90" : ""}
+            >
+              {processing ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  处理中...
+                </>
+              ) : dialog.type === "rename" ? (
+                "确认重命名"
+              ) : (
+                "确认删除"
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {renderDialog()}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -171,10 +351,16 @@ export function TagsPage() {
                   <div className="text-xs text-[var(--text-tertiary)]">{tag.count} 篇文章</div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer">
+                  <button
+                    onClick={() => openRenameDialog("tag", tag.name, tag.id)}
+                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer"
+                  >
                     <Edit3 size={12} />
                   </button>
-                  <button className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer">
+                  <button
+                    onClick={() => openDeleteDialog("tag", tag.name, tag.id)}
+                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer"
+                  >
                     <Trash2 size={12} />
                   </button>
                 </div>
@@ -210,10 +396,16 @@ export function TagsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer">
+                      <button
+                        onClick={() => openRenameDialog("category", cat.name, cat.id)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer"
+                      >
                         <Edit3 size={14} />
                       </button>
-                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer">
+                      <button
+                        onClick={() => openDeleteDialog("category", cat.name, cat.id)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer"
+                      >
                         <Trash2 size={14} />
                       </button>
                       <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer">

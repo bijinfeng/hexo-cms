@@ -86,6 +86,7 @@ export function PagesPage() {
             title: page.title || page.path.split("/").pop()?.replace(".md", "") || "未命名",
             path: "/" + page.path.replace(/^source\//, "").replace(/\.md$/, ""),
             filePath: page.path,
+            slug: page.path.replace(/^source\//, "").replace(/\/index\.md$/, "").replace(/\.md$/, ""),
             status: page.frontmatter.draft ? "draft" : "published",
             updatedAt: page.date || new Date().toISOString().split("T")[0],
             description: page.frontmatter.description || page.content.slice(0, 50) + "...",
@@ -243,7 +244,10 @@ export function PagesPage() {
                     </div>
 
                     <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer">
+                      <button
+                        onClick={() => navigate({ to: "/pages/$slug", params: { slug: page.slug } })}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer"
+                      >
                         <Edit3 size={14} />
                       </button>
                       <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer">
@@ -264,7 +268,10 @@ export function PagesPage() {
         )}
 
         {/* Add new page */}
-        <button className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-[var(--border-default)] text-[var(--text-tertiary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-all cursor-pointer">
+        <button
+          onClick={() => navigate({ to: "/pages/new" })}
+          className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-[var(--border-default)] text-[var(--text-tertiary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-all cursor-pointer"
+        >
           <Plus size={16} />
           <span className="text-sm font-medium">新建页面</span>
         </button>

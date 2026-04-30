@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsNewRouteImport } from './routes/posts.new'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 import { Route as PagesNewRouteImport } from './routes/pages.new'
+import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 
 const ThemesRoute = ThemesRouteImport.update({
   id: '/themes',
@@ -88,6 +89,11 @@ const PagesNewRoute = PagesNewRouteImport.update({
   path: '/new',
   getParentRoute: () => PagesRoute,
 } as any)
+const PagesSlugRoute = PagesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => PagesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/$slug': typeof PagesSlugRoute
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/$slug': typeof PagesSlugRoute
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/$slug': typeof PagesSlugRoute
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/$slug'
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/$slug'
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/$slug'
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
@@ -289,14 +301,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagesNewRouteImport
       parentRoute: typeof PagesRoute
     }
+    '/pages/$slug': {
+      id: '/pages/$slug'
+      path: '/$slug'
+      fullPath: '/pages/$slug'
+      preLoaderRoute: typeof PagesSlugRouteImport
+      parentRoute: typeof PagesRoute
+    }
   }
 }
 
 interface PagesRouteChildren {
+  PagesSlugRoute: typeof PagesSlugRoute
   PagesNewRoute: typeof PagesNewRoute
 }
 
 const PagesRouteChildren: PagesRouteChildren = {
+  PagesSlugRoute: PagesSlugRoute,
   PagesNewRoute: PagesNewRoute,
 }
 

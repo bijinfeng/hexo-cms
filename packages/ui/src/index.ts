@@ -19,6 +19,7 @@ export { CommentsPage } from "./pages/comments";
 export { ThemesPage } from "./pages/themes";
 export { PagesPage } from "./pages/pages";
 export { NewPagePage } from "./pages/pages.new";
+export { EditPagePage } from "./pages/pages.$slug";
 export { DeployPage } from "./pages/deploy";
 export { SettingsPage } from "./pages/settings";
 export { LoginPage } from "./pages/login";

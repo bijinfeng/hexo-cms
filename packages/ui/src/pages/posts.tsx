@@ -15,6 +15,11 @@ import {
   Calendar,
   Tag,
   RefreshCw,
+  X,
+  ChevronUp,
+  CheckSquare,
+  Square,
+  Loader2,
 } from "lucide-react";
 
 const STATIC_POSTS = [
@@ -94,6 +99,13 @@ const statusConfig = {
 
 const filterOptions = ["全部", "已发布", "草稿", "已归档"];
 
+const dateRangeOptions = [
+  { label: "全部时间", value: "all" },
+  { label: "最近 7 天", value: "7" },
+  { label: "最近 30 天", value: "30" },
+  { label: "最近 90 天", value: "90" },
+];
+
 export function PostsPage() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<any[]>(STATIC_POSTS);
@@ -103,6 +115,17 @@ export function PostsPage() {
   const [accessToken, setAccessToken] = useState("");
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("全部");
+  const [selectedCategory, setSelectedCategory] = useState("全部分类");
+  const [dateRange, setDateRange] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // 批量操作状态
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const [batchProcessing, setBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState(false);
+  const [showBatchPublishDialog, setShowBatchPublishDialog] = useState(false);
+  const [showBatchUnpublishDialog, setShowBatchUnpublishDialog] = useState(false);
 
   useEffect(() => {
     loadGitHubConfig();
@@ -209,21 +232,423 @@ export function PostsPage() {
     }
   }
 
+  // 批量操作：全选/取消全选
+  function toggleSelectAll() {
+    if (selectedPosts.size === filtered.length) {
+      setSelectedPosts(new Set());
+    } else {
+      setSelectedPosts(new Set(filtered.map((p) => p.id)));
+    }
+  }
+
+  // 批量操作：切换单个文章选择
+  function toggleSelectPost(postId: string) {
+    const newSelected = new Set(selectedPosts);
+    if (newSelected.has(postId)) {
+      newSelected.delete(postId);
+    } else {
+      newSelected.add(postId);
+    }
+    setSelectedPosts(newSelected);
+  }
+
+  // 批量删除
+  async function handleBatchDelete() {
+    if (!githubConfig || !accessToken) {
+      setError("请先在设置页面配置 GitHub 仓库");
+      return;
+    }
+
+    const postsToDelete = posts.filter((p) => selectedPosts.has(p.id));
+    setBatchProcessing(true);
+    setBatchProgress({ current: 0, total: postsToDelete.length });
+    setError("");
+
+    let successCount = 0;
+    let failedPosts: string[] = [];
+
+    for (let i = 0; i < postsToDelete.length; i++) {
+      const post = postsToDelete[i];
+      try {
+        const res = await fetch("/api/github/posts", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            owner: githubConfig.owner,
+            repo: githubConfig.repo,
+            token: accessToken,
+            path: post.path,
+            commitMessage: `删除文章: ${post.title}`,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          successCount++;
+        } else {
+          failedPosts.push(post.title);
+        }
+      } catch (err) {
+        failedPosts.push(post.title);
+      }
+
+      setBatchProgress({ current: i + 1, total: postsToDelete.length });
+    }
+
+    // 刷新文章列表
+    await loadPostsFromGitHub();
+
+    setBatchProcessing(false);
+    setBatchProgress(null);
+    setSelectedPosts(new Set());
+    setShowBatchDeleteDialog(false);
+
+    if (failedPosts.length > 0) {
+      setError(`删除完成，${successCount} 篇成功，${failedPosts.length} 篇失败：${failedPosts.join(", ")}`);
+    }
+  }
+
+  // 批量发布/取消发布
+  async function handleBatchPublish(publish: boolean) {
+    if (!githubConfig || !accessToken) {
+      setError("请先在设置页面配置 GitHub 仓库");
+      return;
+    }
+
+    const postsToUpdate = posts.filter((p) => selectedPosts.has(p.id));
+    setBatchProcessing(true);
+    setBatchProgress({ current: 0, total: postsToUpdate.length });
+    setError("");
+
+    let successCount = 0;
+    let failedPosts: string[] = [];
+
+    for (let i = 0; i < postsToUpdate.length; i++) {
+      const post = postsToUpdate[i];
+      try {
+        // 先获取完整文章内容
+        const getRes = await fetch(
+          `/api/github/posts?owner=${githubConfig.owner}&repo=${githubConfig.repo}&token=${accessToken}&path=${post.path}`
+        );
+        const getData = await getRes.json();
+
+        if (!getRes.ok || !getData.post) {
+          failedPosts.push(post.title);
+          continue;
+        }
+
+        const fullPost = getData.post;
+
+        // 更新 draft 状态
+        const updatedPost = {
+          ...fullPost,
+          frontmatter: {
+            ...fullPost.frontmatter,
+            draft: !publish,
+          },
+        };
+
+        // 保存更新
+        const saveRes = await fetch("/api/github/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            owner: githubConfig.owner,
+            repo: githubConfig.repo,
+            token: accessToken,
+            post: updatedPost,
+            commitMessage: `${publish ? "发布" : "取消发布"}文章: ${post.title}`,
+          }),
+        });
+
+        const saveData = await saveRes.json();
+        if (saveRes.ok && saveData.success) {
+          successCount++;
+        } else {
+          failedPosts.push(post.title);
+        }
+      } catch (err) {
+        failedPosts.push(post.title);
+      }
+
+      setBatchProgress({ current: i + 1, total: postsToUpdate.length });
+    }
+
+    // 刷新文章列表
+    await loadPostsFromGitHub();
+
+    setBatchProcessing(false);
+    setBatchProgress(null);
+    setSelectedPosts(new Set());
+    setShowBatchPublishDialog(false);
+    setShowBatchUnpublishDialog(false);
+
+    if (failedPosts.length > 0) {
+      setError(`操作完成，${successCount} 篇成功，${failedPosts.length} 篇失败：${failedPosts.join(", ")}`);
+    }
+  }
+
+  // 提取所有分类
+  const allCategories = ["全部分类", ...Array.from(new Set(posts.map((p) => p.category)))];
+
+  // 清除所有过滤器
+  const clearAllFilters = () => {
+    setSearch("");
+    setActiveFilter("全部");
+    setSelectedCategory("全部分类");
+    setDateRange("all");
+  };
+
+  // 检查是否有激活的过滤器
+  const hasActiveFilters =
+    search !== "" ||
+    activeFilter !== "全部" ||
+    selectedCategory !== "全部分类" ||
+    dateRange !== "all";
+
+  // 获取选中文章的详细信息
+  const selectedPostsData = posts.filter((p) => selectedPosts.has(p.id));
+  const selectedDrafts = selectedPostsData.filter((p) => p.status === "draft");
+  const selectedPublished = selectedPostsData.filter((p) => p.status === "published");
+
+  // 过滤逻辑
   const filtered = posts.filter((p) => {
+    // 高级搜索：标题、标签、内容、分类
     const matchSearch =
       !search ||
       p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.tags.some((t: string) => t.toLowerCase().includes(search.toLowerCase()));
+      p.tags.some((t: string) => t.toLowerCase().includes(search.toLowerCase())) ||
+      p.excerpt.toLowerCase().includes(search.toLowerCase()) ||
+      p.category.toLowerCase().includes(search.toLowerCase());
+
+    // 状态过滤
     const matchFilter =
       activeFilter === "全部" ||
       (activeFilter === "已发布" && p.status === "published") ||
       (activeFilter === "草稿" && p.status === "draft") ||
       (activeFilter === "已归档" && p.status === "archived");
-    return matchSearch && matchFilter;
+
+    // 分类过滤
+    const matchCategory =
+      selectedCategory === "全部分类" || p.category === selectedCategory;
+
+    // 日期范围过滤
+    const matchDateRange = (() => {
+      if (dateRange === "all") return true;
+      const postDate = new Date(p.date);
+      const now = new Date();
+      const daysAgo = parseInt(dateRange);
+      const cutoffDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+      return postDate >= cutoffDate;
+    })();
+
+    return matchSearch && matchFilter && matchCategory && matchDateRange;
   });
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* 批量操作工具栏 */}
+      {selectedPosts.size > 0 && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--brand-primary)] text-white shadow-lg animate-fade-in">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="font-medium">
+                已选择 {selectedPosts.size} 篇文章
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedPosts(new Set())}
+                disabled={batchProcessing}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                取消选择
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              {batchProgress && (
+                <span className="text-sm">
+                  处理中: {batchProgress.current} / {batchProgress.total}
+                </span>
+              )}
+              {selectedPublished.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBatchUnpublishDialog(true)}
+                  disabled={batchProcessing}
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                >
+                  批量取消发布
+                </Button>
+              )}
+              {selectedDrafts.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBatchPublishDialog(true)}
+                  disabled={batchProcessing}
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                >
+                  批量发布
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBatchDeleteDialog(true)}
+                disabled={batchProcessing}
+                className="bg-red-500/90 border-red-400/20 text-white hover:bg-red-600"
+              >
+                批量删除
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 批量删除确认对话框 */}
+      {showBatchDeleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
+          <Card className="w-full max-w-md mx-4">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+                确认批量删除
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)] mb-4">
+                确定要删除以下 {selectedPosts.size} 篇文章吗？此操作不可恢复。
+              </p>
+              <div className="max-h-48 overflow-y-auto mb-4 p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+                <ul className="space-y-1 text-sm">
+                  {selectedPostsData.map((post) => (
+                    <li key={post.id} className="text-[var(--text-primary)]">
+                      • {post.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBatchDeleteDialog(false)}
+                  disabled={batchProcessing}
+                >
+                  取消
+                </Button>
+                <Button
+                  onClick={handleBatchDelete}
+                  disabled={batchProcessing}
+                  className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90"
+                >
+                  {batchProcessing ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      删除中...
+                    </>
+                  ) : (
+                    "确认删除"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 批量发布确认对话框 */}
+      {showBatchPublishDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
+          <Card className="w-full max-w-md mx-4">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+                确认批量发布
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)] mb-4">
+                确定要发布以下 {selectedDrafts.length} 篇草稿文章吗？
+              </p>
+              <div className="max-h-48 overflow-y-auto mb-4 p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+                <ul className="space-y-1 text-sm">
+                  {selectedDrafts.map((post) => (
+                    <li key={post.id} className="text-[var(--text-primary)]">
+                      • {post.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBatchPublishDialog(false)}
+                  disabled={batchProcessing}
+                >
+                  取消
+                </Button>
+                <Button
+                  onClick={() => handleBatchPublish(true)}
+                  disabled={batchProcessing}
+                >
+                  {batchProcessing ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      发布中...
+                    </>
+                  ) : (
+                    "确认发布"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 批量取消发布确认对话框 */}
+      {showBatchUnpublishDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
+          <Card className="w-full max-w-md mx-4">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+                确认批量取消发布
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)] mb-4">
+                确定要取消发布以下 {selectedPublished.length} 篇文章吗？
+              </p>
+              <div className="max-h-48 overflow-y-auto mb-4 p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+                <ul className="space-y-1 text-sm">
+                  {selectedPublished.map((post) => (
+                    <li key={post.id} className="text-[var(--text-primary)]">
+                      • {post.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBatchUnpublishDialog(false)}
+                  disabled={batchProcessing}
+                >
+                  取消
+                </Button>
+                <Button
+                  onClick={() => handleBatchPublish(false)}
+                  disabled={batchProcessing}
+                >
+                  {batchProcessing ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      处理中...
+                    </>
+                  ) : (
+                    "确认取消发布"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -276,47 +701,176 @@ export function PostsPage() {
         </div>
       )}
 
-      {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
-          {filterOptions.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => setActiveFilter(opt)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                activeFilter === opt
-                  ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
+      {/* Search Bar */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+            {filterOptions.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setActiveFilter(opt)}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                  activeFilter === opt
+                    ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors">
+            <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="搜索标题、标签、内容、分类..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <Button
+            variant="outline"
+            size="default"
+            className="gap-2 flex-shrink-0"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={14} className={hasActiveFilters ? "text-[var(--brand-primary)]" : ""} />
+            高级筛选
+            {showFilters ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </Button>
         </div>
 
-        <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors">
-          <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="搜索文章标题、标签..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
-          />
-        </div>
+        {/* Advanced Filters Panel */}
+        {showFilters && (
+          <Card className="animate-fade-in">
+            <CardContent className="p-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {/* Category Filter */}
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                      分类
+                    </label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)] transition-colors cursor-pointer"
+                    >
+                      {allCategories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-        <Button variant="outline" size="default" className="gap-2 flex-shrink-0">
-          <Filter size={14} />
-          筛选
-          <ChevronDown size={12} />
-        </Button>
+                  {/* Date Range Filter */}
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                      日期范围
+                    </label>
+                    <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+                      {dateRangeOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setDateRange(opt.value)}
+                          className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                            dateRange === opt.value
+                              ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
+                              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Filters & Clear Button */}
+                {hasActiveFilters && (
+                  <div className="flex items-center justify-between pt-3 border-t border-[var(--border-default)]">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-[var(--text-tertiary)]">激活的过滤器:</span>
+                      {search && (
+                        <Badge variant="default" className="gap-1">
+                          搜索: {search.slice(0, 20)}
+                          {search.length > 20 && "..."}
+                        </Badge>
+                      )}
+                      {activeFilter !== "全部" && (
+                        <Badge variant="default">状态: {activeFilter}</Badge>
+                      )}
+                      {selectedCategory !== "全部分类" && (
+                        <Badge variant="default">分类: {selectedCategory}</Badge>
+                      )}
+                      {dateRange !== "all" && (
+                        <Badge variant="default">
+                          日期: {dateRangeOptions.find((o) => o.value === dateRange)?.label}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearAllFilters}
+                      className="gap-1 flex-shrink-0"
+                    >
+                      <X size={12} />
+                      清除所有
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Filter Results Count */}
+        {(hasActiveFilters || filtered.length !== posts.length) && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-[var(--text-secondary)]">
+              显示 <span className="font-semibold text-[var(--brand-primary)]">{filtered.length}</span> / {posts.length} 篇文章
+            </span>
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer text-xs underline"
+              >
+                清除过滤
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Posts Table */}
       <Card>
         <CardContent className="p-0">
           {/* Table Header */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-6 py-3 border-b border-[var(--border-default)] text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-6 py-3 border-b border-[var(--border-default)] text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+            <button
+              onClick={toggleSelectAll}
+              className="flex items-center justify-center text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
+              disabled={filtered.length === 0}
+            >
+              {selectedPosts.size === filtered.length && filtered.length > 0 ? (
+                <CheckSquare size={16} />
+              ) : (
+                <Square size={16} />
+              )}
+            </button>
             <span>文章</span>
             <span className="hidden md:block">分类</span>
             <span className="hidden sm:block">日期</span>
@@ -334,11 +888,26 @@ export function PostsPage() {
             ) : (
               filtered.map((post) => {
                 const status = statusConfig[post.status as keyof typeof statusConfig];
+                const isSelected = selectedPosts.has(post.id);
                 return (
                   <div
                     key={post.id}
-                    className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-6 py-4 hover:bg-[var(--bg-muted)] transition-colors group"
+                    className={`grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 items-center px-6 py-4 hover:bg-[var(--bg-muted)] transition-colors group ${
+                      isSelected ? "bg-[var(--brand-primary-subtle)]" : ""
+                    }`}
                   >
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => toggleSelectPost(post.id)}
+                      className="flex items-center justify-center text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
+                    >
+                      {isSelected ? (
+                        <CheckSquare size={16} className="text-[var(--brand-primary)]" />
+                      ) : (
+                        <Square size={16} />
+                      )}
+                    </button>
+
                     {/* Title + meta */}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">

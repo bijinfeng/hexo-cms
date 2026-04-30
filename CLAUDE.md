@@ -224,12 +224,14 @@ export const Route = createFileRoute("/xxx")({ component: XxxPage });
 | 编辑已有文章 `/posts/$slug` | ✅ 已完成（含删除、图片上传） |
 | Markdown 实时预览（渲染 HTML） | ✅ 已完成（marked 库） |
 | 图片上传到 GitHub | ✅ 已完成（MediaPage 完整实现） |
-| 标签/分类读取真实数据 | ✅ 已完成（/api/github/tags） |
+| 标签/分类管理 | ✅ 已完成（读取、重命名、删除，批量更新文章） |
 | 仪表板真实数据 | ✅ 已完成（/api/github/stats） |
 | 桌面端 GitHub token 管理 UI | ✅ 已完成（系统钥匙串存储） |
-| 页面管理（Pages） | ✅ 已完成（列表、删除、新建，复用 posts API） |
+| 页面管理（Pages） | ✅ 已完成（列表、新建、编辑、删除，完整 CRUD） |
 | 部署管理（Deploy） | ✅ 已完成（GitHub Actions API，手动触发） |
 | 主题管理（Themes） | ✅ 已完成（读取 _config.yml，列出 themes/ 目录，切换主题） |
+| 文章搜索和过滤 | ✅ 已完成（全文搜索、状态/分类/日期过滤、高级筛选面板） |
+| 文章批量操作 | ✅ 已完成（批量选择、批量删除、批量发布/取消发布） |
 
 ## 已知问题
 
