@@ -221,12 +221,14 @@ export const Route = createFileRoute("/xxx")({ component: XxxPage });
 | CodeMirror Markdown 编辑器 | ✅ 已完成 |
 | Electron 桌面应用框架 | ✅ 已完成（main/preload/renderer） |
 | 新建文章保存到 GitHub | ✅ 已完成 |
-| 编辑已有文章 `/posts/$slug` | ✅ 已完成 |
+| 编辑已有文章 `/posts/$slug` | ✅ 已完成（含删除、图片上传） |
 | Markdown 实时预览（渲染 HTML） | ✅ 已完成（marked 库） |
 | 图片上传到 GitHub | ✅ 已完成（MediaPage 完整实现） |
 | 标签/分类读取真实数据 | ✅ 已完成（/api/github/tags） |
 | 仪表板真实数据 | ✅ 已完成（/api/github/stats） |
 | 桌面端 GitHub token 管理 UI | ✅ 已完成（系统钥匙串存储） |
+| 页面管理（Pages） | ✅ 已完成（列表、删除，复用 posts API） |
+| 部署管理（Deploy） | ✅ 已完成（GitHub Actions API，手动触发） |
 
 ## 已知问题
 
