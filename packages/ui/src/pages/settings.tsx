@@ -162,6 +162,12 @@ function GitHubSettings() {
   const [autoDeploy, setAutoDeploy] = useState(true);
   const [deployNotifications, setDeployNotifications] = useState(true);
 
+  // Desktop-specific token management
+  const isDesktop = typeof window !== "undefined" && (window as any).electronAPI;
+  const [token, setToken] = useState("");
+  const [tokenSaved, setTokenSaved] = useState(false);
+  const [tokenLoading, setTokenLoading] = useState(false);
+
   useEffect(() => {
     async function loadConfig() {
       try {
@@ -185,7 +191,57 @@ function GitHubSettings() {
       }
     }
     loadConfig();
+
+    // Load token for desktop app
+    if (isDesktop) {
+      loadDesktopToken();
+    }
   }, []);
+
+  async function loadDesktopToken() {
+    try {
+      setTokenLoading(true);
+      const savedToken = await (window as any).electronAPI.getToken();
+      if (savedToken) {
+        setToken(savedToken);
+        setTokenSaved(true);
+      }
+    } catch (error) {
+      console.error("Failed to load token:", error);
+    } finally {
+      setTokenLoading(false);
+    }
+  }
+
+  async function handleSaveToken() {
+    if (!token.trim()) return;
+    try {
+      setTokenLoading(true);
+      await (window as any).electronAPI.setToken(token);
+      setTokenSaved(true);
+      setTimeout(() => setTokenSaved(false), 2000);
+    } catch (error) {
+      console.error("Failed to save token:", error);
+      alert("保存失败");
+    } finally {
+      setTokenLoading(false);
+    }
+  }
+
+  async function handleDeleteToken() {
+    if (!confirm("确定要删除已保存的 Token 吗？")) return;
+    try {
+      setTokenLoading(true);
+      await (window as any).electronAPI.deleteToken();
+      setToken("");
+      setTokenSaved(false);
+    } catch (error) {
+      console.error("Failed to delete token:", error);
+      alert("删除失败");
+    } finally {
+      setTokenLoading(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -224,6 +280,70 @@ function GitHubSettings() {
 
   return (
     <div className="space-y-4">
+      {/* Desktop Token Management */}
+      {isDesktop && (
+        <Card>
+          <CardHeader>
+            <CardTitle>GitHub Personal Access Token</CardTitle>
+            <CardDescription>
+              桌面端需要 GitHub Token 来访问仓库。
+              <a
+                href="https://github.com/settings/tokens/new?scopes=repo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--brand-primary)] hover:underline ml-1 cursor-pointer inline-flex items-center gap-1"
+              >
+                创建 Token
+                <ExternalLink size={10} />
+              </a>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {tokenSaved && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--status-success-bg)] border border-[var(--status-success)]">
+                <CheckCircle2 size={16} className="text-[var(--status-success)] flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-[var(--text-primary)]">Token 已保存</div>
+                  <div className="text-xs text-[var(--text-secondary)]">已安全存储到系统钥匙串</div>
+                </div>
+              </div>
+            )}
+
+            <FormField
+              label="Personal Access Token"
+              description="需要 repo 权限。Token 将安全存储在系统钥匙串中"
+            >
+              <input
+                type="password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                className="form-input font-mono text-sm"
+                disabled={tokenLoading}
+              />
+            </FormField>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSaveToken}
+                disabled={tokenLoading || !token.trim()}
+              >
+                {tokenLoading ? "保存中..." : "保存 Token"}
+              </Button>
+              {tokenSaved && (
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteToken}
+                  disabled={tokenLoading}
+                >
+                  删除 Token
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>GitHub 仓库</CardTitle>

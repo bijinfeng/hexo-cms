@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -11,37 +11,85 @@ import {
   Trash2,
   Hash,
   ChevronRight,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 
-const tags = [
-  { id: "1", name: "React", slug: "react", count: 12, color: "#61DAFB" },
-  { id: "2", name: "TypeScript", slug: "typescript", count: 9, color: "#3178C6" },
-  { id: "3", name: "TanStack", slug: "tanstack", count: 5, color: "#FF4154" },
-  { id: "4", name: "CSS", slug: "css", count: 8, color: "#1572B6" },
-  { id: "5", name: "Tailwind", slug: "tailwind", count: 7, color: "#06B6D4" },
-  { id: "6", name: "Auth", slug: "auth", count: 3, color: "#10B981" },
-  { id: "7", name: "DevOps", slug: "devops", count: 4, color: "#F59E0B" },
-  { id: "8", name: "GitHub", slug: "github", count: 6, color: "#6B7280" },
-  { id: "9", name: "架构", slug: "architecture", count: 5, color: "#8B5CF6" },
-  { id: "10", name: "安全", slug: "security", count: 2, color: "#EF4444" },
-  { id: "11", name: "CMS", slug: "cms", count: 3, color: "#F97316" },
-  { id: "12", name: "运维", slug: "ops", count: 4, color: "#84CC16" },
-];
-
-const categories = [
-  { id: "1", name: "前端开发", slug: "frontend", count: 18, children: ["React", "CSS", "TypeScript"] },
-  { id: "2", name: "后端开发", slug: "backend", count: 7, children: ["Auth", "安全"] },
-  { id: "3", name: "系统设计", slug: "system-design", count: 5, children: ["架构", "CMS"] },
-  { id: "4", name: "运维", slug: "ops", count: 8, children: ["DevOps", "GitHub", "运维"] },
+const tagColors = [
+  "#61DAFB", "#3178C6", "#FF4154", "#1572B6", "#06B6D4", "#10B981",
+  "#F59E0B", "#6B7280", "#8B5CF6", "#EF4444", "#F97316", "#84CC16",
 ];
 
 export function TagsPage() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"tags" | "categories">("tags");
+  const [tags, setTags] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadTagsAndCategories();
+  }, []);
+
+  async function loadTagsAndCategories() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const configRes = await fetch("/api/github/config");
+      if (!configRes.ok) {
+        setError("未配置 GitHub 仓库，请前往设置页面配置");
+        return;
+      }
+      const { config } = await configRes.json();
+
+      const tokenRes = await fetch("/api/auth/token");
+      if (!tokenRes.ok) {
+        setError("未获取到访问令牌，请重新登录");
+        return;
+      }
+      const { accessToken } = await tokenRes.json();
+
+      const res = await fetch(
+        `/api/github/tags?owner=${config.owner}&repo=${config.repo}&token=${accessToken}`
+      );
+      if (!res.ok) throw new Error("加载标签失败");
+
+      const data = await res.json();
+      setTags(data.tags.map((t: any, i: number) => ({ ...t, color: tagColors[i % tagColors.length] })));
+      setCategories(data.categories);
+    } catch (err: any) {
+      setError(err.message || "加载失败");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filteredTags = tags.filter((t) =>
     !search || t.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const filteredCategories = categories.filter((c) =>
+    !search || c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-primary)]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <AlertCircle className="w-12 h-12 text-[var(--status-error)]" />
+        <p className="text-sm text-[var(--text-secondary)]">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -101,31 +149,38 @@ export function TagsPage() {
 
       {activeTab === "tags" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {filteredTags.map((tag) => (
-            <div
-              key={tag.id}
-              className="group flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-sm)] transition-all cursor-pointer"
-            >
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: tag.color + "20" }}
-              >
-                <Hash size={14} style={{ color: tag.color }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-[var(--text-primary)] truncate">{tag.name}</div>
-                <div className="text-xs text-[var(--text-tertiary)]">{tag.count} 篇文章</div>
-              </div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer">
-                  <Edit3 size={12} />
-                </button>
-                <button className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer">
-                  <Trash2 size={12} />
-                </button>
-              </div>
+          {filteredTags.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
+              <Hash size={40} className="mb-3 opacity-30" />
+              <p className="text-sm">暂无标签</p>
             </div>
-          ))}
+          ) : (
+            filteredTags.map((tag) => (
+              <div
+                key={tag.id}
+                className="group flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-sm)] transition-all cursor-pointer"
+              >
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: tag.color + "20" }}
+                >
+                  <Hash size={14} style={{ color: tag.color }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-[var(--text-primary)] truncate">{tag.name}</div>
+                  <div className="text-xs text-[var(--text-tertiary)]">{tag.count} 篇文章</div>
+                </div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer">
+                    <Edit3 size={12} />
+                  </button>
+                  <button className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer">
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
 
           {/* Add new tag card */}
           <button className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-[var(--border-default)] text-[var(--text-tertiary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-all cursor-pointer">
@@ -135,44 +190,41 @@ export function TagsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {categories.map((cat) => (
-            <Card key={cat.id} className="hover:shadow-[var(--shadow-sm)] transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-[var(--brand-accent-subtle)] flex items-center justify-center flex-shrink-0">
-                    <FolderOpen size={16} className="text-[var(--brand-accent)]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-[var(--text-primary)]">{cat.name}</span>
-                      <Badge variant="default">{cat.count} 篇</Badge>
+          {filteredCategories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
+              <FolderOpen size={40} className="mb-3 opacity-30" />
+              <p className="text-sm">暂无分类</p>
+            </div>
+          ) : (
+            filteredCategories.map((cat) => (
+              <Card key={cat.id} className="hover:shadow-[var(--shadow-sm)] transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-[var(--brand-accent-subtle)] flex items-center justify-center flex-shrink-0">
+                      <FolderOpen size={16} className="text-[var(--brand-accent)]" />
                     </div>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {cat.children.map((child) => (
-                        <span
-                          key={child}
-                          className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-muted)] text-[var(--text-secondary)]"
-                        >
-                          {child}
-                        </span>
-                      ))}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">{cat.name}</span>
+                        <Badge variant="default">{cat.count} 篇</Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer">
+                        <Edit3 size={14} />
+                      </button>
+                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer">
+                        <Trash2 size={14} />
+                      </button>
+                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer">
+                        <ChevronRight size={14} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer">
-                      <Edit3 size={14} />
-                    </button>
-                    <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer">
-                      <Trash2 size={14} />
-                    </button>
-                    <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer">
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))
+          )}
 
           <button className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-[var(--border-default)] text-[var(--text-tertiary)] hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent-subtle)] transition-all cursor-pointer">
             <Plus size={16} />
