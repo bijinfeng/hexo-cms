@@ -7,7 +7,10 @@
     "dev:desktop": "pnpm --filter @hexo-cms/desktop dev",
     "build": "pnpm --filter @hexo-cms/web build",
     "build:desktop": "pnpm --filter @hexo-cms/desktop build",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "type-check": "pnpm -r exec tsc --noEmit"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
