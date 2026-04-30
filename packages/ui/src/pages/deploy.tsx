@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -14,70 +15,9 @@ import {
   Activity,
   Globe,
   Server,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
-
-const deployments = [
-  {
-    id: "abc1234",
-    message: "更新文章：TanStack Start 入门指南",
-    branch: "main",
-    author: "kebai",
-    time: "10 分钟前",
-    duration: "1m 23s",
-    status: "success",
-    url: "https://kebai.github.io",
-  },
-  {
-    id: "def5678",
-    message: "新增标签：React, TypeScript",
-    branch: "main",
-    author: "kebai",
-    time: "2 小时前",
-    duration: "1m 18s",
-    status: "success",
-    url: "https://kebai.github.io",
-  },
-  {
-    id: "ghi9012",
-    message: "上传媒体文件 3 张",
-    branch: "main",
-    author: "kebai",
-    time: "昨天 16:30",
-    duration: "1m 45s",
-    status: "success",
-    url: "https://kebai.github.io",
-  },
-  {
-    id: "jkl3456",
-    message: "修复文章排版问题",
-    branch: "main",
-    author: "kebai",
-    time: "昨天 10:15",
-    duration: "—",
-    status: "failed",
-    url: null,
-  },
-  {
-    id: "mno7890",
-    message: "更新主题配置",
-    branch: "main",
-    author: "kebai",
-    time: "3 天前",
-    duration: "2m 01s",
-    status: "success",
-    url: "https://kebai.github.io",
-  },
-  {
-    id: "pqr1234",
-    message: "初始化博客内容",
-    branch: "main",
-    author: "kebai",
-    time: "1 周前",
-    duration: "3m 12s",
-    status: "success",
-    url: "https://kebai.github.io",
-  },
-];
 
 const statusConfig = {
   success: {
@@ -110,9 +50,154 @@ const statusConfig = {
   },
 };
 
+function formatRelativeTime(isoDate: string): string {
+  const now = new Date();
+  const date = new Date(isoDate);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "刚刚";
+  if (diffMins < 60) return `${diffMins} 分钟前`;
+  if (diffHours < 24) return `${diffHours} 小时前`;
+  if (diffDays === 1) return "昨天";
+  if (diffDays < 7) return `${diffDays} 天前`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} 周前`;
+  return date.toLocaleDateString("zh-CN");
+}
+
 export function DeployPage() {
-  const successCount = deployments.filter((d) => d.status === "success").length;
-  const failedCount = deployments.filter((d) => d.status === "failed").length;
+  const [deployments, setDeployments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [githubConfig, setGithubConfig] = useState<any>(null);
+  const [accessToken, setAccessToken] = useState("");
+  const [siteUrl, setSiteUrl] = useState("");
+  const [successCount, setSuccessCount] = useState(0);
+  const [failedCount, setFailedCount] = useState(0);
+  const [avgDuration, setAvgDuration] = useState("");
+  const [deploying, setDeploying] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadDeployments();
+  }, []);
+
+  async function loadDeployments() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const configRes = await fetch("/api/github/config");
+      if (!configRes.ok) {
+        setError("请先在设置页面配置 GitHub 仓库");
+        return;
+      }
+      const configData = await configRes.json();
+      if (!configData.config) {
+        setError("请先在设置页面配置 GitHub 仓库");
+        return;
+      }
+      setGithubConfig(configData.config);
+
+      const tokenRes = await fetch("/api/auth/token");
+      if (!tokenRes.ok) {
+        setError("无法获取 GitHub 访问令牌");
+        return;
+      }
+      const tokenData = await tokenRes.json();
+      if (!tokenData.accessToken) {
+        setError("无法获取 GitHub 访问令牌");
+        return;
+      }
+      setAccessToken(tokenData.accessToken);
+
+      const { owner, repo } = configData.config;
+      const params = new URLSearchParams({ owner, repo, token: tokenData.accessToken });
+      const deployRes = await fetch(`/api/deploy?${params}`);
+      if (!deployRes.ok) {
+        const errData = await deployRes.json();
+        setError(errData.error || "加载部署历史失败");
+        return;
+      }
+
+      const deployData = await deployRes.json();
+      const formattedRuns = deployData.runs.map((run: any) => ({
+        id: run.sha,
+        name: run.name,
+        message: run.message,
+        branch: run.branch,
+        author: run.author,
+        time: formatRelativeTime(run.createdAt),
+        duration: run.duration,
+        status: run.status,
+        url: run.url,
+      }));
+
+      setDeployments(formattedRuns);
+      setSiteUrl(deployData.siteUrl);
+      setSuccessCount(deployData.successCount);
+      setFailedCount(deployData.failedCount);
+      setAvgDuration(deployData.avgDurationMs ? `${Math.floor(deployData.avgDurationMs / 60000)}m ${Math.floor((deployData.avgDurationMs % 60000) / 1000)}s` : "—");
+    } catch (err: any) {
+      setError(err.message || "加载失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleManualDeploy() {
+    if (!githubConfig || !accessToken) return;
+    try {
+      setDeploying(true);
+      const res = await fetch("/api/deploy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner: githubConfig.owner,
+          repo: githubConfig.repo,
+          token: accessToken,
+          workflowFile: "pages.yml",
+          branch: githubConfig.branch || "main",
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "触发部署失败");
+        return;
+      }
+      alert("部署已触发，请稍后刷新查看状态");
+      setTimeout(() => loadDeployments(), 3000);
+    } catch (err: any) {
+      alert(err.message || "触发部署失败");
+    } finally {
+      setDeploying(false);
+    }
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await loadDeployments();
+    setRefreshing(false);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 size={32} className="animate-spin text-[var(--brand-primary)]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <AlertCircle size={48} className="text-[var(--status-error)]" />
+        <p className="text-[var(--text-secondary)]">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -124,8 +209,8 @@ export function DeployPage() {
             GitHub Actions 自动化部署到 GitHub Pages
           </p>
         </div>
-        <Button>
-          <Play size={16} />
+        <Button onClick={handleManualDeploy} disabled={deploying}>
+          {deploying ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
           手动触发部署
         </Button>
       </div>
@@ -145,15 +230,19 @@ export function DeployPage() {
               </div>
             </div>
           </div>
-          <a
-            href="https://kebai.github.io"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-[var(--brand-primary)] hover:underline cursor-pointer"
-          >
-            kebai.github.io
-            <ExternalLink size={10} />
-          </a>
+          {siteUrl ? (
+            <a
+              href={siteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs text-[var(--brand-primary)] hover:underline cursor-pointer"
+            >
+              {siteUrl.replace(/^https?:\/\//, "")}
+              <ExternalLink size={10} />
+            </a>
+          ) : (
+            <span className="text-xs text-[var(--text-tertiary)]">未配置 Pages</span>
+          )}
         </div>
 
         <div className="stat-card">
@@ -164,7 +253,7 @@ export function DeployPage() {
             <div>
               <div className="text-xs text-[var(--text-tertiary)]">成功率</div>
               <div className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">
-                {Math.round((successCount / deployments.length) * 100)}%
+                {deployments.length > 0 ? Math.round((successCount / deployments.length) * 100) : 0}%
               </div>
             </div>
           </div>
@@ -181,11 +270,11 @@ export function DeployPage() {
             <div>
               <div className="text-xs text-[var(--text-tertiary)]">平均耗时</div>
               <div className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">
-                1m 40s
+                {avgDuration || "—"}
               </div>
             </div>
           </div>
-          <div className="text-xs text-[var(--text-tertiary)]">最近 5 次部署</div>
+          <div className="text-xs text-[var(--text-tertiary)]">最近 {deployments.length} 次部署</div>
         </div>
       </div>
 
@@ -197,84 +286,94 @@ export function DeployPage() {
               <Zap size={16} className="text-[var(--brand-accent)]" />
               部署历史
             </CardTitle>
-            <Button variant="ghost" size="sm" className="gap-1.5 text-[var(--text-secondary)]">
-              <RefreshCw size={14} />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-[var(--text-secondary)]"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
               刷新
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y divide-[var(--border-default)]">
-            {deployments.map((deploy) => {
-              const config = statusConfig[deploy.status as keyof typeof statusConfig];
-              const Icon = config.icon;
-              return (
-                <div
-                  key={deploy.id}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--bg-muted)] transition-colors group"
-                >
-                  {/* Status Icon */}
+          {deployments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
+              <Zap size={40} className="mb-3 opacity-30" />
+              <p className="text-sm">暂无部署记录</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-[var(--border-default)]">
+              {deployments.map((deploy) => {
+                const config = statusConfig[deploy.status as keyof typeof statusConfig];
+                const Icon = config.icon;
+                const durationLabel = deploy.duration
+                  ? `${Math.floor(deploy.duration / 60000)}m ${Math.floor((deploy.duration % 60000) / 1000)}s`
+                  : null;
+                return (
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: config.bg }}
+                    key={deploy.id + deploy.time}
+                    className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--bg-muted)] transition-colors group"
                   >
-                    <Icon
-                      size={16}
-                      style={{ color: config.color }}
-                      className={deploy.status === "running" ? "animate-spin" : ""}
-                    />
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-[var(--text-primary)] truncate">
-                        {deploy.message}
-                      </span>
-                      <Badge variant={config.variant}>{config.label}</Badge>
+                    {/* Status Icon */}
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: config.bg }}
+                    >
+                      <Icon
+                        size={16}
+                        style={{ color: config.color }}
+                        className={deploy.status === "running" ? "animate-spin" : ""}
+                      />
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
-                      <span className="flex items-center gap-1">
-                        <GitCommit size={10} />
-                        <span className="font-mono">{deploy.id}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <GitBranch size={10} />
-                        {deploy.branch}
-                      </span>
-                      <span>{deploy.time}</span>
-                      {deploy.duration !== "—" && (
-                        <span className="flex items-center gap-1">
-                          <Clock size={10} />
-                          {deploy.duration}
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+                          {deploy.message}
                         </span>
+                        <Badge variant={config.variant}>{config.label}</Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
+                        <span className="flex items-center gap-1">
+                          <GitCommit size={10} />
+                          <span className="font-mono">{deploy.id}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <GitBranch size={10} />
+                          {deploy.branch}
+                        </span>
+                        <span>{deploy.time}</span>
+                        {durationLabel && (
+                          <span className="flex items-center gap-1">
+                            <Clock size={10} />
+                            {durationLabel}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {deploy.url && (
+                        <a
+                          href={deploy.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer"
+                        >
+                          <ExternalLink size={14} />
+                        </a>
                       )}
                     </div>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {deploy.status === "failed" && (
-                      <button className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--brand-primary)] bg-[var(--brand-primary-subtle)] hover:opacity-80 transition-opacity cursor-pointer">
-                        <RefreshCw size={12} />
-                        重试
-                      </button>
-                    )}
-                    {deploy.url && (
-                      <a
-                        href={deploy.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer"
-                      >
-                        <ExternalLink size={14} />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
