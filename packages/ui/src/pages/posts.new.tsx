@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import CodeMirror from "@uiw/react-codemirror";
@@ -49,6 +49,8 @@ export function NewPostPage() {
   const [error, setError] = useState("");
   const [githubConfig, setGithubConfig] = useState<any>(null);
   const [accessToken, setAccessToken] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadGitHubConfig();
@@ -90,6 +92,37 @@ export function NewPostPage() {
   function insertMarkdown(before: string, after = "", placeholder = "") {
     const newContent = content + before + placeholder + after;
     setContent(newContent);
+  }
+
+  async function handleImageUpload(file: File) {
+    if (!githubConfig || !accessToken) {
+      setError("请先在设置页面配置 GitHub 仓库");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("owner", githubConfig.owner);
+      formData.append("repo", githubConfig.repo);
+      formData.append("token", accessToken);
+      formData.append("dir", githubConfig.media_dir || "source/images");
+
+      const res = await fetch("/api/github/media", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (res.ok && data.path) {
+        insertMarkdown(`![${file.name}](/${data.path})`);
+      } else {
+        setError(data.error || "图片上传失败");
+      }
+    } catch (err) {
+      setError("图片上传失败，请检查网络连接");
+    } finally {
+      setUploading(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
   }
 
   async function handleSave(publish = false) {
@@ -179,7 +212,7 @@ export function NewPostPage() {
     { icon: Code, label: "代码", action: () => insertMarkdown("`", "`", "代码") },
     { separator: true },
     { icon: Link, label: "链接", action: () => insertMarkdown("[", "](url)", "链接文字") },
-    { icon: Image, label: "图片", action: () => insertMarkdown("![", "](url)", "图片描述") },
+    { icon: Image, label: "图片", action: () => imageInputRef.current?.click() },
     { separator: true },
     { icon: List, label: "无序列表", action: () => insertMarkdown("- ", "", "列表项") },
     { icon: ListOrdered, label: "有序列表", action: () => insertMarkdown("1. ", "", "列表项") },
@@ -189,6 +222,18 @@ export function NewPostPage() {
 
   return (
     <div className="h-full flex flex-col animate-fade-in -m-6">
+      {/* Hidden file input for image upload */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImageUpload(file);
+        }}
+      />
+
       {/* Editor Topbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-[var(--border-default)] bg-[var(--bg-surface)] flex-shrink-0">
         <button
@@ -268,9 +313,13 @@ export function NewPostPage() {
                     key={i}
                     onClick={action.action}
                     title={action.label}
-                    className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
+                    disabled={action.label === "图片" && uploading}
+                    className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <action.icon size={14} />
+                    {action.label === "图片" && uploading
+                      ? <Loader2 size={14} className="animate-spin" />
+                      : <action.icon size={14} />
+                    }
                   </button>
                 )
               )}

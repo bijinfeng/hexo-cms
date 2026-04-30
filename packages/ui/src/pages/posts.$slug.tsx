@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import CodeMirror from "@uiw/react-codemirror";
@@ -53,6 +53,8 @@ export function EditPostPage() {
   const [githubConfig, setGithubConfig] = useState<any>(null);
   const [accessToken, setAccessToken] = useState("");
   const [postPath, setPostPath] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
@@ -102,7 +104,7 @@ export function EditPostPage() {
       path,
     });
 
-    const res = await fetch(`/api/github/posts/single?${params}`);
+    const res = await fetch(`/api/github/posts?${params}`);
     if (!res.ok) {
       setError("文章不存在或加载失败");
       return;
@@ -211,6 +213,78 @@ export function EditPostPage() {
     );
   }
 
+  async function handleDelete() {
+    if (!confirm(`确定要删除文章「${title}」吗？此操作不可恢复。`)) {
+      return;
+    }
+
+    if (!githubConfig || !accessToken) {
+      setError("请先在设置页面配置 GitHub 仓库");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/github/posts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner: githubConfig.owner,
+          repo: githubConfig.repo,
+          token: accessToken,
+          path: postPath,
+          commitMessage: `删除文章: ${title}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        navigate({ to: "/posts" });
+      } else {
+        setError(data.error || "删除失败");
+      }
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+      setError("删除失败，请检查网络连接");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleImageUpload(file: File) {
+    if (!githubConfig || !accessToken) {
+      setError("请先在设置页面配置 GitHub 仓库");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("owner", githubConfig.owner);
+      formData.append("repo", githubConfig.repo);
+      formData.append("token", accessToken);
+      formData.append("dir", githubConfig.media_dir || "source/images");
+
+      const res = await fetch("/api/github/media", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (res.ok && data.path) {
+        insertMarkdown(`![${file.name}](/${data.path})`);
+      } else {
+        setError(data.error || "图片上传失败");
+      }
+    } catch (err) {
+      setError("图片上传失败，请检查网络连接");
+    } finally {
+      setUploading(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  }
+
   const toolbarActions = [
     { icon: Heading1, label: "H1", action: () => insertMarkdown("# ", "", "标题") },
     { icon: Heading2, label: "H2", action: () => insertMarkdown("## ", "", "标题") },
@@ -220,7 +294,7 @@ export function EditPostPage() {
     { icon: Code, label: "代码", action: () => insertMarkdown("`", "`", "代码") },
     { separator: true },
     { icon: Link, label: "链接", action: () => insertMarkdown("[", "](url)", "链接文字") },
-    { icon: Image, label: "图片", action: () => insertMarkdown("![", "](url)", "图片描述") },
+    { icon: Image, label: "图片", action: () => imageInputRef.current?.click() },
     { separator: true },
     { icon: List, label: "无序列表", action: () => insertMarkdown("- ", "", "列表项") },
     { icon: ListOrdered, label: "有序列表", action: () => insertMarkdown("1. ", "", "列表项") },
@@ -238,6 +312,18 @@ export function EditPostPage() {
 
   return (
     <div className="h-full flex flex-col animate-fade-in -m-6">
+      {/* Hidden file input for image upload */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImageUpload(file);
+        }}
+      />
+
       {/* Editor Topbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-[var(--border-default)] bg-[var(--bg-surface)] flex-shrink-0">
         <button
@@ -307,9 +393,13 @@ export function EditPostPage() {
                     key={i}
                     onClick={action.action}
                     title={action.label}
-                    className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
+                    disabled={action.label === "图片" && uploading}
+                    className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <action.icon size={14} />
+                    {action.label === "图片" && uploading
+                      ? <Loader2 size={14} className="animate-spin" />
+                      : <action.icon size={14} />
+                    }
                   </button>
                 )
               )}
@@ -454,9 +544,13 @@ export function EditPostPage() {
 
             {/* Danger zone */}
             <div className="pt-2 border-t border-[var(--border-default)]">
-              <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer">
+              <button
+                onClick={handleDelete}
+                disabled={saving}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <Trash2 size={13} />
-                删除文章
+                {saving ? "删除中..." : "删除文章"}
               </button>
             </div>
           </div>

@@ -10,7 +10,7 @@ import {
   Filter,
   Eye,
   Edit3,
-  MoreHorizontal,
+  Trash2,
   ChevronDown,
   Calendar,
   Tag,
@@ -153,6 +153,7 @@ export function PostsPage() {
           id: String(index + 1),
           title: post.title,
           slug: post.path.replace(/^.*\//, "").replace(/\.md$/, ""),
+          path: post.path,
           date: post.date || new Date().toISOString().split("T")[0],
           status: post.frontmatter.draft ? "draft" : "published",
           views: 0,
@@ -169,6 +170,42 @@ export function PostsPage() {
       setError("加载文章失败，请检查网络连接");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDeletePost(post: any) {
+    if (!confirm(`确定要删除文章「${post.title}」吗？此操作不可恢复。`)) {
+      return;
+    }
+
+    if (!githubConfig || !accessToken) {
+      setError("请先在设置页面配置 GitHub 仓库");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/github/posts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner: githubConfig.owner,
+          repo: githubConfig.repo,
+          token: accessToken,
+          path: post.path,
+          commitMessage: `删除文章: ${post.title}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setPosts((prev) => prev.filter((p) => p.id !== post.id));
+      } else {
+        setError(data.error || "删除失败");
+      }
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+      setError("删除失败，请检查网络连接");
     }
   }
 
@@ -350,8 +387,11 @@ export function PostsPage() {
                       >
                         <Edit3 size={14} />
                       </button>
-                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer opacity-0 group-hover:opacity-100">
-                        <MoreHorizontal size={14} />
+                      <button
+                        onClick={() => handleDeletePost(post)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
