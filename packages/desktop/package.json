@@ -13,7 +13,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@hexo-cms/core": "workspace:*",
     "@hexo-cms/ui": "workspace:*",
-    "@tanstack/react-router": "latest",
+    "@tanstack/react-router": "^1.168.26",
     "@tanstack/router-plugin": "^1.132.0",
     "better-sqlite3": "^12.9.0",
     "electron-updater": "^6.3.9",
