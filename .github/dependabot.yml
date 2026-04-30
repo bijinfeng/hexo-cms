@@ -1,0 +1,43 @@
+version: 2
+updates:
+  # npm 依赖更新
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    groups:
+      # TanStack 相关包分组
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      # TypeScript 相关包分组
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+      # React 相关包分组
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      # Electron 相关包分组
+      electron:
+        patterns:
+          - "electron"
+          - "electron-*"
+          - "@electron-toolkit/*"
+      # ESLint 相关包分组
+      eslint:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@typescript-eslint/*"
+    # 自动合并补丁版本更新
+    labels:
+      - "dependencies"
+      - "automated"
