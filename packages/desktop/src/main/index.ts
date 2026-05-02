@@ -1,9 +1,49 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } from "electron";
 import { join } from "path";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { GitHubService } from "@hexo-cms/core";
 import type { GitHubConfig } from "@hexo-cms/core";
+
+// ==================== 托盘 ====================
+
+let tray: Tray | null = null;
+let mainWindow: BrowserWindow | null = null;
+
+function createTray(): void {
+  const isMac = process.platform === "darwin";
+  const iconName = isMac ? "tray-mac.png" : "icon.png";
+  const iconPath = join(__dirname, "../../build", iconName);
+  const nativeIcon = nativeImage.createFromPath(iconPath);
+
+  if (isMac) nativeIcon.setTemplateImage(true);
+  tray = new Tray(nativeIcon.resize({ width: 16, height: 16 }));
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "显示/隐藏窗口",
+      click: () => {
+        if (mainWindow) {
+          mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+        }
+      },
+    },
+    { type: "separator" },
+    {
+      label: "退出 Hexo CMS",
+      role: "quit",
+    },
+  ]);
+
+  tray.setToolTip("Hexo CMS");
+  tray.setContextMenu(contextMenu);
+
+  tray.on("click", () => {
+    if (mainWindow) {
+      mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    }
+  });
+}
 
 // ==================== 配置存储 ====================
 
@@ -81,7 +121,7 @@ function invalidateGitHubServiceCache(): void {
 function createWindow(): void {
   const isMac = process.platform === "darwin";
 
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 900,
@@ -144,6 +184,7 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+  createTray();
 
   app.on("activate", function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
