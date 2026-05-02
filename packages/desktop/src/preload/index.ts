@@ -26,6 +26,11 @@ const ALLOWED_CHANNELS = [
   "github:switch-theme",
   "github:get-deployments",
   "github:trigger-deploy",
+  "window:minimize",
+  "window:maximize",
+  "window:unmaximize",
+  "window:close",
+  "window:isMaximized",
 ];
 
 contextBridge.exposeInMainWorld("electronAPI", {

@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
+import { cn } from "../../utils";
 import { Button } from "../ui/button";
 import { Sun, Moon, Bell, Search, Menu } from "lucide-react";
+import { WindowControls } from "./WindowControls";
 
 interface TopbarProps {
   title?: string;
+  isElectron?: boolean;
   onMenuToggle?: () => void;
 }
 
-export function Topbar({ title, onMenuToggle }: TopbarProps) {
+export function Topbar({ title, isElectron, onMenuToggle }: TopbarProps) {
   const [isDark, setIsDark] = useState(false);
+  const isMac = /Mac|Darwin/i.test(navigator.userAgent || navigator.platform);
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"));
@@ -22,11 +26,18 @@ export function Topbar({ title, onMenuToggle }: TopbarProps) {
   }
 
   return (
-    <header className="h-14 flex items-center gap-3 px-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-10">
+    <header
+      className={cn(
+        "h-12 flex items-center gap-3 px-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-10",
+        isElectron && isMac && "pl-20"
+      )}
+      style={isElectron ? { WebkitAppRegion: "drag" } as React.CSSProperties : undefined}
+    >
       {/* Mobile menu toggle */}
       <button
         onClick={onMenuToggle}
         className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
+        style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : undefined}
       >
         <Menu size={18} />
       </button>
@@ -47,7 +58,7 @@ export function Topbar({ title, onMenuToggle }: TopbarProps) {
         </kbd>
       </div>
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex items-center gap-1" style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : undefined}>
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell size={18} />
@@ -64,6 +75,13 @@ export function Topbar({ title, onMenuToggle }: TopbarProps) {
           K
         </button>
       </div>
+
+      {/* Window controls — Electron on Windows/Linux */}
+      {isElectron && !isMac && (
+        <div style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+          <WindowControls />
+        </div>
+      )}
     </header>
   );
 }

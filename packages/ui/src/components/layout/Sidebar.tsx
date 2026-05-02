@@ -58,15 +58,12 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       )}
     >
       {/* Logo */}
-      <div className="flex items-center h-14 px-3 border-b border-[var(--sidebar-border)] shrink-0">
-        <div className={cn("flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-hover)] flex items-center justify-center shadow-sm", collapsed && "mx-auto")}>
+      <div className={cn("flex items-center h-12 px-3 border-b border-[var(--sidebar-border)] shrink-0", collapsed && "justify-center")}>
+        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-hover)] flex items-center justify-center shadow-sm">
           <Zap size={16} className="text-white" />
         </div>
         {!collapsed && (
-          <div className="ml-3 min-w-0">
-            <div className="font-bold text-sm text-[var(--text-primary)] truncate">HexoCMS</div>
-            <div className="text-xs text-[var(--text-tertiary)] truncate leading-tight">内容管理平台</div>
-          </div>
+          <div className="ml-3 font-bold text-sm text-[var(--text-primary)] truncate">HexoCMS</div>
         )}
       </div>
 
@@ -119,22 +116,22 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         <button
           onClick={onToggle}
           className={cn(
-            "w-full flex items-center gap-2 hover:bg-[var(--bg-muted)] transition-colors cursor-pointer group",
-            collapsed ? "justify-center py-3" : "px-4 py-2.5"
+            "w-full flex items-center hover:bg-[var(--bg-muted)] transition-colors cursor-pointer",
+            collapsed ? "justify-center py-3" : "px-4 py-2.5 gap-2"
           )}
         >
           <span className={cn(
             "rounded-full bg-[var(--brand-accent)] flex-shrink-0 transition-all duration-200",
-            collapsed ? "w-0 h-0 opacity-0" : "w-2 h-2 opacity-100"
+            collapsed ? "w-0 opacity-0 overflow-hidden" : "w-1.5 h-1.5 opacity-100"
           )} />
           <span className={cn(
-            "text-xs leading-none whitespace-nowrap transition-[width,opacity] duration-200",
-            collapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
-          )}>已连接 GitHub</span>
+            "text-xs text-[var(--text-secondary)] whitespace-nowrap transition-all duration-200",
+            collapsed ? "w-0 opacity-0 overflow-hidden" : "flex-1 text-left opacity-100"
+          )}>已连接 GitHub 仓库</span>
           <PanelLeftClose
             size={14}
             className={cn(
-              "flex-shrink-0 transition-transform duration-300",
+              "flex-shrink-0 transition-transform duration-300 text-[var(--text-tertiary)]",
               collapsed ? "rotate-180" : ""
             )}
           />

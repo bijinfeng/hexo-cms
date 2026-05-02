@@ -79,14 +79,17 @@ function invalidateGitHubServiceCache(): void {
 
 
 function createWindow(): void {
+  const isMac = process.platform === "darwin";
+
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 900,
     minHeight: 600,
     show: false,
+    frame: isMac,
     autoHideMenuBar: true,
-    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
+    titleBarStyle: isMac ? "hiddenInset" : "hidden",
     webPreferences: {
       preload: join(__dirname, "../preload/index.mjs"),
       sandbox: false,
@@ -110,6 +113,28 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
 }
+
+// ==================== 窗口控制 IPC ====================
+
+ipcMain.handle("window:minimize", (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.minimize();
+});
+
+ipcMain.handle("window:maximize", (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.maximize();
+});
+
+ipcMain.handle("window:unmaximize", (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.unmaximize();
+});
+
+ipcMain.handle("window:close", (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.close();
+});
+
+ipcMain.handle("window:isMaximized", (event) => {
+  return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false;
+});
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.hexo-cms");

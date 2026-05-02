@@ -7,7 +7,7 @@ const desktopDataProvider = new DesktopDataProvider();
 export const Route = createRootRoute({
   component: () => (
     <DataProviderProvider provider={desktopDataProvider}>
-      <CMSLayout>
+      <CMSLayout isElectron>
         <Outlet />
       </CMSLayout>
     </DataProviderProvider>

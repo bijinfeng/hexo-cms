@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="128" y1="128" x2="896" y2="896" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded background -->
+  <rect width="1024" height="1024" rx="256" fill="url(#bg)"/>
+  <!-- Lightning bolt icon -->
+  <path d="M576 160 L384 544 L448 544 L384 864 L704 448 L608 448 L704 160 Z" fill="white" fill-opacity="0.95"/>
+</svg>
