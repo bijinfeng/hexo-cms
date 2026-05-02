@@ -10,7 +10,6 @@ import {
   Palette,
   Settings,
   GitBranch,
-  BarChart3,
   PanelLeftClose,
   PanelLeftOpen,
   Zap,
@@ -116,38 +115,25 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Footer area */}
+      {/* Footer */}
       <div className="border-t border-[var(--sidebar-border)] shrink-0">
-        {/* GitHub status — only when expanded */}
-        {!collapsed && (
-          <div className="px-4 py-2.5">
-            <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
-              <BarChart3 size={12} className="text-[var(--brand-accent)]" />
-              <span>已连接 GitHub 仓库</span>
-              <span className="ml-auto w-2 h-2 rounded-full bg-[var(--brand-accent)] animate-pulse" />
-            </div>
-          </div>
-        )}
-
-        {/* Toggle button */}
-        <button
-          onClick={onToggle}
-          className={cn(
-            "w-full flex items-center gap-2 text-xs font-medium transition-all duration-150 cursor-pointer border-t border-[var(--sidebar-border)]",
-            collapsed
-              ? "justify-center py-3 hover:bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              : "px-4 py-2.5 hover:bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          )}
-        >
-          {collapsed ? (
+        {collapsed ? (
+          <button
+            onClick={onToggle}
+            className="w-full flex items-center justify-center py-3 hover:bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+          >
             <PanelLeftOpen size={16} />
-          ) : (
-            <>
-              <PanelLeftClose size={14} />
-              <span>收起侧边栏</span>
-            </>
-          )}
-        </button>
+          </button>
+        ) : (
+          <button
+            onClick={onToggle}
+            className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-[var(--bg-muted)] transition-colors cursor-pointer group"
+          >
+            <span className="w-2 h-2 rounded-full bg-[var(--brand-accent)] flex-shrink-0" />
+            <span className="text-xs text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors flex-1 text-left">已连接 GitHub 仓库</span>
+            <PanelLeftClose size={14} className="text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors flex-shrink-0" />
+          </button>
+        )}
       </div>
     </aside>
   );
