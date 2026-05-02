@@ -59,7 +59,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-[var(--sidebar-border)]">
+      <div className={cn("flex items-center px-4 py-5 border-b border-[var(--sidebar-border)]", collapsed ? "gap-0" : "gap-3")}>
         <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-hover)] flex items-center justify-center shadow-sm">
           <Zap size={16} className="text-white" />
         </div>
@@ -73,7 +73,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           onClick={onToggle}
           className={cn(
             "flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer",
-            collapsed && "mx-auto"
+            collapsed ? "ml-auto" : ""
           )}
         >
           <ChevronLeft size={14} className={cn("transition-transform duration-300", collapsed && "rotate-180")} />
