@@ -1,10 +1,10 @@
 import { betterAuth } from "better-auth";
+import Database from "better-sqlite3";
+
+const db = new Database("./hexo-cms.db");
 
 export const auth = betterAuth({
-  database: {
-    provider: "sqlite",
-    url: "./hexo-cms.db",
-  },
+  database: db,
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID || "",

@@ -9,6 +9,10 @@ const BARE_ROUTES = ["/login"];
 
 const webDataProvider = new WebDataProvider();
 
+function NotFound() {
+  return <div className="flex items-center justify-center h-full text-sm">404 — 页面不存在</div>;
+}
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -18,6 +22,7 @@ export const Route = createRootRoute({
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
   component: RootComponent,
 });

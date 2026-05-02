@@ -1,10 +1,16 @@
-import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { signIn } from "../auth-client";
-import { Github, Zap, ArrowRight, Shield, GitBranch, Sparkles } from "lucide-react";
+import { Zap, ArrowRight, Shield, GitBranch, Sparkles } from "lucide-react";
+import { GithubIcon } from "../components/ui/github-icon";
 
-export function LoginPage() {
-  const navigate = useNavigate();
+export interface LoginPageProps {
+  signIn?: {
+    social: (opts: { provider: string; callbackURL: string }) => Promise<unknown>;
+  };
+  onComplete?: () => void;
+  onSkipAuth?: () => void;
+}
+
+export function LoginPage({ signIn, onComplete, onSkipAuth }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -12,11 +18,17 @@ export function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      await signIn.social({
-        provider: "github",
-        callbackURL: "/",
-      });
-    } catch (e) {
+      if (signIn) {
+        await signIn.social({
+          provider: "github",
+          callbackURL: "/",
+        });
+        onComplete?.();
+      } else {
+        setError("认证服务未配置");
+        setLoading(false);
+      }
+    } catch {
       setError("登录失败，请重试");
       setLoading(false);
     }
@@ -100,7 +112,7 @@ export function LoginPage() {
             {loading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <Github size={18} />
+              <GithubIcon size={18} />
             )}
             {loading ? "正在跳转..." : "使用 GitHub 登录"}
             {!loading && <ArrowRight size={16} className="ml-auto" />}
@@ -119,7 +131,7 @@ export function LoginPage() {
 
           {/* Dev bypass */}
           <button
-            onClick={() => navigate({ to: "/" })}
+            onClick={() => onSkipAuth?.()}
             className="w-full flex items-center justify-center gap-2 h-10 px-6 rounded-xl border border-[var(--border-default)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
           >
             开发模式（跳过登录）

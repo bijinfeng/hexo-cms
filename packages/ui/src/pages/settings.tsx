@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../co
 import { Button } from "../components/ui/button";
 import {
   Globe,
-  Github,
   User,
   Bell,
   Shield,
@@ -13,10 +12,11 @@ import {
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
+import { GithubIcon } from "../components/ui/github-icon";
 
 const settingsSections = [
   { id: "site", label: "站点信息", icon: Globe },
-  { id: "github", label: "GitHub 集成", icon: Github },
+  { id: "github", label: "GitHub 集成", icon: GithubIcon },
   { id: "profile", label: "个人资料", icon: User },
   { id: "notifications", label: "通知设置", icon: Bell },
   { id: "security", label: "安全设置", icon: Shield },

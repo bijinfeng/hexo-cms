@@ -5,14 +5,14 @@ import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ["@hexo-cms/core"] })],
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ["@hexo-cms/core"] })],
   },
   renderer: {
     plugins: [
-      TanStackRouterVite({ routesDirectory: "./src/renderer/src/routes" }),
+      TanStackRouterVite({ routesDirectory: "./src/routes" }),
       react(),
       tailwindcss(),
     ],

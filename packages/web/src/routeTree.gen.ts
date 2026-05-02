@@ -23,6 +23,16 @@ import { Route as PostsNewRouteImport } from './routes/posts.new'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 import { Route as PagesNewRouteImport } from './routes/pages.new'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
+import { Route as ApiDeployRouteImport } from './routes/api/deploy'
+import { Route as ApiGithubThemesRouteImport } from './routes/api/github/themes'
+import { Route as ApiGithubTagsRouteImport } from './routes/api/github/tags'
+import { Route as ApiGithubStatsRouteImport } from './routes/api/github/stats'
+import { Route as ApiGithubPostsRouteImport } from './routes/api/github/posts'
+import { Route as ApiGithubPagesRouteImport } from './routes/api/github/pages'
+import { Route as ApiGithubMediaRouteImport } from './routes/api/github/media'
+import { Route as ApiGithubConfigRouteImport } from './routes/api/github/config'
+import { Route as ApiAuthTokenRouteImport } from './routes/api/auth/token'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const ThemesRoute = ThemesRouteImport.update({
   id: '/themes',
@@ -94,6 +104,56 @@ const PagesSlugRoute = PagesSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => PagesRoute,
 } as any)
+const ApiDeployRoute = ApiDeployRouteImport.update({
+  id: '/api/deploy',
+  path: '/api/deploy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubThemesRoute = ApiGithubThemesRouteImport.update({
+  id: '/api/github/themes',
+  path: '/api/github/themes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubTagsRoute = ApiGithubTagsRouteImport.update({
+  id: '/api/github/tags',
+  path: '/api/github/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubStatsRoute = ApiGithubStatsRouteImport.update({
+  id: '/api/github/stats',
+  path: '/api/github/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubPostsRoute = ApiGithubPostsRouteImport.update({
+  id: '/api/github/posts',
+  path: '/api/github/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubPagesRoute = ApiGithubPagesRouteImport.update({
+  id: '/api/github/pages',
+  path: '/api/github/pages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubMediaRoute = ApiGithubMediaRouteImport.update({
+  id: '/api/github/media',
+  path: '/api/github/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubConfigRoute = ApiGithubConfigRouteImport.update({
+  id: '/api/github/config',
+  path: '/api/github/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthTokenRoute = ApiAuthTokenRouteImport.update({
+  id: '/api/auth/token',
+  path: '/api/auth/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -106,10 +166,20 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/api/deploy': typeof ApiDeployRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/token': typeof ApiAuthTokenRoute
+  '/api/github/config': typeof ApiGithubConfigRoute
+  '/api/github/media': typeof ApiGithubMediaRoute
+  '/api/github/pages': typeof ApiGithubPagesRoute
+  '/api/github/posts': typeof ApiGithubPostsRoute
+  '/api/github/stats': typeof ApiGithubStatsRoute
+  '/api/github/tags': typeof ApiGithubTagsRoute
+  '/api/github/themes': typeof ApiGithubThemesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -122,10 +192,20 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/api/deploy': typeof ApiDeployRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/token': typeof ApiAuthTokenRoute
+  '/api/github/config': typeof ApiGithubConfigRoute
+  '/api/github/media': typeof ApiGithubMediaRoute
+  '/api/github/pages': typeof ApiGithubPagesRoute
+  '/api/github/posts': typeof ApiGithubPostsRoute
+  '/api/github/stats': typeof ApiGithubStatsRoute
+  '/api/github/tags': typeof ApiGithubTagsRoute
+  '/api/github/themes': typeof ApiGithubThemesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -139,10 +219,20 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/api/deploy': typeof ApiDeployRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/token': typeof ApiAuthTokenRoute
+  '/api/github/config': typeof ApiGithubConfigRoute
+  '/api/github/media': typeof ApiGithubMediaRoute
+  '/api/github/pages': typeof ApiGithubPagesRoute
+  '/api/github/posts': typeof ApiGithubPostsRoute
+  '/api/github/stats': typeof ApiGithubStatsRoute
+  '/api/github/tags': typeof ApiGithubTagsRoute
+  '/api/github/themes': typeof ApiGithubThemesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -157,10 +247,20 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/api/deploy'
     | '/pages/$slug'
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
+    | '/api/auth/$'
+    | '/api/auth/token'
+    | '/api/github/config'
+    | '/api/github/media'
+    | '/api/github/pages'
+    | '/api/github/posts'
+    | '/api/github/stats'
+    | '/api/github/tags'
+    | '/api/github/themes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,10 +273,20 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/api/deploy'
     | '/pages/$slug'
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
+    | '/api/auth/$'
+    | '/api/auth/token'
+    | '/api/github/config'
+    | '/api/github/media'
+    | '/api/github/pages'
+    | '/api/github/posts'
+    | '/api/github/stats'
+    | '/api/github/tags'
+    | '/api/github/themes'
   id:
     | '__root__'
     | '/'
@@ -189,10 +299,20 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/api/deploy'
     | '/pages/$slug'
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
+    | '/api/auth/$'
+    | '/api/auth/token'
+    | '/api/github/config'
+    | '/api/github/media'
+    | '/api/github/pages'
+    | '/api/github/posts'
+    | '/api/github/stats'
+    | '/api/github/tags'
+    | '/api/github/themes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -206,6 +326,16 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TagsRoute: typeof TagsRoute
   ThemesRoute: typeof ThemesRoute
+  ApiDeployRoute: typeof ApiDeployRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiAuthTokenRoute: typeof ApiAuthTokenRoute
+  ApiGithubConfigRoute: typeof ApiGithubConfigRoute
+  ApiGithubMediaRoute: typeof ApiGithubMediaRoute
+  ApiGithubPagesRoute: typeof ApiGithubPagesRoute
+  ApiGithubPostsRoute: typeof ApiGithubPostsRoute
+  ApiGithubStatsRoute: typeof ApiGithubStatsRoute
+  ApiGithubTagsRoute: typeof ApiGithubTagsRoute
+  ApiGithubThemesRoute: typeof ApiGithubThemesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -308,6 +438,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagesSlugRouteImport
       parentRoute: typeof PagesRoute
     }
+    '/api/deploy': {
+      id: '/api/deploy'
+      path: '/api/deploy'
+      fullPath: '/api/deploy'
+      preLoaderRoute: typeof ApiDeployRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/themes': {
+      id: '/api/github/themes'
+      path: '/api/github/themes'
+      fullPath: '/api/github/themes'
+      preLoaderRoute: typeof ApiGithubThemesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/tags': {
+      id: '/api/github/tags'
+      path: '/api/github/tags'
+      fullPath: '/api/github/tags'
+      preLoaderRoute: typeof ApiGithubTagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/stats': {
+      id: '/api/github/stats'
+      path: '/api/github/stats'
+      fullPath: '/api/github/stats'
+      preLoaderRoute: typeof ApiGithubStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/posts': {
+      id: '/api/github/posts'
+      path: '/api/github/posts'
+      fullPath: '/api/github/posts'
+      preLoaderRoute: typeof ApiGithubPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/pages': {
+      id: '/api/github/pages'
+      path: '/api/github/pages'
+      fullPath: '/api/github/pages'
+      preLoaderRoute: typeof ApiGithubPagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/media': {
+      id: '/api/github/media'
+      path: '/api/github/media'
+      fullPath: '/api/github/media'
+      preLoaderRoute: typeof ApiGithubMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/config': {
+      id: '/api/github/config'
+      path: '/api/github/config'
+      fullPath: '/api/github/config'
+      preLoaderRoute: typeof ApiGithubConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/token': {
+      id: '/api/auth/token'
+      path: '/api/auth/token'
+      fullPath: '/api/auth/token'
+      preLoaderRoute: typeof ApiAuthTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -346,6 +546,16 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TagsRoute: TagsRoute,
   ThemesRoute: ThemesRoute,
+  ApiDeployRoute: ApiDeployRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiAuthTokenRoute: ApiAuthTokenRoute,
+  ApiGithubConfigRoute: ApiGithubConfigRoute,
+  ApiGithubMediaRoute: ApiGithubMediaRoute,
+  ApiGithubPagesRoute: ApiGithubPagesRoute,
+  ApiGithubPostsRoute: ApiGithubPostsRoute,
+  ApiGithubStatsRoute: ApiGithubStatsRoute,
+  ApiGithubTagsRoute: ApiGithubTagsRoute,
+  ApiGithubThemesRoute: ApiGithubThemesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

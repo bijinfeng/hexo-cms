@@ -40,7 +40,7 @@ async function getGitHubService(): Promise<GitHubService | null> {
     return null;
   }
 
-  let token: string | null = null;
+  let token: string | null;
   try {
     const keytar = await import("keytar");
     token = await keytar.default.getPassword("hexo-cms", "github-token");
@@ -88,7 +88,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     webPreferences: {
-      preload: join(__dirname, "../preload/index.js"),
+      preload: join(__dirname, "../preload/index.mjs"),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
@@ -349,7 +349,7 @@ ipcMain.handle("github:get-media", async () => {
   }
 });
 
-ipcMain.handle("github:upload-media", async (_event, { buffer, path, name, type }: { buffer: ArrayBuffer; path: string; name: string; type: string }) => {
+ipcMain.handle("github:upload-media", async (_event, { buffer, path, name }: { buffer: ArrayBuffer; path: string; name: string; type: string }) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
 
@@ -418,7 +418,7 @@ ipcMain.handle("github:get-deployments", async () => {
   const config = loadConfig();
   if (!config) return [];
 
-  let token: string | null = null;
+  let token: string | null;
   try {
     const keytar = await import("keytar");
     token = await keytar.default.getPassword("hexo-cms", "github-token");
@@ -454,7 +454,7 @@ ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => 
   const config = loadConfig();
   if (!config) throw new Error("GitHub not configured");
 
-  let token: string | null = null;
+  let token: string | null;
   try {
     const keytar = await import("keytar");
     token = await keytar.default.getPassword("hexo-cms", "github-token");
