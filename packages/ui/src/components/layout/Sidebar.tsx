@@ -11,7 +11,6 @@ import {
   Settings,
   GitBranch,
   PanelLeftClose,
-  PanelLeftOpen,
   Zap,
 } from "lucide-react";
 
@@ -117,23 +116,29 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
       {/* Footer */}
       <div className="border-t border-[var(--sidebar-border)] shrink-0">
-        {collapsed ? (
-          <button
-            onClick={onToggle}
-            className="w-full flex items-center justify-center py-3 hover:bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-          >
-            <PanelLeftOpen size={16} />
-          </button>
-        ) : (
-          <button
-            onClick={onToggle}
-            className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-[var(--bg-muted)] transition-colors cursor-pointer group"
-          >
-            <span className="w-2 h-2 rounded-full bg-[var(--brand-accent)] flex-shrink-0" />
-            <span className="text-xs text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors flex-1 text-left">已连接 GitHub 仓库</span>
-            <PanelLeftClose size={14} className="text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors flex-shrink-0" />
-          </button>
-        )}
+        <button
+          onClick={onToggle}
+          className={cn(
+            "w-full flex items-center gap-2 hover:bg-[var(--bg-muted)] transition-colors cursor-pointer group",
+            collapsed ? "justify-center py-3" : "px-4 py-2.5"
+          )}
+        >
+          <span className={cn(
+            "rounded-full bg-[var(--brand-accent)] flex-shrink-0 transition-all duration-200",
+            collapsed ? "w-0 h-0 opacity-0" : "w-2 h-2 opacity-100"
+          )} />
+          <span className={cn(
+            "text-xs leading-none whitespace-nowrap transition-[width,opacity] duration-200",
+            collapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
+          )}>已连接 GitHub</span>
+          <PanelLeftClose
+            size={14}
+            className={cn(
+              "flex-shrink-0 transition-transform duration-300",
+              collapsed ? "rotate-180" : ""
+            )}
+          />
+        </button>
       </div>
     </aside>
   );
