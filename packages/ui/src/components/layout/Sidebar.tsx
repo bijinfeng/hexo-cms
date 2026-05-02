@@ -11,7 +11,8 @@ import {
   Settings,
   GitBranch,
   BarChart3,
-  ChevronLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
   Zap,
 } from "lucide-react";
 
@@ -55,29 +56,20 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     <aside
       className={cn(
         "cms-sidebar flex flex-col transition-all duration-300 ease-in-out",
-        collapsed ? "w-16" : "w-60"
+        collapsed ? "w-14" : "w-60"
       )}
     >
       {/* Logo */}
-      <div className={cn("flex items-center px-4 py-5 border-b border-[var(--sidebar-border)]", collapsed ? "gap-0" : "gap-3")}>
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-hover)] flex items-center justify-center shadow-sm">
+      <div className="flex items-center h-14 px-3 border-b border-[var(--sidebar-border)] shrink-0">
+        <div className={cn("flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-hover)] flex items-center justify-center shadow-sm", collapsed && "mx-auto")}>
           <Zap size={16} className="text-white" />
         </div>
         {!collapsed && (
-          <div className="flex-1 min-w-0">
+          <div className="ml-3 min-w-0">
             <div className="font-bold text-sm text-[var(--text-primary)] truncate">HexoCMS</div>
-            <div className="text-xs text-[var(--text-tertiary)] truncate">内容管理平台</div>
+            <div className="text-xs text-[var(--text-tertiary)] truncate leading-tight">内容管理平台</div>
           </div>
         )}
-        <button
-          onClick={onToggle}
-          className={cn(
-            "flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer",
-            collapsed ? "ml-auto" : ""
-          )}
-        >
-          <ChevronLeft size={14} className={cn("transition-transform duration-300", collapsed && "rotate-180")} />
-        </button>
       </div>
 
       {/* Navigation */}
@@ -124,16 +116,39 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Bottom Stats */}
-      {!collapsed && (
-        <div className="px-4 py-3 border-t border-[var(--sidebar-border)]">
-          <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
-            <BarChart3 size={12} className="text-[var(--brand-accent)]" />
-            <span>已连接 GitHub 仓库</span>
-            <span className="ml-auto w-2 h-2 rounded-full bg-[var(--brand-accent)] animate-pulse" />
+      {/* Footer area */}
+      <div className="border-t border-[var(--sidebar-border)] shrink-0">
+        {/* GitHub status — only when expanded */}
+        {!collapsed && (
+          <div className="px-4 py-2.5">
+            <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+              <BarChart3 size={12} className="text-[var(--brand-accent)]" />
+              <span>已连接 GitHub 仓库</span>
+              <span className="ml-auto w-2 h-2 rounded-full bg-[var(--brand-accent)] animate-pulse" />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Toggle button */}
+        <button
+          onClick={onToggle}
+          className={cn(
+            "w-full flex items-center gap-2 text-xs font-medium transition-all duration-150 cursor-pointer border-t border-[var(--sidebar-border)]",
+            collapsed
+              ? "justify-center py-3 hover:bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              : "px-4 py-2.5 hover:bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          )}
+        >
+          {collapsed ? (
+            <PanelLeftOpen size={16} />
+          ) : (
+            <>
+              <PanelLeftClose size={14} />
+              <span>收起侧边栏</span>
+            </>
+          )}
+        </button>
+      </div>
     </aside>
   );
 }
