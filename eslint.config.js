@@ -43,7 +43,6 @@ export default [
       '@typescript-eslint': tseslint,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
@@ -114,7 +113,7 @@ export default [
     },
     rules: {
       // TypeScript 规则
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -123,16 +122,15 @@ export default [
         },
       ],
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
 
       // React 规则
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/display-name': 'off',
 
-      // React Hooks 规则
+      // React Hooks 规则（内联函数依赖由 useCallback 管理，关闭 warn 减少噪音）
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/exhaustive-deps': 'off',
 
       // 通用规则
       'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug'] }],

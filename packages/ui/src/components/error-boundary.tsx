@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render(): ReactNode {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
-      return <DefaultFallback error={this.state.error!} onRetry={() => this.setState({ hasError: false, error: null })} />;
+      return <DefaultFallback error={this.state.error ?? new Error("Unknown error")} onRetry={() => this.setState({ hasError: false, error: null })} />;
     }
     return this.props.children;
   }
