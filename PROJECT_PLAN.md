@@ -6,23 +6,25 @@
 
 ## 设计系统
 
+> **配色方案**: DESIGN_SYSTEM.md 为准，以下为摘要
+
 ### UI 风格
-- **风格**: Data-Dense Dashboard（数据密集型仪表板）
-- **主色调**: 深色专业风格
-- **字体**: Inter（清晰易读的现代字体）
+- **风格**: 年轻活力 · 现代简洁 · 双主题支持（参考 Vercel、Linear、Notion）
+- **主色调**: Warm Orange `#F97316`（`--primary-500`）
+- **辅色调**: Fresh Green `#22C55E`（`--accent-500`）
+- **UI 字体**: Plus Jakarta Sans + Inter fallback
+- **代码字体**: JetBrains Mono
 - **设计原则**: 简洁、高效、开发者友好
+- **深色模式**: class 切换 + CSS 变量
 
 ### 配色方案
 ```
-主色 (Primary):     #0F172A (深蓝黑)
-强调色 (Accent):    #6366F1 (靛蓝)
-成功色 (Success):   #10B981 (绿色)
-警告色 (Warning):   #F59E0B (橙色)
-错误色 (Error):     #EF4444 (红色)
-背景色 (Background): #F8FAFC (浅灰白)
-文字色 (Text):      #1E293B (深蓝灰)
-次要文字 (Muted):   #64748B (灰色)
-边框色 (Border):    #E2E8F0 (浅灰)
+主色 (Primary):          Warm Orange #F97316 (--primary-500)
+强调色 (Accent):         Fresh Green #22C55E (--accent-500)
+成功色 (Success):        #22C55E
+警告色 (Warning):        #F59E0B
+错误色 (Error):          #EF4444
+信息色 (Info):           #3B82F6
 ```
 
 ## 核心功能模块

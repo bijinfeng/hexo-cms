@@ -70,7 +70,7 @@ function formatRelativeTime(isoDate: string): string {
 
 export function DeployPage() {
   const dataProvider = useDataProvider();
-  const [deployments, setDeployments] = useState<any[]>([]);
+  const [deployments, setDeployments] = useState<Array<{ id: string; status: string; createdAt: string; duration: number; conclusion: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [siteUrl, setSiteUrl] = useState("");
@@ -96,33 +96,33 @@ export function DeployPage() {
       }
 
       const runs = await dataProvider.getDeployments();
-      const formattedRuns = runs.map((run: any) => ({
+      const formattedRuns = runs.map((run) => ({
         id: run.id,
         name: run.status,
         message: run.conclusion || run.status,
-        branch: "main",
+        branch: "main" as const,
         author: "",
         time: formatRelativeTime(run.createdAt),
         duration: run.duration,
-        status: run.conclusion === "success" ? "success" : run.conclusion === "failure" ? "failed" : run.status === "in_progress" ? "running" : "pending",
+        status: (run.conclusion === "success" ? "success" : run.conclusion === "failure" ? "failed" : run.status === "in_progress" ? "running" : "pending") as "success" | "failed" | "running" | "pending",
         url: `https://github.com/${config.owner}/${config.repo}/actions/runs/${run.id}`,
       }));
 
       setDeployments(formattedRuns);
       setSiteUrl(`https://${config.owner}.github.io/${config.repo}`);
 
-      const success = formattedRuns.filter((r: any) => r.status === "success").length;
-      const failed = formattedRuns.filter((r: any) => r.status === "failed").length;
+      const success = formattedRuns.filter((r) => r.status === "success").length;
+      const failed = formattedRuns.filter((r) => r.status === "failed").length;
       setSuccessCount(success);
       setFailedCount(failed);
 
-      const durations = formattedRuns.filter((r: any) => r.duration > 0).map((r: any) => r.duration);
+      const durations = formattedRuns.filter((r) => r.duration > 0).map((r) => r.duration);
       if (durations.length > 0) {
-        const avg = durations.reduce((a: number, b: number) => a + b, 0) / durations.length;
+        const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
         setAvgDuration(`${Math.floor(avg / 60000)}m ${Math.floor((avg % 60000) / 1000)}s`);
       }
-    } catch (err: any) {
-      setError(err.message || "加载失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载失败");
     } finally {
       setLoading(false);
     }

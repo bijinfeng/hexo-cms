@@ -7,6 +7,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { marked } from "marked";
+import { sanitizeHtml } from "../sanitize";
 import {
   ArrowLeft,
   Save,
@@ -96,9 +97,9 @@ export function EditPostPage() {
 
   const htmlPreview = useMemo(() => {
     try {
-      return marked.parse(content);
+      return sanitizeHtml(marked.parse(content) as string);
     } catch {
-      return content;
+      return sanitizeHtml(content);
     }
   }, [content]);
 

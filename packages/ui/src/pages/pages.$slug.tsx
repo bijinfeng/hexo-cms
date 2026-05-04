@@ -7,6 +7,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { marked } from "marked";
+import { sanitizeHtml } from "../sanitize";
 import {
   ArrowLeft,
   Save,
@@ -23,7 +24,6 @@ import {
   Heading1,
   Heading2,
   Minus,
-  Upload,
   Globe,
   FileText,
   Loader2,
@@ -76,9 +76,9 @@ export function EditPagePage() {
 
   const htmlPreview = useMemo(() => {
     try {
-      return marked.parse(content);
+      return sanitizeHtml(marked.parse(content) as string);
     } catch {
-      return content;
+      return sanitizeHtml(content);
     }
   }, [content]);
 

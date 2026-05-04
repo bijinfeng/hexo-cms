@@ -1,9 +1,12 @@
 import { Octokit } from "octokit";
-import type { GitHubConfig, HexoPost } from "./types";
+import type { GitHubConfig, HexoPost, Frontmatter } from "./types";
+import { DataProviderError, DataProviderErrorCode } from "./types";
+import { Logger } from "./logger";
 
 export class GitHubService {
   private octokit: Octokit;
   private config: GitHubConfig;
+  private log: Logger;
 
   constructor(accessToken: string, config: GitHubConfig) {
     this.octokit = new Octokit({ auth: accessToken });
@@ -11,6 +14,29 @@ export class GitHubService {
       ...config,
       branch: config.branch || "main",
     };
+    this.log = new Logger("GitHubService");
+  }
+
+  private handleOctokitError(error: unknown, operation: string, path?: string): never {
+    const ctx = { operation, ...(path ? { path } : {}) };
+    if (error instanceof DataProviderError) throw error;
+    if (error && typeof error === "object" && "status" in error) {
+      const status = (error as { status: number }).status;
+      if (status === 401 || status === 403) {
+        this.log.error(`Auth failed: ${operation}`, ctx, error as Error);
+        throw new DataProviderError("GitHub authentication failed", DataProviderErrorCode.AUTH, status, error as Error);
+      }
+      if (status === 404) {
+        this.log.warn(`Not found: ${operation}`, ctx);
+        throw new DataProviderError(`Resource not found: ${path}`, DataProviderErrorCode.NOT_FOUND, status, error as Error);
+      }
+      if (status === 429) {
+        this.log.warn(`Rate limited: ${operation}`, ctx);
+        throw new DataProviderError("GitHub API rate limit exceeded", DataProviderErrorCode.RATE_LIMIT, status, error as Error);
+      }
+    }
+    this.log.error(`Operation failed: ${operation}`, ctx, error as Error);
+    throw new DataProviderError(`GitHub operation failed: ${operation}`, DataProviderErrorCode.NETWORK, undefined, error as Error);
   }
 
   /**
@@ -26,6 +52,7 @@ export class GitHubService {
       });
 
       if (!Array.isArray(data)) {
+        this.log.warn(`getPosts: response is not an array`, { directory, type: typeof data });
         return [];
       }
 
@@ -42,8 +69,15 @@ export class GitHubService {
 
       return posts;
     } catch (error) {
-      console.error("Failed to get posts:", error);
-      return [];
+      if (DataProviderError.isNotFound(error)) {
+        this.log.warn(`getPosts: directory not found`, { directory });
+        return [];
+      }
+      if (error && typeof error === "object" && "status" in error && (error as { status: number }).status === 404) {
+        this.log.warn(`getPosts: directory not found (Octokit 404)`, { directory });
+        return [];
+      }
+      this.handleOctokitError(error, "getPosts", directory);
     }
   }
 
@@ -72,17 +106,25 @@ export class GitHubService {
         };
       }
 
+      this.log.warn(`getPost: response is not a file`, { path });
       return null;
     } catch (error) {
-      console.error(`Failed to get post ${path}:`, error);
-      return null;
+      if (DataProviderError.isNotFound(error)) {
+        this.log.warn(`getPost: not found`, { path });
+        return null;
+      }
+      if (error && typeof error === "object" && "status" in error && (error as { status: number }).status === 404) {
+        this.log.warn(`getPost: not found (Octokit 404)`, { path });
+        return null;
+      }
+      this.handleOctokitError(error, "getPost", path);
     }
   }
 
   /**
    * 创建或更新文章
    */
-  async savePost(post: HexoPost, commitMessage?: string): Promise<boolean> {
+  async savePost(post: HexoPost, commitMessage?: string): Promise<void> {
     try {
       const content = this.stringifyPost(post);
       const { data: currentFile } = await this.octokit.rest.repos.getContent({
@@ -104,17 +146,16 @@ export class GitHubService {
         sha,
       });
 
-      return true;
+      this.log.info(`Post saved: ${post.path}`, { title: post.title });
     } catch (error) {
-      console.error("Failed to save post:", error);
-      return false;
+      this.handleOctokitError(error, "savePost", post.path);
     }
   }
 
   /**
    * 删除文章
    */
-  async deletePost(path: string, commitMessage?: string): Promise<boolean> {
+  async deletePost(path: string, commitMessage?: string): Promise<void> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,
@@ -123,29 +164,31 @@ export class GitHubService {
         ref: this.config.branch,
       });
 
-      if ("sha" in data) {
-        await this.octokit.rest.repos.deleteFile({
-          owner: this.config.owner,
-          repo: this.config.repo,
-          path,
-          message: commitMessage || `Delete post: ${path}`,
-          sha: data.sha,
-          branch: this.config.branch,
-        });
-        return true;
+      if (!("sha" in data)) {
+        this.log.warn(`deletePost: no sha in response`, { path });
+        throw new DataProviderError(`Cannot delete ${path}: no SHA found`, DataProviderErrorCode.UNKNOWN, undefined);
       }
 
-      return false;
+      await this.octokit.rest.repos.deleteFile({
+        owner: this.config.owner,
+        repo: this.config.repo,
+        path,
+        message: commitMessage || `Delete post: ${path}`,
+        sha: data.sha,
+        branch: this.config.branch,
+      });
+
+      this.log.info(`Post deleted: ${path}`);
     } catch (error) {
-      console.error("Failed to delete post:", error);
-      return false;
+      if (error instanceof DataProviderError && error.code !== DataProviderErrorCode.UNKNOWN) throw error;
+      this.handleOctokitError(error, "deletePost", path);
     }
   }
 
   /**
    * 解析 Frontmatter
    */
-  private parseFrontmatter(content: string): { frontmatter: Record<string, any>; body: string } {
+  private parseFrontmatter(content: string): { frontmatter: Frontmatter; body: string } {
     const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
     const match = content.match(frontmatterRegex);
 
@@ -154,15 +197,15 @@ export class GitHubService {
     }
 
     const [, frontmatterStr, body] = match;
-    const frontmatter: Record<string, any> = {};
+    const frontmatter: Frontmatter = {};
 
     frontmatterStr.split("\n").forEach((line) => {
       const colonIndex = line.indexOf(":");
       if (colonIndex > 0) {
         const key = line.slice(0, colonIndex).trim();
-        let value: any = line.slice(colonIndex + 1).trim();
+        let value: unknown = line.slice(colonIndex + 1).trim();
 
-        if (value.startsWith("[") && value.endsWith("]")) {
+        if (typeof value === "string" && value.startsWith("[") && value.endsWith("]")) {
           value = value
             .slice(1, -1)
             .split(",")
@@ -171,7 +214,7 @@ export class GitHubService {
           value = true;
         } else if (value === "false") {
           value = false;
-        } else if (!isNaN(Number(value))) {
+        } else if (typeof value === "string" && !isNaN(Number(value))) {
           value = Number(value);
         }
 
@@ -214,16 +257,22 @@ export class GitHubService {
           sha: data.sha,
         };
       }
+      this.log.warn(`getRawFile: response is not a file`, { path });
       return null;
-    } catch {
-      return null;
+    } catch (error) {
+      if (DataProviderError.isNotFound(error)) {
+        this.log.warn(`getRawFile: not found`, { path });
+        return null;
+      }
+      if (error && typeof error === "object" && "status" in error && (error as { status: number }).status === 404) {
+        this.log.warn(`getRawFile: not found (Octokit 404)`, { path });
+        return null;
+      }
+      this.handleOctokitError(error, "getRawFile", path);
     }
   }
 
-  /**
-   * 写入文件内容（用于 _config.yml 等配置文件）
-   */
-  async writeRawFile(path: string, content: string, commitMessage: string): Promise<boolean> {
+  async writeRawFile(path: string, content: string, commitMessage: string): Promise<void> {
     try {
       const existing = await this.getRawFile(path);
       await this.octokit.rest.repos.createOrUpdateFileContents({
@@ -235,10 +284,9 @@ export class GitHubService {
         branch: this.config.branch,
         sha: existing?.sha,
       });
-      return true;
+      this.log.info(`File written: ${path}`);
     } catch (error) {
-      console.error(`Failed to write file ${path}:`, error);
-      return false;
+      this.handleOctokitError(error, "writeRawFile", path);
     }
   }
 
@@ -256,15 +304,13 @@ export class GitHubService {
 
       if (!Array.isArray(data)) return [];
       return data.map((item) => ({ name: item.name, type: item.type, path: item.path }));
-    } catch {
+    } catch (error) {
+      this.log.warn(`listDirectory failed`, { path }, error as Error);
       return [];
     }
   }
 
-  /**
-   * 获取媒体文件列表
-   */
-  async getMediaFiles(directory: string = "source/images"): Promise<any[]> {
+  async getMediaFiles(directory: string = "source/images"): Promise<Array<{ name: string; type: string; path: string; sha: string; size: number }>> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,
@@ -273,21 +319,19 @@ export class GitHubService {
         ref: this.config.branch,
       });
 
-      if (!Array.isArray(data)) {
-        return [];
-      }
+      if (!Array.isArray(data)) return [];
 
-      return data.filter((file) => file.type === "file");
+      return data
+        .filter((file): file is { name: string; type: string; path: string; sha: string; size: number } =>
+          file.type === "file"
+        );
     } catch (error) {
-      console.error("Failed to get media files:", error);
+      this.log.warn(`getMediaFiles failed`, { directory }, error as Error);
       return [];
     }
   }
 
-  /**
-   * 上传媒体文件
-   */
-  async uploadMedia(path: string, base64Content: string, fileName: string): Promise<{ url: string } | null> {
+  async uploadMedia(path: string, base64Content: string, fileName: string): Promise<{ url: string }> {
     try {
       const { data: currentFile } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,
@@ -308,17 +352,14 @@ export class GitHubService {
         sha,
       });
 
+      this.log.info(`Media uploaded: ${fileName}`, { path });
       return { url: result.data.content?.html_url || "" };
     } catch (error) {
-      console.error("Failed to upload media:", error);
-      return null;
+      this.handleOctokitError(error, "uploadMedia", path);
     }
   }
 
-  /**
-   * 删除媒体文件
-   */
-  async deleteMedia(path: string): Promise<boolean> {
+  async deleteMedia(path: string): Promise<void> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,
@@ -327,22 +368,26 @@ export class GitHubService {
         ref: this.config.branch,
       });
 
-      if ("sha" in data) {
-        await this.octokit.rest.repos.deleteFile({
-          owner: this.config.owner,
-          repo: this.config.repo,
-          path,
-          message: `Delete media: ${path}`,
-          sha: data.sha,
-          branch: this.config.branch,
-        });
-        return true;
+      if (!("sha" in data)) {
+        throw new DataProviderError(`Cannot delete ${path}: no SHA found`, DataProviderErrorCode.UNKNOWN);
       }
 
-      return false;
+      await this.octokit.rest.repos.deleteFile({
+        owner: this.config.owner,
+        repo: this.config.repo,
+        path,
+        message: `Delete media: ${path}`,
+        sha: data.sha,
+        branch: this.config.branch,
+      });
+
+      this.log.info(`Media deleted: ${path}`);
     } catch (error) {
-      console.error("Failed to delete media:", error);
-      return false;
+      if (error instanceof DataProviderError && error.code === DataProviderErrorCode.NOT_FOUND) {
+        this.log.warn(`deleteMedia: not found`, { path });
+        return;
+      }
+      this.handleOctokitError(error, "deleteMedia", path);
     }
   }
 }

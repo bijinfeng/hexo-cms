@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -7,6 +7,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { marked } from "marked";
+import { sanitizeHtml } from "../sanitize";
 import {
   ArrowLeft,
   Save,
@@ -31,6 +32,7 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
+import { SaveIndicator, type SaveStatus } from "../components/save-indicator";
 
 const availableTags = ["React", "TypeScript", "TanStack", "CSS", "Tailwind", "Auth", "DevOps", "GitHub", "架构", "安全"];
 const availableCategories = ["前端开发", "后端开发", "系统设计", "运维", "其他"];
@@ -47,7 +49,7 @@ export function NewPostPage() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [slug, setSlug] = useState("");
   const [isDarkMode] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -58,9 +60,9 @@ export function NewPostPage() {
 
   const htmlPreview = useMemo(() => {
     try {
-      return marked.parse(content);
+      return sanitizeHtml(marked.parse(content) as string);
     } catch {
-      return content;
+      return sanitizeHtml(content);
     }
   }, [content]);
 
@@ -89,7 +91,7 @@ export function NewPostPage() {
       return;
     }
 
-    setSaving(true);
+    setSaveStatus("saving");
     setError("");
 
     try {
@@ -124,12 +126,15 @@ export function NewPostPage() {
       };
 
       await dataProvider.savePost(post);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
       navigate({ to: "/posts" });
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to save post:", err);
-      setError(err.message || "保存失败");
+      setError(err instanceof Error ? err.message : "保存失败");
+      setSaveStatus("error");
     } finally {
-      setSaving(false);
+      setTimeout(() => { if (saveStatus === "saving") setSaveStatus("idle"); }, 500);
     }
   }
 
@@ -189,6 +194,7 @@ export function NewPostPage() {
         </Badge>
 
         <div className="ml-auto flex items-center gap-2">
+          <SaveIndicator status={saveStatus} />
           <button
             onClick={() => setPreview((v) => !v)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
@@ -196,12 +202,12 @@ export function NewPostPage() {
             {preview ? <EyeOff size={14} /> : <Eye size={14} />}
             {preview ? "编辑" : "预览"}
           </button>
-          <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saveStatus === "saving"}>
+            {saveStatus === "saving" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             保存草稿
           </Button>
-          <Button size="sm" onClick={() => handleSave(true)} disabled={saving}>
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
+          <Button size="sm" onClick={() => handleSave(true)} disabled={saveStatus === "saving"}>
+            {saveStatus === "saving" ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
             发布
           </Button>
         </div>

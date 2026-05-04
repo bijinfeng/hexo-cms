@@ -39,10 +39,23 @@ const dateRangeOptions = [
   { label: "最近 90 天", value: "90" },
 ];
 
+interface PostDisplayItem {
+  id: string;
+  title: string;
+  slug: string;
+  path: string;
+  date: string;
+  status: "published" | "draft" | "archived";
+  views: number;
+  tags: string[];
+  category: string;
+  excerpt: string;
+}
+
 export function PostsPage() {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<PostDisplayItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -68,28 +81,28 @@ export function PostsPage() {
     setError("");
     try {
       const rawPosts = await dataProvider.getPosts();
-      const formattedPosts = rawPosts.map((post: any, index: number) => ({
+      const formattedPosts = rawPosts.map((post, index: number) => ({
         id: String(index + 1),
         title: post.title,
         slug: post.path.replace(/^.*\//, "").replace(/\.md$/, ""),
         path: post.path,
         date: post.date || new Date().toISOString().split("T")[0],
-        status: post.frontmatter?.draft ? "draft" : "published",
+        status: (post.frontmatter?.draft ? "draft" : "published") as "published" | "draft" | "archived",
         views: 0,
-        tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter.tags : [],
-        category: post.frontmatter?.category || "未分类",
+        tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter.tags as string[] : [],
+        category: typeof post.frontmatter?.category === "string" ? post.frontmatter.category : "未分类",
         excerpt: (post.content || "").slice(0, 100) + "...",
       }));
       setPosts(formattedPosts);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load posts:", err);
-      setError(err.message || "加载文章失败");
+      setError(err instanceof Error ? err.message : "加载文章失败");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleDeletePost(post: any) {
+  async function handleDeletePost(post: PostDisplayItem) {
     if (!confirm(`确定要删除文章「${post.title}」吗？此操作不可恢复。`)) {
       return;
     }
@@ -97,7 +110,7 @@ export function PostsPage() {
     try {
       await dataProvider.deletePost(post.path);
       setPosts((prev) => prev.filter((p) => p.id !== post.id));
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to delete post:", err);
       setError(err.message || "删除失败");
     }

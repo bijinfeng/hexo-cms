@@ -7,9 +7,12 @@ export { Topbar } from "./components/layout/Topbar";
 export { Badge } from "./components/ui/badge";
 export { Button } from "./components/ui/button";
 export { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
+export { SaveIndicator } from "./components/save-indicator";
+export type { SaveStatus } from "./components/save-indicator";
 
 // Pages
 export { DashboardPage } from "./pages/index";
+export { OnboardingPage } from "./pages/onboarding";
 export { PostsPage } from "./pages/posts";
 export { NewPostPage } from "./pages/posts.new";
 export { EditPostPage } from "./pages/posts.$slug";
@@ -24,8 +27,12 @@ export { DeployPage } from "./pages/deploy";
 export { SettingsPage } from "./pages/settings";
 export { LoginPage } from "./pages/login";
 
+// Error Boundary
+export { ErrorBoundary } from "./components/error-boundary";
+
 // Utils
 export { cn } from "./utils";
+export { sanitizeHtml } from "./sanitize";
 
 // Context
 export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";

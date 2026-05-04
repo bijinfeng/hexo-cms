@@ -98,7 +98,11 @@ async function getGitHubService(): Promise<GitHubService | null> {
   if (
     cachedGitHubService &&
     cachedToken === token &&
-    JSON.stringify(cachedConfig) === JSON.stringify(config)
+    cachedConfig?.owner === config.owner &&
+    cachedConfig?.repo === config.repo &&
+    cachedConfig?.branch === config.branch &&
+    cachedConfig?.postsDir === config.postsDir &&
+    cachedConfig?.mediaDir === config.mediaDir
   ) {
     return cachedGitHubService;
   }
@@ -132,7 +136,7 @@ function createWindow(): void {
     titleBarStyle: isMac ? "hiddenInset" : "hidden",
     webPreferences: {
       preload: join(__dirname, "../preload/index.mjs"),
-      sandbox: false,
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -236,59 +240,104 @@ ipcMain.handle("config:get", () => {
 });
 
 ipcMain.handle("config:save", (_event, config: GitHubConfig) => {
-  saveConfigToFile(config);
-  invalidateGitHubServiceCache();
-  return true;
+  try {
+    saveConfigToFile(config);
+    invalidateGitHubServiceCache();
+    return true;
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: config:save failed", error: String(error) }));
+    throw error;
+  }
 });
 
 // 文章管理
 ipcMain.handle("github:get-posts", async () => {
-  const github = await getGitHubService();
-  if (!github) return [];
-  return github.getPosts();
+  try {
+    const github = await getGitHubService();
+    if (!github) return [];
+    return await github.getPosts();
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:get-posts failed", error: String(error) }));
+    return [];
+  }
 });
 
 ipcMain.handle("github:get-post", async (_event, path: string) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-  return github.getPost(path);
+  try {
+    return await github.getPost(path);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:get-post failed", path, error: String(error) }));
+    throw error;
+  }
 });
 
 ipcMain.handle("github:save-post", async (_event, post) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-  return github.savePost(post);
+  try {
+    await github.savePost(post);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:save-post failed", path: post?.path, error: String(error) }));
+    throw error;
+  }
 });
 
 ipcMain.handle("github:delete-post", async (_event, path: string) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-  return github.deletePost(path);
+  try {
+    await github.deletePost(path);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:delete-post failed", path, error: String(error) }));
+    throw error;
+  }
 });
 
 // 页面管理（复用 posts API，路径前缀不同）
 ipcMain.handle("github:get-pages", async () => {
-  const github = await getGitHubService();
-  if (!github) return [];
-  return github.getPosts();
+  try {
+    const github = await getGitHubService();
+    if (!github) return [];
+    return await github.getPosts();
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:get-pages failed", error: String(error) }));
+    return [];
+  }
 });
 
 ipcMain.handle("github:get-page", async (_event, path: string) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-  return github.getPost(path);
+  try {
+    return await github.getPost(path);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:get-page failed", path, error: String(error) }));
+    throw error;
+  }
 });
 
 ipcMain.handle("github:save-page", async (_event, post) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-  return github.savePost(post);
+  try {
+    await github.savePost(post);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:save-page failed", path: post?.path, error: String(error) }));
+    throw error;
+  }
 });
 
 ipcMain.handle("github:delete-page", async (_event, path: string) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-  return github.deletePost(path);
+  try {
+    await github.deletePost(path);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:delete-page failed", path, error: String(error) }));
+    throw error;
+  }
 });
 
 // 标签和分类管理
@@ -418,20 +467,25 @@ ipcMain.handle("github:get-media", async () => {
 ipcMain.handle("github:upload-media", async (_event, { buffer, path, name }: { buffer: ArrayBuffer; path: string; name: string; type: string }) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-
-  // Convert ArrayBuffer to base64
-  const bytes = new Uint8Array(buffer);
-  const base64 = Buffer.from(bytes).toString("base64");
-
-  const result = await github.uploadMedia(path, base64, name);
-  if (!result) throw new Error("Failed to upload media");
-  return result;
+  try {
+    const bytes = new Uint8Array(buffer);
+    const base64 = Buffer.from(bytes).toString("base64");
+    return await github.uploadMedia(path, base64, name);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:upload-media failed", path, name, error: String(error) }));
+    throw new Error("Failed to upload media", { cause: error });
+  }
 });
 
 ipcMain.handle("github:delete-media", async (_event, path: string) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-  await github.deleteMedia(path);
+  try {
+    await github.deleteMedia(path);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:delete-media failed", path, error: String(error) }));
+    throw new Error("Failed to delete media", { cause: error });
+  }
 });
 
 // 统计数据
@@ -471,12 +525,15 @@ ipcMain.handle("github:get-themes", async () => {
 ipcMain.handle("github:switch-theme", async (_event, themeName: string) => {
   const github = await getGitHubService();
   if (!github) throw new Error("GitHub not configured");
-
-  const configFile = await github.getRawFile("_config.yml");
-  if (!configFile) throw new Error("_config.yml not found");
-
-  const updatedConfig = setYamlValue(configFile.content, "theme", themeName);
-  await github.writeRawFile("_config.yml", updatedConfig, `切换主题为: ${themeName}`);
+  try {
+    const configFile = await github.getRawFile("_config.yml");
+    if (!configFile) throw new Error("_config.yml not found");
+    const updatedConfig = setYamlValue(configFile.content, "theme", themeName);
+    await github.writeRawFile("_config.yml", updatedConfig, `切换主题为: ${themeName}`);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:switch-theme failed", themeName, error: String(error) }));
+    throw error;
+  }
 });
 
 // 部署管理
@@ -519,26 +576,19 @@ ipcMain.handle("github:get-deployments", async () => {
 ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => {
   const config = loadConfig();
   if (!config) throw new Error("GitHub not configured");
-
-  let token: string | null;
   try {
     const keytar = await import("keytar");
-    token = await keytar.default.getPassword("hexo-cms", "github-token");
-  } catch {
-    throw new Error("Failed to get token");
+    const token = await keytar.default.getPassword("hexo-cms", "github-token");
+    if (!token) throw new Error("No token found");
+    const { Octokit } = await import("octokit");
+    const octokit = new Octokit({ auth: token });
+    await octokit.rest.actions.createWorkflowDispatch({
+      owner: config.owner, repo: config.repo, workflow_id: workflowFile, ref: config.branch || "main",
+    });
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:trigger-deploy failed", workflowFile, error: String(error) }));
+    throw error;
   }
-
-  if (!token) throw new Error("No token found");
-
-  const { Octokit } = await import("octokit");
-  const octokit = new Octokit({ auth: token });
-
-  await octokit.rest.actions.createWorkflowDispatch({
-    owner: config.owner,
-    repo: config.repo,
-    workflow_id: workflowFile,
-    ref: config.branch || "main",
-  });
 });
 
 // Helper functions for YAML parsing

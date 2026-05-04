@@ -23,7 +23,7 @@ const statusConfig = {
 export function PagesPage() {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
-  const [pages, setPages] = useState<any[]>([]);
+  const [pages, setPages] = useState<Array<{ id: string; title: string; slug: string; path: string; date: string; status: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 

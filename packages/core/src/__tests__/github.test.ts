@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GitHubService } from "../github";
+import { DataProviderError } from "../types";
 import type { HexoPost } from "../types";
 
 // Create mock functions
@@ -21,6 +22,12 @@ vi.mock("octokit", () => {
     },
   };
 });
+
+function octokitError(status: number, message: string) {
+  const err = new Error(message) as Error & { status: number };
+  err.status = status;
+  return err;
+}
 
 describe("GitHubService", () => {
   let service: GitHubService;
@@ -79,8 +86,7 @@ describe("GitHubService", () => {
 
     it("should return empty array on API error", async () => {
       mockGetContent.mockRejectedValue(new Error("API error"));
-      const posts = await service.getPosts();
-      expect(posts).toEqual([]);
+      await expect(service.getPosts()).rejects.toThrow(DataProviderError);
     });
 
     it("should use custom directory when provided", async () => {
@@ -112,9 +118,14 @@ describe("GitHubService", () => {
     });
 
     it("should return null when file not found", async () => {
-      mockGetContent.mockRejectedValue(new Error("Not found"));
+      mockGetContent.mockRejectedValue(octokitError(404, "Not found"));
       const post = await service.getPost("nonexistent.md");
       expect(post).toBeNull();
+    });
+
+    it("should throw on unexpected error", async () => {
+      mockGetContent.mockRejectedValue(new Error("Network error"));
+      await expect(service.getPost("fail.md")).rejects.toThrow(DataProviderError);
     });
 
     it("should return null when response is not a file", async () => {
@@ -148,11 +159,10 @@ describe("GitHubService", () => {
     };
 
     it("should create new file when it does not exist", async () => {
-      mockGetContent.mockRejectedValue(new Error("Not found"));
+      mockGetContent.mockRejectedValue(octokitError(404, "Not found"));
       mockCreateOrUpdateFileContents.mockResolvedValue({ data: {} });
 
-      const result = await service.savePost(testPost);
-      expect(result).toBe(true);
+      await expect(service.savePost(testPost)).resolves.toBeUndefined();
       expect(mockCreateOrUpdateFileContents).toHaveBeenCalledWith(
         expect.objectContaining({
           path: testPost.path,
@@ -167,29 +177,27 @@ describe("GitHubService", () => {
       });
       mockCreateOrUpdateFileContents.mockResolvedValue({ data: {} });
 
-      const result = await service.savePost(testPost);
-      expect(result).toBe(true);
+      await expect(service.savePost(testPost)).resolves.toBeUndefined();
       expect(mockCreateOrUpdateFileContents).toHaveBeenCalledWith(
         expect.objectContaining({ sha: "existing-sha" })
       );
     });
 
     it("should use custom commit message when provided", async () => {
-      mockGetContent.mockRejectedValue(new Error("Not found"));
+      mockGetContent.mockRejectedValue(octokitError(404, "Not found"));
       mockCreateOrUpdateFileContents.mockResolvedValue({ data: {} });
 
-      await service.savePost(testPost, "Custom commit message");
+      await expect(service.savePost(testPost, "Custom commit message")).resolves.toBeUndefined();
       expect(mockCreateOrUpdateFileContents).toHaveBeenCalledWith(
         expect.objectContaining({ message: "Custom commit message" })
       );
     });
 
-    it("should return false on API error", async () => {
-      mockGetContent.mockRejectedValue(new Error("Not found"));
-      mockCreateOrUpdateFileContents.mockRejectedValue(new Error("API error"));
+    it("should throw on API error", async () => {
+      mockGetContent.mockRejectedValue(octokitError(404, "Not found"));
+      mockCreateOrUpdateFileContents.mockRejectedValue(octokitError(500, "API error"));
 
-      const result = await service.savePost(testPost);
-      expect(result).toBe(false);
+      await expect(service.savePost(testPost)).rejects.toThrow(DataProviderError);
     });
   });
 
@@ -200,26 +208,23 @@ describe("GitHubService", () => {
       });
       mockDeleteFile.mockResolvedValue({ data: {} });
 
-      const result = await service.deletePost("source/_posts/test.md");
-      expect(result).toBe(true);
+      await expect(service.deletePost("source/_posts/test.md")).resolves.toBeUndefined();
       expect(mockDeleteFile).toHaveBeenCalledWith(
         expect.objectContaining({ sha: "file-sha" })
       );
     });
 
-    it("should return false when file has no sha", async () => {
+    it("should throw when file has no sha", async () => {
       mockGetContent.mockResolvedValue({
         data: [{ type: "dir" }],
       });
 
-      const result = await service.deletePost("source/_posts");
-      expect(result).toBe(false);
+      await expect(service.deletePost("source/_posts")).rejects.toThrow(DataProviderError);
     });
 
-    it("should return false on API error", async () => {
-      mockGetContent.mockRejectedValue(new Error("Not found"));
-      const result = await service.deletePost("nonexistent.md");
-      expect(result).toBe(false);
+    it("should throw on API error", async () => {
+      mockGetContent.mockRejectedValue(octokitError(500, "API error"));
+      await expect(service.deletePost("nonexistent.md")).rejects.toThrow(DataProviderError);
     });
   });
 
@@ -237,9 +242,14 @@ describe("GitHubService", () => {
     });
 
     it("should return null when file not found", async () => {
-      mockGetContent.mockRejectedValue(new Error("Not found"));
+      mockGetContent.mockRejectedValue(octokitError(404, "Not found"));
       const result = await service.getRawFile("nonexistent.yml");
       expect(result).toBeNull();
+    });
+
+    it("should throw on unexpected error", async () => {
+      mockGetContent.mockRejectedValue(new Error("Network error"));
+      await expect(service.getRawFile("fail.yml")).rejects.toThrow(DataProviderError);
     });
   });
 

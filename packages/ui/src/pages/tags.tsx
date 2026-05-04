@@ -35,8 +35,8 @@ export function TagsPage() {
   const dataProvider = useDataProvider();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"tags" | "categories">("tags");
-  const [tags, setTags] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [tags, setTags] = useState<Array<{ id: string; name: string; slug: string; count: number; color?: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string; count: number; color?: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -53,9 +53,9 @@ export function TagsPage() {
       setError("");
 
       const data = await dataProvider.getTags();
-      setTags(data.tags.map((t: any, i: number) => ({ ...t, color: tagColors[i % tagColors.length] })));
+      setTags(data.tags.map((t, i) => ({ ...t, color: tagColors[i % tagColors.length] })));
       setCategories(data.categories);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || "加载失败");
     } finally {
       setLoading(false);
@@ -84,8 +84,8 @@ export function TagsPage() {
       await dataProvider.renameTag(dialog.itemType, dialog.itemName, newName.trim());
       closeDialog();
       await loadTagsAndCategories();
-    } catch (err: any) {
-      alert(err.message || "重命名失败");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "重命名失败");
     } finally {
       setProcessing(false);
     }
@@ -99,8 +99,8 @@ export function TagsPage() {
       await dataProvider.deleteTag(dialog.itemType, dialog.itemName);
       closeDialog();
       await loadTagsAndCategories();
-    } catch (err: any) {
-      alert(err.message || "删除失败");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "删除失败");
     } finally {
       setProcessing(false);
     }

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import {
   Upload,
@@ -12,11 +11,7 @@ import {
   FileText,
   Film,
   Music,
-  Download,
   Trash2,
-  MoreHorizontal,
-  FolderOpen,
-  ChevronDown,
   Loader2,
   Copy,
   CheckCircle2,
@@ -54,7 +49,7 @@ export function MediaPage() {
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeFilter, setActiveFilter] = useState("全部");
-  const [mediaItems, setMediaItems] = useState<any[]>([]);
+  const [mediaItems, setMediaItems] = useState<Array<{ name: string; path: string; url: string; size?: number }>>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");

@@ -1,11 +1,13 @@
-import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState } from "@tanstack/react-router";
-import { CMSLayout, DataProviderProvider } from "@hexo-cms/ui";
+import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { CMSLayout, DataProviderProvider, ErrorBoundary } from "@hexo-cms/ui";
 import { WebDataProvider } from "../lib/web-data-provider";
+import { useSession } from "../lib/auth-client";
 import appCss from "../styles.css?url";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
 
-const BARE_ROUTES = ["/login"];
+const BARE_ROUTES = ["/login", "/onboarding"];
 
 const webDataProvider = new WebDataProvider();
 
@@ -51,14 +53,42 @@ function RootComponent() {
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
   const isBare = BARE_ROUTES.includes(pathname);
+  const navigate = useNavigate();
+  const { data: session, isPending } = useSession();
 
-  if (isBare) return <Outlet />;
+  useEffect(() => {
+    if (isPending) return;
+
+    if (!session && !isBare) {
+      navigate({ to: "/login", replace: true });
+    }
+
+    if (session && isBare) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [session, isPending, isBare, navigate]);
+
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[var(--bg-base)]">
+        <div className="w-6 h-6 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session && !isBare) return null;
+
+  if (isBare) return <ErrorBoundary><Outlet /></ErrorBoundary>;
 
   return (
     <DataProviderProvider provider={webDataProvider}>
-      <CMSLayout>
-        <Outlet />
-      </CMSLayout>
+      <ErrorBoundary>
+        <CMSLayout>
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </CMSLayout>
+      </ErrorBoundary>
     </DataProviderProvider>
   );
 }

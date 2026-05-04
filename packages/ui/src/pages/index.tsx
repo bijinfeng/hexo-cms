@@ -9,10 +9,7 @@ import {
   Tags,
   Eye,
   TrendingUp,
-  GitCommit,
-  CheckCircle2,
   Clock,
-  AlertCircle,
   Plus,
   ArrowRight,
   Zap,
@@ -42,7 +39,7 @@ export function DashboardPage() {
     totalTags: 0,
     totalCategories: 0,
   });
-  const [recentPosts, setRecentPosts] = useState<any[]>([]);
+  const [recentPosts, setRecentPosts] = useState<Array<{ title: string; date: string; status: string }>>([]);
   const [repoInfo, setRepoInfo] = useState<string>("");
 
   useEffect(() => {
