@@ -30,9 +30,13 @@ export { LoginPage } from "./pages/login";
 // Error Boundary
 export { ErrorBoundary } from "./components/error-boundary";
 
+// Generic Components
+export { ListPage } from "./components/list-page";
+
 // Utils
 export { cn } from "./utils";
 export { sanitizeHtml } from "./sanitize";
+export { withCache } from "./with-cache";
 
 // Context
 export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";

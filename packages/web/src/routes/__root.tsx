@@ -1,6 +1,6 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { CMSLayout, DataProviderProvider, ErrorBoundary } from "@hexo-cms/ui";
+import { CMSLayout, DataProviderProvider, ErrorBoundary, withCache } from "@hexo-cms/ui";
 import { WebDataProvider } from "../lib/web-data-provider";
 import { useSession } from "../lib/auth-client";
 import appCss from "../styles.css?url";
@@ -9,7 +9,7 @@ const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');v
 
 const BARE_ROUTES = ["/login", "/onboarding"];
 
-const webDataProvider = new WebDataProvider();
+const webDataProvider = withCache(new WebDataProvider());
 
 function NotFound() {
   return <div className="flex items-center justify-center h-full text-sm">404 — 页面不存在</div>;

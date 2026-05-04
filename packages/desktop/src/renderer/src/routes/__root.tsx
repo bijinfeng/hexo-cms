@@ -1,11 +1,11 @@
 import { createRootRoute, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CMSLayout, DataProviderProvider, ErrorBoundary } from "@hexo-cms/ui";
+import { CMSLayout, DataProviderProvider, ErrorBoundary, withCache } from "@hexo-cms/ui";
 import { DesktopDataProvider } from "../lib/desktop-data-provider";
 
 const BARE_ROUTES = ["/login", "/onboarding"];
 
-const desktopDataProvider = new DesktopDataProvider();
+const desktopDataProvider = withCache(new DesktopDataProvider());
 
 function RootComponent() {
   const routerState = useRouterState();
