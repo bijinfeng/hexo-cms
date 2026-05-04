@@ -32,6 +32,7 @@ export { ErrorBoundary } from "./components/error-boundary";
 
 // Generic Components
 export { ListPage } from "./components/list-page";
+export { DashboardWidgetGrid } from "./components/dashboard-widgets";
 
 // Utils
 export { cn } from "./utils";
