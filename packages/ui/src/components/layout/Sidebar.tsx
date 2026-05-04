@@ -91,6 +91,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                       collapsed && "justify-center px-2"
                     )}
                     title={collapsed ? item.label : undefined}
+                    aria-current={isActive ? "page" : undefined}
                   >
                     <item.icon
                       size={18}

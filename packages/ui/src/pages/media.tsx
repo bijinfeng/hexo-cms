@@ -157,7 +157,7 @@ export function MediaPage() {
 
       {/* Error */}
       {error && (
-        <div className="p-3 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)] text-sm text-[var(--status-error)]">
+        <div className="p-3 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)] text-sm text-[var(--status-error)]" role="alert">
           {error}
         </div>
       )}
