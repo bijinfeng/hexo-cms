@@ -33,6 +33,7 @@ export { ErrorBoundary } from "./components/error-boundary";
 // Generic Components
 export { ListPage } from "./components/list-page";
 export { DashboardWidgetGrid } from "./components/dashboard-widgets";
+export { Skeleton, SkeletonCard } from "./components/skeleton";
 
 // Utils
 export { cn } from "./utils";

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { DashboardWidgetGrid } from "../components/dashboard-widgets";
+import { Skeleton, SkeletonCard } from "../components/skeleton";
 import {
   FileText,
   Tags,
@@ -15,6 +16,8 @@ import {
   Plus,
   ArrowRight,
   Zap,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 
 const statusConfig = {
@@ -33,6 +36,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [stats, setStats] = useState({
     totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalTags: 0, totalCategories: 0,
   });
@@ -44,6 +48,8 @@ export function DashboardPage() {
   }, []);
 
   async function loadDashboard() {
+    setLoading(true);
+    setError("");
     try {
       const config = await dataProvider.getConfig();
       if (config) setRepoInfo(`${config.owner}/${config.repo}`);
@@ -70,6 +76,7 @@ export function DashboardPage() {
       );
     } catch (err) {
       console.error("Failed to load dashboard:", err);
+      setError("加载统计数据失败，请重试");
     } finally {
       setLoading(false);
     }
@@ -84,8 +91,20 @@ export function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 size={24} className="animate-spin text-[var(--text-tertiary)]" />
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton width={128} height={28} />
+            <Skeleton width={192} className="mt-2" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+        </div>
+        <div className="flex gap-6">
+          <Skeleton variant="card" className="flex-1" />
+          <Skeleton variant="card" className="hidden lg:block w-72" />
+        </div>
       </div>
     );
   }
@@ -102,6 +121,20 @@ export function DashboardPage() {
           新建文章
         </Button>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--status-error-bg)] border border-[var(--status-error)]" role="alert">
+          <AlertCircle size={18} className="text-[var(--status-error)] flex-shrink-0" />
+          <span className="text-sm text-[var(--status-error)] flex-1">{error}</span>
+          <button
+            onClick={loadDashboard}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[var(--status-error)] text-white rounded-md hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            <RefreshCw size={14} />
+            重试
+          </button>
+        </div>
+      )}
 
       <DashboardWidgetGrid
         children={[
