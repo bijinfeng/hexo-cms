@@ -72,8 +72,8 @@ export function NewPagePage() {
       const path = `${dir}/${file.name}`;
       const result = await dataProvider.uploadMedia(file, path);
       insertMarkdown(`![${file.name}](${result.url})`);
-    } catch (err: any) {
-      setError(err.message || "图片上传失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "图片上传失败");
     } finally {
       setUploading(false);
       if (imageInputRef.current) imageInputRef.current.value = "";
@@ -100,8 +100,8 @@ export function NewPagePage() {
       const page = { path: filePath, title, date: frontmatter.date, content, frontmatter };
       await dataProvider.savePage(page as any);
       navigate({ to: "/pages" });
-    } catch (err: any) {
-      setError(err.message || "保存失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
     } finally {
       setSaving(false);
     }

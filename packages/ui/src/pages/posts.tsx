@@ -112,7 +112,7 @@ export function PostsPage() {
       setPosts((prev) => prev.filter((p) => p.id !== post.id));
     } catch (err) {
       console.error("Failed to delete post:", err);
-      setError(err.message || "删除失败");
+      setError(err instanceof Error ? err.message : "删除失败");
     }
   }
 

@@ -63,8 +63,8 @@ export function EditPagePage() {
       setContent(page.content || "");
       setPostPath(page.path);
       setStatus(page.frontmatter.draft ? "draft" : "published");
-    } catch (err: any) {
-      setError(err.message || "加载失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载失败");
     } finally {
       setLoading(false);
     }
@@ -119,8 +119,8 @@ export function EditPagePage() {
       const page = { path: postPath, title, date: frontmatter.date, content, frontmatter };
       await dataProvider.savePage(page as any);
       navigate({ to: "/pages" });
-    } catch (err: any) {
-      setError(err.message || "保存失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
     } finally {
       setSaving(false);
     }
@@ -132,8 +132,8 @@ export function EditPagePage() {
     try {
       await dataProvider.deletePage(postPath);
       navigate({ to: "/pages" });
-    } catch (err: any) {
-      setError(err.message || "删除失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "删除失败");
     }
   }
 

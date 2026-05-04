@@ -83,9 +83,9 @@ export function EditPostPage() {
       if (post.frontmatter?.category) {
         setCategory(post.frontmatter.category);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load post:", err);
-      setError(err.message || "文章不存在或加载失败");
+      setError(err instanceof Error ? err.message : "文章不存在或加载失败");
     } finally {
       setLoading(false);
     }
@@ -137,9 +137,9 @@ export function EditPostPage() {
 
       await dataProvider.savePost(post);
       navigate({ to: "/posts" });
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to save post:", err);
-      setError(err.message || "保存失败");
+      setError(err instanceof Error ? err.message : "保存失败");
     } finally {
       setSaving(false);
     }
@@ -162,9 +162,9 @@ export function EditPostPage() {
     try {
       await dataProvider.deletePost(postPath);
       navigate({ to: "/posts" });
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to delete post:", err);
-      setError(err.message || "删除失败");
+      setError(err instanceof Error ? err.message : "删除失败");
     } finally {
       setSaving(false);
     }
@@ -176,8 +176,8 @@ export function EditPostPage() {
       const path = `source/images/${file.name}`;
       const result = await dataProvider.uploadMedia(file, path);
       insertMarkdown(`![${file.name}](${result.url})`);
-    } catch (err: any) {
-      setError(err.message || "图片上传失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "图片上传失败");
     } finally {
       setUploading(false);
       if (imageInputRef.current) imageInputRef.current.value = "";

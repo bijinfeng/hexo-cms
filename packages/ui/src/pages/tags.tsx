@@ -56,7 +56,7 @@ export function TagsPage() {
       setTags(data.tags.map((t, i) => ({ ...t, color: tagColors[i % tagColors.length] })));
       setCategories(data.categories);
     } catch (err) {
-      setError(err.message || "加载失败");
+      setError(err instanceof Error ? err.message : "加载失败");
     } finally {
       setLoading(false);
     }

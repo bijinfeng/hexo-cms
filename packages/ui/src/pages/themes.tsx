@@ -33,8 +33,8 @@ export function ThemesPage() {
       const themesData = await dataProvider.getThemes();
       setCurrentTheme(themesData.currentTheme);
       setInstalledThemes(themesData.installedThemes.map((t) => t.name));
-    } catch (err: any) {
-      setError(err.message || "加载失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载失败");
     } finally {
       setLoading(false);
     }
@@ -47,8 +47,8 @@ export function ThemesPage() {
       await dataProvider.switchTheme(themeName);
       setCurrentTheme(themeName);
       alert(`已切换到主题「${themeName}」，请重新部署站点以生效`);
-    } catch (err: any) {
-      alert(err.message || "切换主题失败");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "切换主题失败");
     } finally {
       setSwitching(false);
     }

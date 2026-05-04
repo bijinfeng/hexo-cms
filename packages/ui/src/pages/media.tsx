@@ -66,8 +66,8 @@ export function MediaPage() {
     try {
       const files = await dataProvider.getMediaFiles();
       setMediaItems(files);
-    } catch (err: any) {
-      setError(err.message || "加载失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载失败");
     } finally {
       setLoading(false);
     }
@@ -92,8 +92,8 @@ export function MediaPage() {
         await dataProvider.uploadMedia(file, path);
       }
       await loadMedia();
-    } catch (err: any) {
-      setError(err.message || "上传失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "上传失败");
     } finally {
       setUploading(false);
     }
@@ -103,8 +103,8 @@ export function MediaPage() {
     try {
       await dataProvider.deleteMedia(path);
       setMediaItems((prev) => prev.filter((item) => item.path !== path));
-    } catch (err: any) {
-      setError(err.message || "删除失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "删除失败");
     }
   }
 

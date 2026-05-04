@@ -136,8 +136,8 @@ export function DeployPage() {
       await dataProvider.triggerDeploy(config.workflow_file || "pages.yml");
       alert("部署已触发，请稍后刷新查看状态");
       setTimeout(() => loadDeployments(), 3000);
-    } catch (err: any) {
-      alert(err.message || "触发部署失败");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "触发部署失败");
     } finally {
       setDeploying(false);
     }

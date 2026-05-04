@@ -77,8 +77,8 @@ export function NewPostPage() {
       const path = `source/images/${file.name}`;
       const result = await dataProvider.uploadMedia(file, path);
       insertMarkdown(`![${file.name}](${result.url})`);
-    } catch (err: any) {
-      setError(err.message || "图片上传失败");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "图片上传失败");
     } finally {
       setUploading(false);
       if (imageInputRef.current) imageInputRef.current.value = "";
