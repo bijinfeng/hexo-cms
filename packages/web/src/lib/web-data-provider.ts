@@ -23,9 +23,9 @@ async function checkResponse(res: Response, operation: string): Promise<void> {
   throw new WebDataProviderError(`Request failed: ${operation} (${status})`, DataProviderErrorCode.NETWORK, status);
 }
 
-async function apiFetch(url: string, options?: RequestInit & { method?: string; headers?: Record<string, string>; body?: unknown }): Promise<Response> {
+async function apiFetch(url: string, options?: Parameters<typeof fetch>[1] & { method?: string; headers?: Record<string, string>; body?: unknown }): Promise<Response> {
   try {
-    const res = await fetch(url, options as RequestInit);
+    const res = await fetch(url, options);
     await checkResponse(res, url);
     return res;
   } catch (error) {

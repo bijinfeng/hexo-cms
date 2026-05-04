@@ -14,6 +14,7 @@ import { Route as TagsRouteImport } from './routes/tags'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PostsRouteImport } from './routes/posts'
 import { Route as PagesRouteImport } from './routes/pages'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DeployRouteImport } from './routes/deploy'
@@ -57,6 +58,11 @@ const PostsRoute = PostsRouteImport.update({
 const PagesRoute = PagesRouteImport.update({
   id: '/pages',
   path: '/pages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaRoute = MediaRouteImport.update({
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
+  '/onboarding': typeof OnboardingRoute
   '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
+  '/onboarding': typeof OnboardingRoute
   '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
+  '/onboarding': typeof OnboardingRoute
   '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/deploy'
     | '/login'
     | '/media'
+    | '/onboarding'
     | '/pages'
     | '/posts'
     | '/settings'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/deploy'
     | '/login'
     | '/media'
+    | '/onboarding'
     | '/pages'
     | '/posts'
     | '/settings'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/deploy'
     | '/login'
     | '/media'
+    | '/onboarding'
     | '/pages'
     | '/posts'
     | '/settings'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   DeployRoute: typeof DeployRoute
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
+  OnboardingRoute: typeof OnboardingRoute
   PagesRoute: typeof PagesRouteWithChildren
   PostsRoute: typeof PostsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
@@ -373,6 +386,13 @@ declare module '@tanstack/react-router' {
       path: '/pages'
       fullPath: '/pages'
       preLoaderRoute: typeof PagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/media': {
@@ -541,6 +561,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeployRoute: DeployRoute,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
+  OnboardingRoute: OnboardingRoute,
   PagesRoute: PagesRouteWithChildren,
   PostsRoute: PostsRouteWithChildren,
   SettingsRoute: SettingsRoute,

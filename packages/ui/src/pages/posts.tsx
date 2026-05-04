@@ -151,15 +151,14 @@ export function PostsPage() {
       try {
         await dataProvider.deletePost(post.path);
         successCount++;
-      } catch (err) {
+      } catch {
         failedPosts.push(post.title);
       }
 
       setBatchProgress({ current: i + 1, total: postsToDelete.length });
     }
 
-    // 刷新文章列表
-    await loadPostsFromGitHub();
+    await loadPosts();
 
     setBatchProcessing(false);
     setBatchProgress(null);
@@ -196,24 +195,16 @@ export function PostsPage() {
           },
         };
 
-        // 保存更新
         await dataProvider.savePost(updatedPost);
-
-        const saveData = await saveRes.json();
-        if (saveRes.ok && saveData.success) {
-          successCount++;
-        } else {
-          failedPosts.push(post.title);
-        }
-      } catch (err) {
+        successCount++;
+      } catch {
         failedPosts.push(post.title);
       }
 
       setBatchProgress({ current: i + 1, total: postsToUpdate.length });
     }
 
-    // 刷新文章列表
-    await loadPostsFromGitHub();
+    await loadPosts();
 
     setBatchProcessing(false);
     setBatchProgress(null);

@@ -8,8 +8,6 @@ import {
   Palette,
   CheckCircle2,
   Download,
-  Star,
-  Eye,
   AlertCircle,
 } from "lucide-react";
 

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
-import { CheckCircle2, GithubIcon, Loader2, ArrowRight } from "lucide-react";
+import { CheckCircle2, Loader2, ArrowRight } from "lucide-react";
+import { GithubIcon } from "../components/ui/github-icon";
 
 const STEPS = ["GitHub Token", "仓库配置", "完成"];
 

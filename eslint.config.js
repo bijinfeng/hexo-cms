@@ -15,6 +15,7 @@ export default [
       '**/*.gen.ts',
       '**/*.config.js',
       '**/*.config.ts',
+      '**/out/**',
     ],
   },
 
@@ -134,7 +135,7 @@ export default [
       'react-hooks/exhaustive-deps': 'warn',
 
       // 通用规则
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug'] }],
       'no-debugger': 'warn',
       'no-unused-vars': 'off', // 使用 TypeScript 的规则
     },

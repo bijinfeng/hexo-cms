@@ -12,7 +12,6 @@ import {
   Eye,
   TrendingUp,
   Clock,
-  Loader2,
   Plus,
   ArrowRight,
   Zap,

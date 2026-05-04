@@ -27,6 +27,11 @@ import {
   Minus,
   Globe,
   FileText,
+  Loader2,
+  Calendar,
+  FolderOpen,
+  Tag,
+  Upload,
   Trash2,
 } from "lucide-react";
 

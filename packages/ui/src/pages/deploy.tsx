@@ -17,6 +17,7 @@ import {
   Activity,
   Globe,
   Server,
+  Loader2,
   AlertCircle,
 } from "lucide-react";
 
