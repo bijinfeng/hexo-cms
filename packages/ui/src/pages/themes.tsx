@@ -3,13 +3,13 @@ import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/skeleton";
 import {
   Palette,
   CheckCircle2,
   Download,
   Star,
   Eye,
-  Loader2,
   AlertCircle,
 } from "lucide-react";
 
@@ -56,8 +56,14 @@ export function ThemesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 size={32} className="animate-spin text-[var(--brand-primary)]" />
+      <div className="space-y-4 animate-fade-in">
+        <Skeleton width={128} height={28} />
+        <Skeleton width={256} className="mt-2" />
+        <div className="grid md:grid-cols-2 gap-4 mt-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} variant="card" height={120} />
+          ))}
+        </div>
       </div>
     );
   }

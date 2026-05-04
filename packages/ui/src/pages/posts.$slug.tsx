@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/skeleton";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
@@ -24,13 +25,8 @@ import {
   Heading1,
   Heading2,
   Minus,
-  Upload,
-  Tag,
-  Calendar,
-  FolderOpen,
   Globe,
   FileText,
-  Loader2,
   Trash2,
 } from "lucide-react";
 
@@ -203,8 +199,10 @@ export function EditPostPage() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <Loader2 size={24} className="animate-spin text-[var(--text-tertiary)]" />
+      <div className="h-full flex flex-col animate-fade-in -m-6 p-6 space-y-4">
+        <Skeleton width={200} height={28} />
+        <Skeleton height={40} />
+        <Skeleton variant="card" height={400} />
       </div>
     );
   }

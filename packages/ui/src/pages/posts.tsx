@@ -684,9 +684,9 @@ export function PostsPage() {
 
       {/* Posts Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {/* Table Header */}
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-6 py-3 border-b border-[var(--border-default)] text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-6 py-3 border-b border-[var(--border-default)] text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider min-w-[600px]">
             <button
               onClick={toggleSelectAll}
               className="flex items-center justify-center text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"

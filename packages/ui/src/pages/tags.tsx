@@ -3,6 +3,7 @@ import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/skeleton";
 import {
   Tag,
   FolderOpen,
@@ -12,7 +13,6 @@ import {
   Trash2,
   Hash,
   ChevronRight,
-  Loader2,
   AlertCircle,
   X,
 } from "lucide-react";
@@ -116,8 +116,12 @@ export function TagsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-primary)]" />
+      <div className="space-y-4 animate-fade-in">
+        <Skeleton width={128} height={28} />
+        <Skeleton width={256} />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} variant="card" height={80} />)}
+        </div>
       </div>
     );
   }

@@ -3,6 +3,7 @@ import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/skeleton";
 import {
   Zap,
   GitCommit,
@@ -16,7 +17,6 @@ import {
   Activity,
   Globe,
   Server,
-  Loader2,
   AlertCircle,
 } from "lucide-react";
 
@@ -151,8 +151,12 @@ export function DeployPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 size={32} className="animate-spin text-[var(--brand-primary)]" />
+      <div className="space-y-4 animate-fade-in">
+        <Skeleton width={128} height={28} />
+        <div className="grid sm:grid-cols-3 gap-4 mt-6">
+          {[1, 2, 3].map((i) => <Skeleton key={i} variant="card" height={100} />)}
+        </div>
+        <Skeleton variant="card" height={300} />
       </div>
     );
   }
