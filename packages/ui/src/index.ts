@@ -8,7 +8,7 @@ export { Badge } from "./components/ui/badge";
 export { Button } from "./components/ui/button";
 export { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 export { SaveIndicator } from "./components/save-indicator";
-export type { SaveStatus } from "./components/save-indicator";
+export type { SaveStatus, DeployStatus } from "./components/save-indicator";
 
 // Pages
 export { DashboardPage } from "./pages/index";

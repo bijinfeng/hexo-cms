@@ -32,7 +32,7 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
-import { SaveIndicator, type SaveStatus } from "../components/save-indicator";
+import { SaveIndicator, type SaveStatus, type DeployStatus } from "../components/save-indicator";
 
 const availableTags = ["React", "TypeScript", "TanStack", "CSS", "Tailwind", "Auth", "DevOps", "GitHub", "架构", "安全"];
 const availableCategories = ["前端开发", "后端开发", "系统设计", "运维", "其他"];
@@ -50,6 +50,7 @@ export function NewPostPage() {
   const [slug, setSlug] = useState("");
   const [isDarkMode] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [deployStatus, setDeployStatus] = useState<DeployStatus>("idle");
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -92,6 +93,7 @@ export function NewPostPage() {
     }
 
     setSaveStatus("saving");
+    setDeployStatus("idle");
     setError("");
 
     try {
@@ -105,36 +107,38 @@ export function NewPostPage() {
         date: date || new Date().toISOString().split("T")[0],
       };
 
-      if (selectedTags.length > 0) {
-        frontmatter.tags = selectedTags;
-      }
+      if (selectedTags.length > 0) frontmatter.tags = selectedTags;
+      if (category) frontmatter.category = category;
+      if (finalStatus === "draft") frontmatter.draft = true;
 
-      if (category) {
-        frontmatter.category = category;
-      }
-
-      if (finalStatus === "draft") {
-        frontmatter.draft = true;
-      }
-
-      const post = {
-        path: filePath,
-        title,
-        date: frontmatter.date,
-        content,
-        frontmatter,
-      };
+      const post = { path: filePath, title, date: frontmatter.date, content, frontmatter };
 
       await dataProvider.savePost(post);
       setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
-      navigate({ to: "/posts" });
+
+      if (publish) {
+        setDeployStatus("deploying");
+        try {
+          await dataProvider.triggerDeploy(".github/workflows/deploy.yml");
+          setDeployStatus("deployed");
+        } catch {
+          setDeployStatus("failed");
+        }
+      }
     } catch (err) {
       console.error("Failed to save post:", err);
       setError(err instanceof Error ? err.message : "保存失败");
       setSaveStatus("error");
-    } finally {
-      setTimeout(() => { if (saveStatus === "saving") setSaveStatus("idle"); }, 500);
+    }
+  }
+
+  async function handleDeploy() {
+    setDeployStatus("deploying");
+    try {
+      await dataProvider.triggerDeploy(".github/workflows/deploy.yml");
+      setDeployStatus("deployed");
+    } catch {
+      setDeployStatus("failed");
     }
   }
 
@@ -194,7 +198,7 @@ export function NewPostPage() {
         </Badge>
 
         <div className="ml-auto flex items-center gap-2">
-          <SaveIndicator status={saveStatus} />
+          <SaveIndicator status={saveStatus} deployStatus={deployStatus} onDeploy={handleDeploy} />
           <button
             onClick={() => setPreview((v) => !v)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
