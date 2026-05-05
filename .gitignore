@@ -69,3 +69,5 @@ Thumbs.db
 .claude/settings.local.json
 .gstack/
 .gstack/
+hexo-cms.db
+packages/web/hexo-cms.db
