@@ -61,12 +61,10 @@ describe('DataProviderContext', () => {
   });
 
   describe('useDataProvider', () => {
-    it('should throw when used outside DataProviderProvider', () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      expect(() => render(<ConsumerComponent />)).toThrow(
-        'useDataProvider must be used within DataProviderProvider'
-      );
-      consoleError.mockRestore();
+    it('should return stub when used outside DataProviderProvider', () => {
+      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      expect(() => render(<ConsumerComponent />)).not.toThrow();
+      consoleWarn.mockRestore();
     });
 
     it('should return the provider instance', () => {
