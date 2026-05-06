@@ -10,16 +10,22 @@
 
 ```
 hexo-cms/                      ← pnpm workspace 根目录
-├── CLAUDE.md                  ← 你在这里
-├── DESIGN_SYSTEM.md           ← 设计规范（颜色、字体、组件）
-├── PROJECT_PLAN.md            ← 功能规划
-├── pnpm-workspace.yaml        ← workspace 配置
-├── package.json               ← 根 package（仅 scripts）
+├── .claude/                   ← Claude Code 配置
+│   └── README.md             ← AI 文档入口
+├── docs/                      ← 项目文档
+│   ├── ai/
+│   │   ├── AGENTS.md         ← AI 助手上下文
+│   │   └── CLAUDE.md         ← 你在这里
+│   ├── DESIGN_SYSTEM.md      ← 设计规范（颜色、字体、组件）
+│   ├── PROJECT_PLAN.md       ← 功能规划
+│   └── ...
+├── pnpm-workspace.yaml       ← workspace 配置
+├── package.json              ← 根 package（仅 scripts）
 └── packages/
-    ├── core/                  ← @hexo-cms/core：纯逻辑，无 UI
-    ├── ui/                    ← @hexo-cms/ui：共享 React 组件和页面
-    ├── web/                   ← @hexo-cms/web：TanStack Start 全栈 Web 应用
-    └── desktop/               ← @hexo-cms/desktop：Electron 桌面应用
+    ├── core/                 ← @hexo-cms/core：纯逻辑，无 UI
+    ├── ui/                   ← @hexo-cms/ui：共享 React 组件和页面
+    ├── web/                  ← @hexo-cms/web：TanStack Start 全栈 Web 应用
+    └── desktop/              ← @hexo-cms/desktop：Electron 桌面应用
 ```
 
 ## 包职责

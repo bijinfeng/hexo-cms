@@ -362,7 +362,7 @@ CMD ["node", ".output/server/index.mjs"]
 | `PROJECT_PLAN.md` | ✅ 存在 | 功能规划清晰 |
 | `ARCHITECTURE_REVIEW.md` | ✅ 存在 | 架构评估详细 |
 | `README.md` | ❌ 缺失 | **最重要的文档缺失** |
-| `CONTRIBUTING.md` | ❌ 缺失 | 贡献指南缺失 |
+| `CONTRIBUTING.md` | ✅ 存在 | 贡献指南完整 |
 | `CHANGELOG.md` | ❌ 缺失 | 变更记录缺失 |
 
 **最大问题**：项目没有 `README.md`，这是开源项目的门面，也是新成员了解项目的第一入口。
