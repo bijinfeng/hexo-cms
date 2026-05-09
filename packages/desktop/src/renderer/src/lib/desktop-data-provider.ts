@@ -1,5 +1,6 @@
 import type { DataProvider } from "@hexo-cms/core";
 import type { HexoPost, GitHubConfig } from "@hexo-cms/core";
+import { requireElectronAPI } from "@hexo-cms/ui";
 
 /**
  * DesktopDataProvider
@@ -10,61 +11,61 @@ export class DesktopDataProvider implements DataProvider {
   // ==================== 配置管理 ====================
 
   async getConfig(): Promise<GitHubConfig | null> {
-    return window.electronAPI.invoke("config:get");
+    return requireElectronAPI().invoke("config:get");
   }
 
   async saveConfig(config: GitHubConfig): Promise<void> {
-    await window.electronAPI.invoke("config:save", config);
+    await requireElectronAPI().invoke("config:save", config);
   }
 
   // ==================== Token 管理 ====================
 
   async getToken(): Promise<string | null> {
-    return window.electronAPI.invoke("get-token");
+    return requireElectronAPI().invoke("get-token");
   }
 
   async saveToken(token: string): Promise<void> {
-    await window.electronAPI.invoke("set-token", token);
+    await requireElectronAPI().invoke("set-token", token);
   }
 
   async deleteToken(): Promise<void> {
-    await window.electronAPI.invoke("delete-token");
+    await requireElectronAPI().invoke("delete-token");
   }
 
   // ==================== 文章管理 ====================
 
   async getPosts(): Promise<HexoPost[]> {
-    return window.electronAPI.invoke("github:get-posts");
+    return requireElectronAPI().invoke("github:get-posts");
   }
 
   async getPost(path: string): Promise<HexoPost> {
-    return window.electronAPI.invoke("github:get-post", path);
+    return requireElectronAPI().invoke("github:get-post", path);
   }
 
   async savePost(post: HexoPost): Promise<void> {
-    await window.electronAPI.invoke("github:save-post", post);
+    await requireElectronAPI().invoke("github:save-post", post);
   }
 
   async deletePost(path: string): Promise<void> {
-    await window.electronAPI.invoke("github:delete-post", path);
+    await requireElectronAPI().invoke("github:delete-post", path);
   }
 
   // ==================== 页面管理 ====================
 
   async getPages(): Promise<HexoPost[]> {
-    return window.electronAPI.invoke("github:get-pages");
+    return requireElectronAPI().invoke("github:get-pages");
   }
 
   async getPage(path: string): Promise<HexoPost> {
-    return window.electronAPI.invoke("github:get-page", path);
+    return requireElectronAPI().invoke("github:get-page", path);
   }
 
   async savePage(post: HexoPost): Promise<void> {
-    await window.electronAPI.invoke("github:save-page", post);
+    await requireElectronAPI().invoke("github:save-page", post);
   }
 
   async deletePage(path: string): Promise<void> {
-    await window.electronAPI.invoke("github:delete-page", path);
+    await requireElectronAPI().invoke("github:delete-page", path);
   }
 
   // ==================== 标签和分类管理 ====================
@@ -74,31 +75,31 @@ export class DesktopDataProvider implements DataProvider {
     categories: Array<{ id: string; name: string; slug: string; count: number }>;
     total: number;
   }> {
-    return window.electronAPI.invoke("github:get-tags");
+    return requireElectronAPI().invoke("github:get-tags");
   }
 
   async renameTag(type: "tag" | "category", oldName: string, newName: string): Promise<{ updatedCount: number }> {
-    return window.electronAPI.invoke("github:rename-tag", { type, oldName, newName });
+    return requireElectronAPI().invoke("github:rename-tag", { type, oldName, newName });
   }
 
   async deleteTag(type: "tag" | "category", name: string): Promise<{ updatedCount: number }> {
-    return window.electronAPI.invoke("github:delete-tag", { type, name });
+    return requireElectronAPI().invoke("github:delete-tag", { type, name });
   }
 
   // ==================== 媒体管理 ====================
 
   async getMediaFiles(): Promise<Array<{ name: string; path: string; size: number; url: string; sha: string }>> {
-    return window.electronAPI.invoke("github:get-media");
+    return requireElectronAPI().invoke("github:get-media");
   }
 
   async uploadMedia(file: File, path: string): Promise<{ url: string }> {
     // 将 File 转换为 ArrayBuffer 以便通过 IPC 传输
     const buffer = await file.arrayBuffer();
-    return window.electronAPI.invoke("github:upload-media", { buffer, path, name: file.name, type: file.type });
+    return requireElectronAPI().invoke("github:upload-media", { buffer, path, name: file.name, type: file.type });
   }
 
   async deleteMedia(path: string): Promise<void> {
-    await window.electronAPI.invoke("github:delete-media", path);
+    await requireElectronAPI().invoke("github:delete-media", path);
   }
 
   // ==================== 统计数据 ====================
@@ -109,7 +110,7 @@ export class DesktopDataProvider implements DataProvider {
     draftPosts: number;
     totalViews: number;
   }> {
-    return window.electronAPI.invoke("github:get-stats");
+    return requireElectronAPI().invoke("github:get-stats");
   }
 
   // ==================== 主题管理 ====================
@@ -118,11 +119,11 @@ export class DesktopDataProvider implements DataProvider {
     currentTheme: string;
     installedThemes: Array<{ name: string; path: string }>;
   }> {
-    return window.electronAPI.invoke("github:get-themes");
+    return requireElectronAPI().invoke("github:get-themes");
   }
 
   async switchTheme(themeName: string): Promise<void> {
-    await window.electronAPI.invoke("github:switch-theme", themeName);
+    await requireElectronAPI().invoke("github:switch-theme", themeName);
   }
 
   // ==================== 部署管理 ====================
@@ -134,10 +135,10 @@ export class DesktopDataProvider implements DataProvider {
     duration: number;
     conclusion: string;
   }>> {
-    return window.electronAPI.invoke("github:get-deployments");
+    return requireElectronAPI().invoke("github:get-deployments");
   }
 
   async triggerDeploy(workflowFile: string): Promise<void> {
-    await window.electronAPI.invoke("github:trigger-deploy", workflowFile);
+    await requireElectronAPI().invoke("github:trigger-deploy", workflowFile);
   }
 }

@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import { Minus, Square, X } from "lucide-react";
-
-type ElectronWindowControlsAPI = {
-  invoke: (channel: string, ...args: any[]) => Promise<any>;
-};
-
-function getElectronAPI(): ElectronWindowControlsAPI | null {
-  return (window as typeof globalThis & { electronAPI?: ElectronWindowControlsAPI }).electronAPI ?? null;
-}
+import { getElectronAPI } from "../../lib/electron-api";
 
 export function WindowControls() {
   const [maximized, setMaximized] = useState(false);
@@ -15,7 +8,7 @@ export function WindowControls() {
   useEffect(() => {
     const electronAPI = getElectronAPI();
     if (!electronAPI) return;
-    electronAPI.invoke("window:isMaximized").then((v: boolean) => setMaximized(v));
+    electronAPI.invoke<boolean>("window:isMaximized").then((v) => setMaximized(v));
 
     function onMaximize() { setMaximized(true); }
     function onUnmaximize() { setMaximized(false); }

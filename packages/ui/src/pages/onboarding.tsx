@@ -4,18 +4,9 @@ import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { CheckCircle2, Loader2, ArrowRight } from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
+import { getElectronAPI } from "../lib/electron-api";
 
 const STEPS = ["GitHub Token", "仓库配置", "完成"];
-
-type ElectronTokenAPI = {
-  setToken: (token: string) => Promise<unknown>;
-};
-
-function getElectronTokenAPI(): ElectronTokenAPI | null {
-  if (typeof window === "undefined") return null;
-  const api = (window as typeof globalThis & { electronAPI?: ElectronTokenAPI }).electronAPI;
-  return api ?? null;
-}
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -29,7 +20,7 @@ export function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const electronAPI = getElectronTokenAPI();
+  const electronAPI = getElectronAPI();
   const isDesktop = Boolean(electronAPI);
 
   async function handleValidateToken() {
@@ -37,8 +28,8 @@ export function OnboardingPage() {
     setValidating(true);
     setError("");
     try {
-      if (isDesktop) {
-        await electronAPI?.setToken(token);
+      if (electronAPI) {
+        await electronAPI.setToken(token);
       }
       setStep(1);
     } catch {
@@ -60,8 +51,8 @@ export function OnboardingPage() {
         postsDir: "source/_posts",
         mediaDir: "source/images",
       });
-      if (isDesktop) {
-        await electronAPI?.setToken(token);
+      if (electronAPI) {
+        await electronAPI.setToken(token);
       }
       setStep(2);
     } catch {

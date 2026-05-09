@@ -39,6 +39,8 @@ export { Skeleton, SkeletonCard } from "./components/skeleton";
 export { cn } from "./utils";
 export { sanitizeHtml } from "./sanitize";
 export { withCache } from "./with-cache";
+export { getElectronAPI, requireElectronAPI } from "./lib/electron-api";
+export type { ElectronAPI } from "./types/electron-api";
 
 // Context
 export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";

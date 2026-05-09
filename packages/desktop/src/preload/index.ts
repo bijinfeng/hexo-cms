@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { ElectronAPI } from "@hexo-cms/ui";
 
 // IPC 通道白名单（安全限制）
 const ALLOWED_CHANNELS = [
@@ -33,17 +34,19 @@ const ALLOWED_CHANNELS = [
   "window:isMaximized",
 ];
 
-contextBridge.exposeInMainWorld("electronAPI", {
+const electronAPI: ElectronAPI = {
   // Token 管理
   getToken: (): Promise<string | null> => ipcRenderer.invoke("get-token"),
   setToken: (token: string): Promise<boolean> => ipcRenderer.invoke("set-token", token),
   deleteToken: (): Promise<boolean> => ipcRenderer.invoke("delete-token"),
 
   // 通用 IPC 调用（带白名单验证）
-  invoke: (channel: string, ...args: any[]): Promise<any> => {
+  invoke: <T = unknown>(channel: string, ...args: unknown[]): Promise<T> => {
     if (!ALLOWED_CHANNELS.includes(channel)) {
       return Promise.reject(new Error(`IPC channel not allowed: ${channel}`));
     }
-    return ipcRenderer.invoke(channel, ...args);
+    return ipcRenderer.invoke(channel, ...args) as Promise<T>;
   },
-});
+};
+
+contextBridge.exposeInMainWorld("electronAPI", electronAPI);

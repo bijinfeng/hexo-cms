@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
+import { getElectronAPI } from "../lib/electron-api";
 import type { GitHubConfig } from "@hexo-cms/core";
 
 const settingsSections = [
@@ -166,9 +167,7 @@ function GitHubSettings() {
   const [deployNotifications, setDeployNotifications] = useState(true);
 
   // Desktop-specific token management
-  const electronAPI = typeof window !== "undefined"
-    ? (window as typeof globalThis & { electronAPI?: { getToken: () => Promise<string | null>; setToken: (token: string) => Promise<unknown>; deleteToken: () => Promise<unknown> } }).electronAPI
-    : undefined;
+  const electronAPI = getElectronAPI();
   const isDesktop = Boolean(electronAPI);
   const [token, setToken] = useState("");
   const [tokenSaved, setTokenSaved] = useState(false);
