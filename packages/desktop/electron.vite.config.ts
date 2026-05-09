@@ -1,10 +1,16 @@
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig, externalizeDepsPlugin, loadEnv } from "electron-vite";
+import { builtinModules } from "node:module";
+import { defineConfig, loadEnv } from "electron-vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
 const workspaceRoot = fileURLToPath(new URL("../..", import.meta.url));
+const electronRuntimeExternals = [
+  "electron",
+  /^electron\/.+/,
+  ...builtinModules.flatMap((moduleName) => [moduleName, `node:${moduleName}`]),
+];
 
 const loadWorkspaceEnv = (mode: string) => {
   const env = loadEnv(mode, workspaceRoot, "");
@@ -20,16 +26,28 @@ export default defineConfig(({ mode }) => {
   return {
     main: {
       envDir: workspaceRoot,
-      plugins: [externalizeDepsPlugin({ exclude: ["@hexo-cms/core"] })],
+      build: {
+        externalizeDeps: {
+          exclude: ["@hexo-cms/core"],
+        },
+      },
     },
     preload: {
       envDir: workspaceRoot,
-      plugins: [externalizeDepsPlugin({ exclude: ["@hexo-cms/core"] })],
+      build: {
+        externalizeDeps: false,
+        rollupOptions: {
+          external: electronRuntimeExternals,
+          output: {
+            format: "cjs",
+          },
+        },
+      },
     },
     renderer: {
       envDir: workspaceRoot,
       plugins: [
-        TanStackRouterVite({ routesDirectory: "./src/routes" }),
+        tanstackRouter({ routesDirectory: "./src/routes" }),
         react(),
         tailwindcss(),
       ],
