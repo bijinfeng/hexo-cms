@@ -14,6 +14,7 @@ import { Route as TagsRouteImport } from './routes/tags'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PostsRouteImport } from './routes/posts'
 import { Route as PagesRouteImport } from './routes/pages'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DeployRouteImport } from './routes/deploy'
@@ -21,6 +22,8 @@ import { Route as CommentsRouteImport } from './routes/comments'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsNewRouteImport } from './routes/posts.new'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
+import { Route as PagesNewRouteImport } from './routes/pages.new'
+import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 
 const ThemesRoute = ThemesRouteImport.update({
   id: '/themes',
@@ -45,6 +48,11 @@ const PostsRoute = PostsRouteImport.update({
 const PagesRoute = PagesRouteImport.update({
   id: '/pages',
   path: '/pages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaRoute = MediaRouteImport.update({
@@ -82,6 +90,16 @@ const PostsSlugRoute = PostsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => PostsRoute,
 } as any)
+const PagesNewRoute = PagesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => PagesRoute,
+} as any)
+const PagesSlugRoute = PagesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => PagesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,11 +107,14 @@ export interface FileRoutesByFullPath {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
-  '/pages': typeof PagesRoute
+  '/onboarding': typeof OnboardingRoute
+  '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/$slug': typeof PagesSlugRoute
+  '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
 }
@@ -103,11 +124,14 @@ export interface FileRoutesByTo {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
-  '/pages': typeof PagesRoute
+  '/onboarding': typeof OnboardingRoute
+  '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/$slug': typeof PagesSlugRoute
+  '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
 }
@@ -118,11 +142,14 @@ export interface FileRoutesById {
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
-  '/pages': typeof PagesRoute
+  '/onboarding': typeof OnboardingRoute
+  '/pages': typeof PagesRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
   '/themes': typeof ThemesRoute
+  '/pages/$slug': typeof PagesSlugRoute
+  '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
 }
@@ -134,11 +161,14 @@ export interface FileRouteTypes {
     | '/deploy'
     | '/login'
     | '/media'
+    | '/onboarding'
     | '/pages'
     | '/posts'
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/$slug'
+    | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
   fileRoutesByTo: FileRoutesByTo
@@ -148,11 +178,14 @@ export interface FileRouteTypes {
     | '/deploy'
     | '/login'
     | '/media'
+    | '/onboarding'
     | '/pages'
     | '/posts'
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/$slug'
+    | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
   id:
@@ -162,11 +195,14 @@ export interface FileRouteTypes {
     | '/deploy'
     | '/login'
     | '/media'
+    | '/onboarding'
     | '/pages'
     | '/posts'
     | '/settings'
     | '/tags'
     | '/themes'
+    | '/pages/$slug'
+    | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
   fileRoutesById: FileRoutesById
@@ -177,7 +213,8 @@ export interface RootRouteChildren {
   DeployRoute: typeof DeployRoute
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
-  PagesRoute: typeof PagesRoute
+  OnboardingRoute: typeof OnboardingRoute
+  PagesRoute: typeof PagesRouteWithChildren
   PostsRoute: typeof PostsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   TagsRoute: typeof TagsRoute
@@ -219,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/pages'
       fullPath: '/pages'
       preLoaderRoute: typeof PagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/media': {
@@ -270,8 +314,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsSlugRouteImport
       parentRoute: typeof PostsRoute
     }
+    '/pages/new': {
+      id: '/pages/new'
+      path: '/new'
+      fullPath: '/pages/new'
+      preLoaderRoute: typeof PagesNewRouteImport
+      parentRoute: typeof PagesRoute
+    }
+    '/pages/$slug': {
+      id: '/pages/$slug'
+      path: '/$slug'
+      fullPath: '/pages/$slug'
+      preLoaderRoute: typeof PagesSlugRouteImport
+      parentRoute: typeof PagesRoute
+    }
   }
 }
+
+interface PagesRouteChildren {
+  PagesSlugRoute: typeof PagesSlugRoute
+  PagesNewRoute: typeof PagesNewRoute
+}
+
+const PagesRouteChildren: PagesRouteChildren = {
+  PagesSlugRoute: PagesSlugRoute,
+  PagesNewRoute: PagesNewRoute,
+}
+
+const PagesRouteWithChildren = PagesRoute._addFileChildren(PagesRouteChildren)
 
 interface PostsRouteChildren {
   PostsSlugRoute: typeof PostsSlugRoute
@@ -291,7 +361,8 @@ const rootRouteChildren: RootRouteChildren = {
   DeployRoute: DeployRoute,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
-  PagesRoute: PagesRoute,
+  OnboardingRoute: OnboardingRoute,
+  PagesRoute: PagesRouteWithChildren,
   PostsRoute: PostsRouteWithChildren,
   SettingsRoute: SettingsRoute,
   TagsRoute: TagsRoute,

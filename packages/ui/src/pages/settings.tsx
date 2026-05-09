@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
+import type { GitHubConfig } from "@hexo-cms/core";
 
 const settingsSections = [
   { id: "site", label: "站点信息", icon: Globe },
@@ -152,7 +153,7 @@ function SiteSettings() {
 
 function GitHubSettings() {
   const dataProvider = useDataProvider();
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<GitHubConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [owner, setOwner] = useState("");
@@ -165,7 +166,10 @@ function GitHubSettings() {
   const [deployNotifications, setDeployNotifications] = useState(true);
 
   // Desktop-specific token management
-  const isDesktop = typeof window !== "undefined" && (window as any).electronAPI;
+  const electronAPI = typeof window !== "undefined"
+    ? (window as typeof globalThis & { electronAPI?: { getToken: () => Promise<string | null>; setToken: (token: string) => Promise<unknown>; deleteToken: () => Promise<unknown> } }).electronAPI
+    : undefined;
+  const isDesktop = Boolean(electronAPI);
   const [token, setToken] = useState("");
   const [tokenSaved, setTokenSaved] = useState(false);
   const [tokenLoading, setTokenLoading] = useState(false);
@@ -179,11 +183,11 @@ function GitHubSettings() {
           setOwner(configData.owner || "");
           setRepo(configData.repo || "");
           setBranch(configData.branch || "main");
-          setPostsDir(configData.posts_dir || "source/_posts");
-          setMediaDir(configData.media_dir || "source/images");
-          setWorkflowFile(configData.workflow_file || ".github/workflows/deploy.yml");
-          setAutoDeploy(configData.auto_deploy === 1);
-          setDeployNotifications(configData.deploy_notifications === 1);
+          setPostsDir(configData.posts_dir || configData.postsDir || "source/_posts");
+          setMediaDir(configData.media_dir || configData.mediaDir || "source/images");
+          setWorkflowFile(configData.workflow_file || configData.workflowFile || ".github/workflows/deploy.yml");
+          setAutoDeploy(configData.auto_deploy === 1 || configData.autoDeploy === true);
+          setDeployNotifications(configData.deploy_notifications === 1 || configData.deployNotifications === true);
         }
       } catch (error) {
         console.error("Failed to load config:", error);
@@ -202,7 +206,7 @@ function GitHubSettings() {
   async function loadDesktopToken() {
     try {
       setTokenLoading(true);
-      const savedToken = await (window as any).electronAPI.getToken();
+      const savedToken = await electronAPI?.getToken();
       if (savedToken) {
         setToken(savedToken);
         setTokenSaved(true);
@@ -218,7 +222,7 @@ function GitHubSettings() {
     if (!token.trim()) return;
     try {
       setTokenLoading(true);
-      await (window as any).electronAPI.setToken(token);
+      await electronAPI?.setToken(token);
       setTokenSaved(true);
       setTimeout(() => setTokenSaved(false), 2000);
     } catch (error) {
@@ -233,7 +237,7 @@ function GitHubSettings() {
     if (!confirm("确定要删除已保存的 Token 吗？")) return;
     try {
       setTokenLoading(true);
-      await (window as any).electronAPI.deleteToken();
+      await electronAPI?.deleteToken();
       setToken("");
       setTokenSaved(false);
     } catch (error) {

@@ -103,7 +103,7 @@ export function PagesPage() {
                 {page.status === "published" ? "已发布" : "草稿"}
               </Badge>
               <button
-                onClick={() => navigate({ to: `/pages/${page.slug}/edit` })}
+                onClick={() => navigate({ to: `/pages/${page.slug}` })}
                 className="p-2 rounded-lg hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
                 title="编辑"
               >
@@ -123,4 +123,3 @@ export function PagesPage() {
     />
   );
 }
-

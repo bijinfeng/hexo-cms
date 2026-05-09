@@ -9,4 +9,6 @@ declare global {
   }
 }
 
+declare module "@hexo-cms/ui/styles";
+
 export {};

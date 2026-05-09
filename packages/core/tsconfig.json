@@ -5,6 +5,7 @@
     "moduleResolution": "bundler",
     "strict": true,
     "declaration": true,
+    "types": ["node"],
     "skipLibCheck": true
   },
   "include": ["src"]

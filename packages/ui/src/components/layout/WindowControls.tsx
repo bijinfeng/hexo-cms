@@ -1,20 +1,21 @@
 import { useState, useEffect } from "react";
 import { Minus, Square, X } from "lucide-react";
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-    };
-  }
+type ElectronWindowControlsAPI = {
+  invoke: (channel: string, ...args: any[]) => Promise<any>;
+};
+
+function getElectronAPI(): ElectronWindowControlsAPI | null {
+  return (window as typeof globalThis & { electronAPI?: ElectronWindowControlsAPI }).electronAPI ?? null;
 }
 
 export function WindowControls() {
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
-    if (!window.electronAPI) return;
-    window.electronAPI.invoke("window:isMaximized").then((v: boolean) => setMaximized(v));
+    const electronAPI = getElectronAPI();
+    if (!electronAPI) return;
+    electronAPI.invoke("window:isMaximized").then((v: boolean) => setMaximized(v));
 
     function onMaximize() { setMaximized(true); }
     function onUnmaximize() { setMaximized(false); }
@@ -27,9 +28,9 @@ export function WindowControls() {
     };
   }, []);
 
-  function minimize() { window.electronAPI?.invoke("window:minimize"); }
-  function toggleMaximize() { window.electronAPI?.invoke(maximized ? "window:unmaximize" : "window:maximize"); }
-  function close() { window.electronAPI?.invoke("window:close"); }
+  function minimize() { getElectronAPI()?.invoke("window:minimize"); }
+  function toggleMaximize() { getElectronAPI()?.invoke(maximized ? "window:unmaximize" : "window:maximize"); }
+  function close() { getElectronAPI()?.invoke("window:close"); }
 
   const btnClass = "w-8 h-8 flex items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer";
 

@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { DataProvider } from '@hexo-cms/core';
-import type { HexoPost, GitHubConfig } from '@hexo-cms/core';
+import type { HexoPost } from '@hexo-cms/core';
 
 const DataProviderContext = createContext<DataProvider | null>(null);
 

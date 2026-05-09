@@ -7,6 +7,16 @@ import { GithubIcon } from "../components/ui/github-icon";
 
 const STEPS = ["GitHub Token", "仓库配置", "完成"];
 
+type ElectronTokenAPI = {
+  setToken: (token: string) => Promise<unknown>;
+};
+
+function getElectronTokenAPI(): ElectronTokenAPI | null {
+  if (typeof window === "undefined") return null;
+  const api = (window as typeof globalThis & { electronAPI?: ElectronTokenAPI }).electronAPI;
+  return api ?? null;
+}
+
 export function OnboardingPage() {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
@@ -19,7 +29,8 @@ export function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const isDesktop = typeof window !== "undefined" && "electronAPI" in (window as Record<string, unknown>);
+  const electronAPI = getElectronTokenAPI();
+  const isDesktop = Boolean(electronAPI);
 
   async function handleValidateToken() {
     if (!token.trim()) return;
@@ -27,7 +38,7 @@ export function OnboardingPage() {
     setError("");
     try {
       if (isDesktop) {
-        await (window as Record<string, unknown>).electronAPI.setToken(token);
+        await electronAPI?.setToken(token);
       }
       setStep(1);
     } catch {
@@ -50,7 +61,7 @@ export function OnboardingPage() {
         mediaDir: "source/images",
       });
       if (isDesktop) {
-        await (window as Record<string, unknown>).electronAPI.setToken(token);
+        await electronAPI?.setToken(token);
       }
       setStep(2);
     } catch {

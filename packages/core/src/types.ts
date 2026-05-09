@@ -4,6 +4,14 @@ export interface GitHubConfig {
   branch?: string;
   postsDir?: string;
   mediaDir?: string;
+  workflowFile?: string;
+  autoDeploy?: boolean;
+  deployNotifications?: boolean;
+  posts_dir?: string;
+  media_dir?: string;
+  workflow_file?: string;
+  auto_deploy?: boolean | number;
+  deploy_notifications?: boolean | number;
 }
 
 export interface HexoPost {
@@ -23,8 +31,8 @@ export interface GitHubRepoConfig extends GitHubConfig {
 export interface Frontmatter {
   title?: string;
   date?: string;
-  tags?: string[];
-  categories?: string[];
+  tags?: string | string[];
+  categories?: string | string[];
   category?: string;
   draft?: boolean;
   slug?: string;

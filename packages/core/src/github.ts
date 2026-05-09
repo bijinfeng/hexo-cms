@@ -3,6 +3,12 @@ import type { GitHubConfig, HexoPost, Frontmatter } from "./types";
 import { DataProviderError, DataProviderErrorCode } from "./types";
 import { Logger } from "./logger";
 
+type OctokitStatusError = Error & { status: number };
+
+function isOctokitStatusError(error: unknown): error is OctokitStatusError {
+  return error instanceof Error && "status" in error && typeof error.status === "number";
+}
+
 export class GitHubService {
   private octokit: Octokit;
   private config: GitHubConfig;
@@ -20,19 +26,19 @@ export class GitHubService {
   private handleOctokitError(error: unknown, operation: string, path?: string): never {
     const ctx = { operation, ...(path ? { path } : {}) };
     if (error instanceof DataProviderError) throw error;
-    if (error && typeof error === "object" && "status" in error) {
-      const status = (error as { status: number }).status;
+    if (isOctokitStatusError(error)) {
+      const { status } = error;
       if (status === 401 || status === 403) {
-        this.log.error(`Auth failed: ${operation}`, ctx, error as Error);
-        throw new DataProviderError("GitHub authentication failed", DataProviderErrorCode.AUTH, status, error as Error);
+        this.log.error(`Auth failed: ${operation}`, ctx, error);
+        throw new DataProviderError("GitHub authentication failed", DataProviderErrorCode.AUTH, status, error);
       }
       if (status === 404) {
         this.log.warn(`Not found: ${operation}`, ctx);
-        throw new DataProviderError(`Resource not found: ${path}`, DataProviderErrorCode.NOT_FOUND, status, error as Error);
+        throw new DataProviderError(`Resource not found: ${path}`, DataProviderErrorCode.NOT_FOUND, status, error);
       }
       if (status === 429) {
         this.log.warn(`Rate limited: ${operation}`, ctx);
-        throw new DataProviderError("GitHub API rate limit exceeded", DataProviderErrorCode.RATE_LIMIT, status, error as Error);
+        throw new DataProviderError("GitHub API rate limit exceeded", DataProviderErrorCode.RATE_LIMIT, status, error);
       }
     }
     this.log.error(`Operation failed: ${operation}`, ctx, error as Error);
@@ -322,9 +328,14 @@ export class GitHubService {
       if (!Array.isArray(data)) return [];
 
       return data
-        .filter((file): file is { name: string; type: string; path: string; sha: string; size: number } =>
-          file.type === "file"
-        );
+        .filter((file) => file.type === "file")
+        .map((file) => ({
+          name: file.name,
+          type: file.type,
+          path: file.path,
+          sha: file.sha,
+          size: file.size,
+        }));
     } catch (error) {
       this.log.warn(`getMediaFiles failed`, { directory }, error as Error);
       return [];

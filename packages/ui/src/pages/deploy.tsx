@@ -21,6 +21,18 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+type DeployStatus = "success" | "failed" | "running" | "pending";
+
+type DeploymentViewModel = {
+  id: string;
+  message: string;
+  branch: string;
+  time: string;
+  duration: number;
+  status: DeployStatus;
+  url: string;
+};
+
 const statusConfig = {
   success: {
     icon: CheckCircle2,
@@ -50,7 +62,13 @@ const statusConfig = {
     label: "等待中",
     variant: "warning" as const,
   },
-};
+} satisfies Record<DeployStatus, {
+  icon: typeof CheckCircle2;
+  color: string;
+  bg: string;
+  label: string;
+  variant: "success" | "error" | "default" | "warning";
+}>;
 
 function formatRelativeTime(isoDate: string): string {
   const now = new Date();
@@ -71,7 +89,7 @@ function formatRelativeTime(isoDate: string): string {
 
 export function DeployPage() {
   const dataProvider = useDataProvider();
-  const [deployments, setDeployments] = useState<Array<{ id: string; status: string; createdAt: string; duration: number; conclusion: string }>>([]);
+  const [deployments, setDeployments] = useState<DeploymentViewModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [siteUrl, setSiteUrl] = useState("");
@@ -99,10 +117,8 @@ export function DeployPage() {
       const runs = await dataProvider.getDeployments();
       const formattedRuns = runs.map((run) => ({
         id: run.id,
-        name: run.status,
         message: run.conclusion || run.status,
-        branch: "main" as const,
-        author: "",
+        branch: "main",
         time: formatRelativeTime(run.createdAt),
         duration: run.duration,
         status: (run.conclusion === "success" ? "success" : run.conclusion === "failure" ? "failed" : run.status === "in_progress" ? "running" : "pending") as "success" | "failed" | "running" | "pending",
@@ -134,7 +150,7 @@ export function DeployPage() {
       setDeploying(true);
       const config = await dataProvider.getConfig();
       if (!config) return;
-      await dataProvider.triggerDeploy(config.workflow_file || "pages.yml");
+      await dataProvider.triggerDeploy(config.workflow_file || config.workflowFile || "pages.yml");
       alert("部署已触发，请稍后刷新查看状态");
       setTimeout(() => loadDeployments(), 3000);
     } catch (err) {
@@ -279,7 +295,7 @@ export function DeployPage() {
           ) : (
             <div className="divide-y divide-[var(--border-default)]">
               {deployments.map((deploy) => {
-                const config = statusConfig[deploy.status as keyof typeof statusConfig];
+                const config = statusConfig[deploy.status];
                 const Icon = config.icon;
                 const durationLabel = deploy.duration
                   ? `${Math.floor(deploy.duration / 60000)}m ${Math.floor((deploy.duration % 60000) / 1000)}s`
