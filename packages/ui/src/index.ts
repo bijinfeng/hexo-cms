@@ -40,7 +40,15 @@ export { cn } from "./utils";
 export { sanitizeHtml } from "./sanitize";
 export { withCache } from "./with-cache";
 export { getElectronAPI, requireElectronAPI } from "./lib/electron-api";
+export { getAuthRedirect, isPublicAuthRoute } from "./lib/auth-route-guard";
 export type { ElectronAPI } from "./types/electron-api";
+export type {
+  AuthClient,
+  AuthSession,
+  AuthState,
+  AuthUser,
+  DeviceFlowInfo,
+} from "./types/auth";
 
 // Context
 export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";

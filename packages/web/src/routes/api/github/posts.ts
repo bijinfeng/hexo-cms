@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { json, getGitHubCtx } from "../../../lib/server-utils";
+import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/github/posts")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
-        if (!ctx) return json({ error: "Not configured" }, 404);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         try {
           const { data: contents } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: ctx.config.posts_dir || "source/_posts" });
           const files = Array.isArray(contents) ? contents.filter((f: any) => f.name.endsWith(".md")) : [];
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/github/posts")({
       },
       POST: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
-        if (!ctx) return json({ error: "Not configured" }, 404);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         const post = await request.json();
         const filePath = `${ctx.config.posts_dir || "source/_posts"}/${post.slug}.md`;
         try {
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/github/posts")({
       },
       DELETE: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
-        if (!ctx) return json({ error: "Not configured" }, 404);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         const body = await request.json();
         const paths = Array.isArray(body) ? body : [body.path];
         try {

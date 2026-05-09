@@ -1,38 +1,95 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Zap, ArrowRight, Shield, GitBranch, Sparkles } from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
+import type { AuthClient, AuthSession } from "../types/auth";
+
+function getAuthErrorMessage(error?: string) {
+  switch (error) {
+    case "AUTH_TIMEOUT":
+      return "授权已过期，请重新登录";
+    case "AUTH_REJECTED":
+      return "GitHub 授权已取消，请重试";
+    case "AUTH_DEVICE_FLOW_DISABLED":
+      return "GitHub 设备授权未启用，请检查 OAuth App 配置";
+    case "AUTH_NOT_CONFIGURED":
+      return "GitHub 授权暂不可用，请检查配置";
+    case "AUTH_SCOPE_INSUFFICIENT":
+      return "当前授权缺少仓库权限，请重新授权";
+    default:
+      return "GitHub 授权失败，请重试";
+  }
+}
 
 export interface LoginPageProps {
+  authClient?: AuthClient;
   signIn?: {
     social: (opts: { provider: string; callbackURL: string }) => Promise<unknown>;
   };
   onComplete?: () => void;
-  onSkipAuth?: () => void;
 }
 
-export function LoginPage({ signIn, onComplete, onSkipAuth }: LoginPageProps) {
+export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [session, setSession] = useState<AuthSession | null>(null);
 
   async function handleGitHubLogin() {
     setLoading(true);
     setError("");
     try {
-      if (signIn) {
+      if (authClient) {
+        const nextSession = await authClient.startLogin();
+        setSession(nextSession);
+        if (nextSession.state === "authenticated") {
+          onComplete?.();
+        } else if (nextSession.state === "error") {
+          setError(getAuthErrorMessage(nextSession.error));
+        }
+      } else if (signIn) {
         await signIn.social({
           provider: "github",
           callbackURL: "/",
         });
         onComplete?.();
       } else {
-        setError("认证服务未配置");
-        setLoading(false);
+        setError("GitHub 授权暂不可用，请稍后重试");
       }
     } catch {
-      setError("登录失败，请重试");
+      setError("GitHub 授权失败，请重试");
+    } finally {
       setLoading(false);
     }
   }
+
+  const deviceFlow = session?.deviceFlow;
+
+  useEffect(() => {
+    if (!authClient || !deviceFlow) return;
+
+    let active = true;
+    const intervalMs = Math.max(deviceFlow.interval, 1) * 1000;
+
+    const timer = window.setInterval(async () => {
+      try {
+        const nextSession = await authClient.getSession();
+        if (!active) return;
+        setSession(nextSession);
+        if (nextSession.state === "authenticated") {
+          window.clearInterval(timer);
+          onComplete?.();
+        } else if (nextSession.state === "error") {
+          setError(getAuthErrorMessage(nextSession.error));
+        }
+      } catch {
+        if (active) setError("GitHub 授权状态检查失败，请重试");
+      }
+    }, intervalMs);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [authClient, deviceFlow, onComplete]);
 
   return (
     <div className="min-h-screen flex bg-[var(--bg-base)]">
@@ -122,20 +179,26 @@ export function LoginPage({ signIn, onComplete, onSkipAuth }: LoginPageProps) {
             <p className="mt-3 text-sm text-[var(--status-error)] text-center">{error}</p>
           )}
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-[var(--border-default)]" />
-            <span className="text-xs text-[var(--text-tertiary)]">或者</span>
-            <div className="flex-1 h-px bg-[var(--border-default)]" />
-          </div>
-
-          {/* Dev bypass */}
-          <button
-            onClick={() => onSkipAuth?.()}
-            className="w-full flex items-center justify-center gap-2 h-10 px-6 rounded-xl border border-[var(--border-default)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-          >
-            开发模式（跳过登录）
-          </button>
+          {deviceFlow && (
+            <div className="mt-5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] p-4 text-center">
+              <p className="text-sm text-[var(--text-secondary)]">在 GitHub 页面输入授权码</p>
+              <div className="mt-3 rounded-lg bg-[var(--bg-muted)] px-4 py-3 font-mono text-2xl font-bold tracking-widest text-[var(--text-primary)]">
+                {deviceFlow.userCode}
+              </div>
+              <a
+                href={deviceFlow.verificationUri}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center justify-center gap-2 text-sm font-medium text-[var(--brand-primary)] hover:underline"
+              >
+                打开 GitHub 授权页面
+                <ArrowRight size={14} />
+              </a>
+              <p className="mt-3 text-xs text-[var(--text-tertiary)]">
+                授权完成后应用会自动继续。
+              </p>
+            </div>
+          )}
 
           <p className="mt-6 text-xs text-[var(--text-tertiary)] text-center leading-relaxed">
             登录即表示你同意我们的服务条款。

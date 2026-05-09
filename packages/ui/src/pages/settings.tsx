@@ -11,10 +11,13 @@ import {
   ExternalLink,
   CheckCircle2,
   ChevronRight,
+  LogOut,
+  RefreshCw,
+  ArrowRight,
 } from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
-import { getElectronAPI } from "../lib/electron-api";
 import type { GitHubConfig } from "@hexo-cms/core";
+import type { AuthClient, AuthSession } from "../types/auth";
 
 const settingsSections = [
   { id: "site", label: "站点信息", icon: Globe },
@@ -24,7 +27,12 @@ const settingsSections = [
   { id: "security", label: "安全设置", icon: Shield },
 ];
 
-export function SettingsPage() {
+export interface SettingsPageProps {
+  authClient?: AuthClient;
+  onSignedOut?: () => void;
+}
+
+export function SettingsPage({ authClient, onSignedOut }: SettingsPageProps) {
   const [activeSection, setActiveSection] = useState("site");
   const [saved, setSaved] = useState(false);
 
@@ -88,7 +96,7 @@ export function SettingsPage() {
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-4">
           {activeSection === "site" && <SiteSettings />}
-          {activeSection === "github" && <GitHubSettings />}
+          {activeSection === "github" && <GitHubSettings authClient={authClient} onSignedOut={onSignedOut} />}
           {activeSection === "profile" && <ProfileSettings />}
           {activeSection === "notifications" && <NotificationSettings />}
           {activeSection === "security" && <SecuritySettings />}
@@ -152,7 +160,13 @@ function SiteSettings() {
   );
 }
 
-function GitHubSettings() {
+function GitHubSettings({
+  authClient,
+  onSignedOut,
+}: {
+  authClient?: AuthClient;
+  onSignedOut?: () => void;
+}) {
   const dataProvider = useDataProvider();
   const [config, setConfig] = useState<GitHubConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -165,13 +179,6 @@ function GitHubSettings() {
   const [workflowFile, setWorkflowFile] = useState(".github/workflows/deploy.yml");
   const [autoDeploy, setAutoDeploy] = useState(true);
   const [deployNotifications, setDeployNotifications] = useState(true);
-
-  // Desktop-specific token management
-  const electronAPI = getElectronAPI();
-  const isDesktop = Boolean(electronAPI);
-  const [token, setToken] = useState("");
-  const [tokenSaved, setTokenSaved] = useState(false);
-  const [tokenLoading, setTokenLoading] = useState(false);
 
   useEffect(() => {
     async function loadConfig() {
@@ -195,57 +202,7 @@ function GitHubSettings() {
       }
     }
     loadConfig();
-
-    // Load token for desktop app
-    if (isDesktop) {
-      loadDesktopToken();
-    }
   }, []);
-
-  async function loadDesktopToken() {
-    try {
-      setTokenLoading(true);
-      const savedToken = await electronAPI?.getToken();
-      if (savedToken) {
-        setToken(savedToken);
-        setTokenSaved(true);
-      }
-    } catch (error) {
-      console.error("Failed to load token:", error);
-    } finally {
-      setTokenLoading(false);
-    }
-  }
-
-  async function handleSaveToken() {
-    if (!token.trim()) return;
-    try {
-      setTokenLoading(true);
-      await electronAPI?.setToken(token);
-      setTokenSaved(true);
-      setTimeout(() => setTokenSaved(false), 2000);
-    } catch (error) {
-      console.error("Failed to save token:", error);
-      alert("保存失败");
-    } finally {
-      setTokenLoading(false);
-    }
-  }
-
-  async function handleDeleteToken() {
-    if (!confirm("确定要删除已保存的 Token 吗？")) return;
-    try {
-      setTokenLoading(true);
-      await electronAPI?.deleteToken();
-      setToken("");
-      setTokenSaved(false);
-    } catch (error) {
-      console.error("Failed to delete token:", error);
-      alert("删除失败");
-    } finally {
-      setTokenLoading(false);
-    }
-  }
 
   async function handleSave() {
     setSaving(true);
@@ -275,69 +232,7 @@ function GitHubSettings() {
 
   return (
     <div className="space-y-4">
-      {/* Desktop Token Management */}
-      {isDesktop && (
-        <Card>
-          <CardHeader>
-            <CardTitle>GitHub Personal Access Token</CardTitle>
-            <CardDescription>
-              桌面端需要 GitHub Token 来访问仓库。
-              <a
-                href="https://github.com/settings/tokens/new?scopes=repo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--brand-primary)] hover:underline ml-1 cursor-pointer inline-flex items-center gap-1"
-              >
-                创建 Token
-                <ExternalLink size={10} />
-              </a>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {tokenSaved && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--status-success-bg)] border border-[var(--status-success)]">
-                <CheckCircle2 size={16} className="text-[var(--status-success)] flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-[var(--text-primary)]">Token 已保存</div>
-                  <div className="text-xs text-[var(--text-secondary)]">已安全存储到系统钥匙串</div>
-                </div>
-              </div>
-            )}
-
-            <FormField
-              label="Personal Access Token"
-              description="需要 repo 权限。Token 将安全存储在系统钥匙串中"
-            >
-              <input
-                type="password"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                className="form-input font-mono text-sm"
-                disabled={tokenLoading}
-              />
-            </FormField>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSaveToken}
-                disabled={tokenLoading || !token.trim()}
-              >
-                {tokenLoading ? "保存中..." : "保存 Token"}
-              </Button>
-              {tokenSaved && (
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteToken}
-                  disabled={tokenLoading}
-                >
-                  删除 Token
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {authClient && <GitHubAuthSettings authClient={authClient} onSignedOut={onSignedOut} />}
 
       <Card>
         <CardHeader>
@@ -444,6 +339,156 @@ function GitHubSettings() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function GitHubAuthSettings({
+  authClient,
+  onSignedOut,
+}: {
+  authClient: AuthClient;
+  onSignedOut?: () => void;
+}) {
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [pendingAction, setPendingAction] = useState<"reauthorize" | "signOut" | null>(null);
+  const deviceFlow = session?.deviceFlow;
+
+  useEffect(() => {
+    let active = true;
+
+    authClient
+      .getSession()
+      .then((nextSession) => {
+        if (active) setSession(nextSession);
+      })
+      .catch(() => {
+        if (active) setSession({ state: "error", error: "AUTH_NETWORK_ERROR" });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authClient]);
+
+  useEffect(() => {
+    if (!deviceFlow) return;
+
+    let active = true;
+    const timer = window.setInterval(async () => {
+      try {
+        const nextSession = await authClient.getSession();
+        if (!active) return;
+        setSession(nextSession);
+        if (nextSession.state === "authenticated" || nextSession.state === "error") {
+          window.clearInterval(timer);
+        }
+      } catch {
+        if (active) setSession({ state: "error", error: "AUTH_NETWORK_ERROR" });
+      }
+    }, Math.max(deviceFlow.interval, 1) * 1000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [authClient, deviceFlow]);
+
+  async function handleReauthorize() {
+    setPendingAction("reauthorize");
+    try {
+      const nextSession = await authClient.reauthorize();
+      setSession(nextSession);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function handleSignOut() {
+    setPendingAction("signOut");
+    try {
+      await authClient.signOut();
+      setSession({ state: "anonymous" });
+      onSignedOut?.();
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  const user = session?.user;
+  const displayName = user?.name || user?.login || user?.email || "GitHub 用户";
+  const statusText = loading
+    ? "检查授权状态中"
+    : session?.state === "authenticated"
+      ? "已通过 GitHub OAuth 授权"
+      : "需要重新登录或授权";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>GitHub 授权</CardTitle>
+        <CardDescription>管理当前 GitHub OAuth 登录状态</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3">
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" className="h-10 w-10 rounded-full" />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-primary-subtle)] text-[var(--brand-primary)]">
+              <GithubIcon size={20} />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium text-[var(--text-primary)]">
+              {loading ? "读取中..." : displayName}
+            </div>
+            <div className="truncate text-xs text-[var(--text-secondary)]">
+              {statusText}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            variant="outline"
+            onClick={handleReauthorize}
+            disabled={pendingAction !== null}
+          >
+            <RefreshCw size={16} />
+            {pendingAction === "reauthorize" ? "授权中..." : "重新授权"}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleSignOut}
+            disabled={pendingAction !== null}
+          >
+            <LogOut size={16} />
+            {pendingAction === "signOut" ? "退出中..." : "退出登录"}
+          </Button>
+        </div>
+
+        {deviceFlow && (
+          <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3 text-center">
+            <p className="text-xs text-[var(--text-secondary)]">在 GitHub 页面输入授权码</p>
+            <div className="mt-2 rounded-md bg-[var(--bg-card)] px-3 py-2 font-mono text-xl font-bold tracking-widest text-[var(--text-primary)]">
+              {deviceFlow.userCode}
+            </div>
+            <a
+              href={deviceFlow.verificationUri}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center justify-center gap-2 text-xs font-medium text-[var(--brand-primary)] hover:underline"
+            >
+              打开 GitHub 授权页面
+              <ArrowRight size={12} />
+            </a>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

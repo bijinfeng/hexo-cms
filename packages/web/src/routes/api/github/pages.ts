@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { json, getGitHubCtx } from "../../../lib/server-utils";
+import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/github/pages")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
-        if (!ctx) return json({ error: "Not configured" }, 404);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         try {
           const { data: contents } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: "source" });
           const files = Array.isArray(contents) ? contents.filter((f: any) => f.name.endsWith(".md") && f.name !== "index.md") : [];
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/github/pages")({
       },
       POST: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
-        if (!ctx) return json({ error: "Not configured" }, 404);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         const page = await request.json();
         try {
           let sha: string | undefined;
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/github/pages")({
       },
       DELETE: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
-        if (!ctx) return json({ error: "Not configured" }, 404);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         const { path: pagePath } = await request.json();
         try { const { data: existing } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: pagePath }); await ctx.octokit.request("DELETE /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: pagePath, message: `Delete page: ${pagePath}`, sha: (existing as any).sha }); return json({ success: true }); } catch (e: any) { return json({ error: e.message }, 500); }
       },

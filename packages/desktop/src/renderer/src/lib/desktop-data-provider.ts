@@ -21,15 +21,15 @@ export class DesktopDataProvider implements DataProvider {
   // ==================== Token 管理 ====================
 
   async getToken(): Promise<string | null> {
-    return requireElectronAPI().invoke("get-token");
+    return null;
   }
 
   async saveToken(token: string): Promise<void> {
-    await requireElectronAPI().invoke("set-token", token);
+    void token;
   }
 
   async deleteToken(): Promise<void> {
-    await requireElectronAPI().invoke("delete-token");
+    return;
   }
 
   // ==================== 文章管理 ====================

@@ -14,7 +14,8 @@ export const Route = createFileRoute("/api/github/config")({
       POST: async ({ request }) => {
         const session = await getAuth(request);
         if (!session) return json({ error: "Unauthorized" }, 401);
-        const body = await request.json();
+        const payload = await request.json();
+        const body = payload.config ?? payload;
         if (!body.owner || !body.repo) return json({ error: "Missing required fields" }, 400);
         const db = await getDb();
         const existing = db.prepare("SELECT id FROM github_config WHERE user_id = ?").get(session.user.id);

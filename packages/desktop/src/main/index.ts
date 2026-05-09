@@ -4,6 +4,23 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { GitHubService } from "@hexo-cms/core";
 import type { GitHubConfig } from "@hexo-cms/core";
+import type { DeviceFlowInfo } from "@hexo-cms/ui";
+import {
+  createAnonymousSession,
+  createAuthenticatedSession,
+  createDeviceFlowSession,
+  fetchGitHubUser,
+  parseStoredOAuthSession,
+  pollGitHubDeviceFlowToken,
+  serializeStoredOAuthSession,
+  startGitHubDeviceFlow,
+  type StoredOAuthSession,
+} from "./auth";
+
+const KEYTAR_SERVICE = "hexo-cms";
+const LEGACY_TOKEN_ACCOUNT = "github-token";
+const OAUTH_SESSION_ACCOUNT = "github-oauth-session";
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID ?? "";
 
 // ==================== 托盘 ====================
 
@@ -72,6 +89,42 @@ function saveConfigToFile(config: GitHubConfig): void {
 let cachedGitHubService: GitHubService | null = null;
 let cachedToken: string | null = null;
 let cachedConfig: GitHubConfig | null = null;
+let activeDeviceFlow: { deviceCode: string; deviceFlow: DeviceFlowInfo } | null = null;
+let lastDeviceFlowError: string | null = null;
+let pollingDeviceFlow = false;
+
+async function getStoredOAuthSession(): Promise<StoredOAuthSession | null> {
+  try {
+    const keytar = await import("keytar");
+    const value = await keytar.default.getPassword(KEYTAR_SERVICE, OAUTH_SESSION_ACCOUNT);
+    return parseStoredOAuthSession(value);
+  } catch {
+    return null;
+  }
+}
+
+async function saveStoredOAuthSession(session: StoredOAuthSession): Promise<void> {
+  const keytar = await import("keytar");
+  await keytar.default.setPassword(KEYTAR_SERVICE, OAUTH_SESSION_ACCOUNT, serializeStoredOAuthSession(session));
+}
+
+async function deleteStoredOAuthSession(): Promise<void> {
+  try {
+    const keytar = await import("keytar");
+    await keytar.default.deletePassword(KEYTAR_SERVICE, OAUTH_SESSION_ACCOUNT);
+    await keytar.default.deletePassword(KEYTAR_SERVICE, LEGACY_TOKEN_ACCOUNT);
+  } catch {
+    // Signing out should be idempotent even if the OS keychain is unavailable.
+  }
+  activeDeviceFlow = null;
+  lastDeviceFlowError = null;
+  invalidateGitHubServiceCache();
+}
+
+async function getGitHubAccessToken(): Promise<string | null> {
+  const session = await getStoredOAuthSession();
+  return session?.accessToken ?? null;
+}
 
 async function getGitHubService(): Promise<GitHubService | null> {
   const config = loadConfig();
@@ -80,14 +133,7 @@ async function getGitHubService(): Promise<GitHubService | null> {
     return null;
   }
 
-  let token: string | null;
-  try {
-    const keytar = await import("keytar");
-    token = await keytar.default.getPassword("hexo-cms", "github-token");
-  } catch {
-    cachedGitHubService = null;
-    return null;
-  }
+  const token = await getGitHubAccessToken();
 
   if (!token) {
     cachedGitHubService = null;
@@ -118,6 +164,57 @@ function invalidateGitHubServiceCache(): void {
   cachedGitHubService = null;
   cachedToken = null;
   cachedConfig = null;
+}
+
+async function pollActiveDeviceFlow(): Promise<void> {
+  if (!activeDeviceFlow || pollingDeviceFlow) return;
+  pollingDeviceFlow = true;
+
+  try {
+    while (activeDeviceFlow) {
+      if (Date.now() >= new Date(activeDeviceFlow.deviceFlow.expiresAt).getTime()) {
+        activeDeviceFlow = null;
+        lastDeviceFlowError = "AUTH_TIMEOUT";
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, Math.max(activeDeviceFlow?.deviceFlow.interval ?? 5, 1) * 1000));
+      if (!activeDeviceFlow) return;
+
+      const result = await pollGitHubDeviceFlowToken({
+        clientId: GITHUB_CLIENT_ID,
+        deviceCode: activeDeviceFlow.deviceCode,
+      });
+
+      if (result.status === "pending") continue;
+      if (result.status === "slow_down") {
+        activeDeviceFlow.deviceFlow.interval += result.intervalDelta ?? 5;
+        continue;
+      }
+      if (result.status === "error") {
+        activeDeviceFlow = null;
+        lastDeviceFlowError = result.error;
+        return;
+      }
+      if (result.status !== "success") continue;
+
+      const user = await fetchGitHubUser(result.token);
+      await saveStoredOAuthSession({
+        accessToken: result.token,
+        tokenType: result.tokenType,
+        scope: result.scope,
+        githubUserId: user?.id,
+        user,
+        createdAt: new Date().toISOString(),
+        lastValidatedAt: new Date().toISOString(),
+      });
+      activeDeviceFlow = null;
+      lastDeviceFlowError = null;
+      invalidateGitHubServiceCache();
+    }
+  } finally {
+    pollingDeviceFlow = false;
+  }
 }
 
 
@@ -203,35 +300,48 @@ app.on("window-all-closed", () => {
 
 // ==================== IPC handlers ====================
 
-// Token 管理
-ipcMain.handle("get-token", async () => {
-  try {
-    const keytar = await import("keytar");
-    return await keytar.default.getPassword("hexo-cms", "github-token");
-  } catch {
-    return null;
-  }
+// Auth
+ipcMain.handle("auth:getSession", async () => {
+  const session = await getStoredOAuthSession();
+  if (session) return createAuthenticatedSession(session);
+  if (activeDeviceFlow || lastDeviceFlowError) return createDeviceFlowSession(activeDeviceFlow?.deviceFlow ?? null, lastDeviceFlowError);
+  return createAnonymousSession();
 });
 
-ipcMain.handle("set-token", async (_event, token: string) => {
-  try {
-    const keytar = await import("keytar");
-    await keytar.default.setPassword("hexo-cms", "github-token", token);
-    invalidateGitHubServiceCache();
-    return true;
-  } catch {
-    return false;
+ipcMain.handle("auth:startDeviceFlow", async () => {
+  const started = await startGitHubDeviceFlow({ clientId: GITHUB_CLIENT_ID });
+  if (started.session.state !== "authenticating" || !started.session.deviceFlow) {
+    return started.session;
   }
+
+  activeDeviceFlow = {
+    deviceCode: started.deviceCode,
+    deviceFlow: started.session.deviceFlow,
+  };
+  lastDeviceFlowError = null;
+
+  shell.openExternal(started.session.deviceFlow.verificationUri);
+  void pollActiveDeviceFlow();
+  return started.session;
 });
 
-ipcMain.handle("delete-token", async () => {
-  try {
-    const keytar = await import("keytar");
-    invalidateGitHubServiceCache();
-    return await keytar.default.deletePassword("hexo-cms", "github-token");
-  } catch {
-    return false;
+ipcMain.handle("auth:signOut", async () => {
+  await deleteStoredOAuthSession();
+});
+
+ipcMain.handle("auth:reauthorize", async () => {
+  await deleteStoredOAuthSession();
+  const started = await startGitHubDeviceFlow({ clientId: GITHUB_CLIENT_ID });
+  if (started.session.state === "authenticating" && started.session.deviceFlow) {
+    activeDeviceFlow = {
+      deviceCode: started.deviceCode,
+      deviceFlow: started.session.deviceFlow,
+    };
+    lastDeviceFlowError = null;
+    shell.openExternal(started.session.deviceFlow.verificationUri);
+    void pollActiveDeviceFlow();
   }
+  return started.session;
 });
 
 // 配置管理
@@ -541,13 +651,7 @@ ipcMain.handle("github:get-deployments", async () => {
   const config = loadConfig();
   if (!config) return [];
 
-  let token: string | null;
-  try {
-    const keytar = await import("keytar");
-    token = await keytar.default.getPassword("hexo-cms", "github-token");
-  } catch {
-    return [];
-  }
+  const token = await getGitHubAccessToken();
 
   if (!token) return [];
 
@@ -577,8 +681,7 @@ ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => 
   const config = loadConfig();
   if (!config) throw new Error("GitHub not configured");
   try {
-    const keytar = await import("keytar");
-    const token = await keytar.default.getPassword("hexo-cms", "github-token");
+    const token = await getGitHubAccessToken();
     if (!token) throw new Error("No token found");
     const { Octokit } = await import("octokit");
     const octokit = new Octokit({ auth: token });

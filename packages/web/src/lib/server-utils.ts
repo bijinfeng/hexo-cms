@@ -1,5 +1,15 @@
 import type { Octokit as OctokitType } from "octokit";
 
+type StatementLike = {
+  get: (...args: any[]) => unknown;
+};
+
+type DatabaseLike = {
+  prepare: (sql: string) => StatementLike;
+};
+
+export type GitHubCtxError = "unauthorized" | "config_missing" | "reauthorization_required";
+
 export function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 }
@@ -25,12 +35,64 @@ export async function getDb() {
   return db;
 }
 
+export function getGitHubAccessToken(db: DatabaseLike, userId: string): string | null {
+  const account = db
+    .prepare("SELECT accessToken FROM account WHERE userId = ? AND providerId = ? ORDER BY updatedAt DESC LIMIT 1")
+    .get(userId, "github") as { accessToken?: string | null } | undefined;
+
+  return account?.accessToken ?? null;
+}
+
+type BetterAuthAccessTokenApi = {
+  getAccessToken: (input: {
+    body: { providerId: "github" };
+    headers: Headers;
+  }) => Promise<{ accessToken?: string | null } | null | undefined>;
+};
+
+export async function getGitHubAccessTokenFromAuth(
+  authApi: BetterAuthAccessTokenApi,
+  headers: Headers,
+): Promise<string | null> {
+  let tokens: { accessToken?: string | null } | null | undefined;
+  try {
+    tokens = await authApi.getAccessToken({
+      body: { providerId: "github" },
+      headers,
+    });
+  } catch (error) {
+    const code = typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : "";
+    if (code === "ACCOUNT_NOT_FOUND" || code === "FAILED_TO_GET_ACCESS_TOKEN") {
+      return null;
+    }
+    throw error;
+  }
+
+  return tokens?.accessToken ?? null;
+}
+
+export function githubCtxErrorResponse(error: GitHubCtxError): Response {
+  switch (error) {
+    case "unauthorized":
+      return json({ error: "UNAUTHORIZED" }, 401);
+    case "reauthorization_required":
+      return json({ error: "REAUTH_REQUIRED" }, 401);
+    case "config_missing":
+      return json({ error: "CONFIG_REQUIRED" }, 404);
+  }
+}
+
 export async function getGitHubCtx(request: Request) {
   const session = await getAuth(request);
-  if (!session) return null;
+  if (!session) return { ok: false as const, error: "unauthorized" as const };
   const db = await getDb();
   const config = db.prepare("SELECT * FROM github_config WHERE user_id = ?").get(session.user.id) as any;
-  if (!config) return null;
+  if (!config) return { ok: false as const, error: "config_missing" as const };
+  const { auth } = await import("../lib/auth");
+  const accessToken = await getGitHubAccessTokenFromAuth(auth.api, request.headers);
+  if (!accessToken) return { ok: false as const, error: "reauthorization_required" as const };
   const { Octokit } = await import("octokit");
-  return { session, config, octokit: new Octokit({ auth: (session as any).session?.token || "" }) as OctokitType };
+  return { ok: true as const, session, config, octokit: new Octokit({ auth: accessToken }) as OctokitType };
 }

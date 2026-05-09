@@ -1,6 +1,9 @@
+import type { AuthSession } from "./auth";
+
 export interface ElectronAPI {
-  getToken: () => Promise<string | null>;
-  setToken: (token: string) => Promise<boolean>;
-  deleteToken: () => Promise<boolean>;
+  getSession: () => Promise<AuthSession>;
+  startDeviceFlow: () => Promise<AuthSession>;
+  signOut: () => Promise<void>;
+  reauthorize: () => Promise<AuthSession>;
   invoke: <T = unknown>(channel: string, ...args: unknown[]) => Promise<T>;
 }

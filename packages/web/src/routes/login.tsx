@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoginPage } from "@hexo-cms/ui";
-import { signIn } from "../lib/auth-client";
+import { webAuthClient } from "../lib/auth-client";
 
 function WebLoginPage() {
   const navigate = useNavigate();
   return (
     <LoginPage
-      signIn={signIn}
-      onSkipAuth={() => navigate({ to: "/" })}
+      authClient={webAuthClient}
+      onComplete={() => navigate({ to: "/" })}
     />
   );
 }

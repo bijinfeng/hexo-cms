@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoginPage } from "@hexo-cms/ui";
+import { desktopAuthClient } from "../lib/desktop-auth-client";
 
 function DesktopLoginPage() {
   const navigate = useNavigate();
   return (
     <LoginPage
-      onSkipAuth={() => navigate({ to: "/" })}
+      authClient={desktopAuthClient}
+      onComplete={() => navigate({ to: "/" })}
     />
   );
 }

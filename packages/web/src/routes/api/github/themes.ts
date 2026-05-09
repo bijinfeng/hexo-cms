@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { json, getGitHubCtx } from "../../../lib/server-utils";
+import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/github/themes")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
-        if (!ctx) return json({ error: "Not configured" }, 404);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         try {
           const [themes, configContent] = await Promise.all([
             ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: "themes" }).then(r => Array.isArray(r.data) ? r.data.filter((f: any) => f.type === "dir").map((f: any) => ({ name: f.name, path: f.path })) : []).catch(() => []),
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/api/github/themes")({
       },
       POST: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
-        if (!ctx) return json({ error: "Not configured" }, 404);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         const { theme } = await request.json();
         try {
           const { data: existing } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: "_config.yml" });

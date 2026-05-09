@@ -1,13 +1,11 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { CMSLayout, DataProviderProvider, ErrorBoundary, withCache } from "@hexo-cms/ui";
+import { CMSLayout, DataProviderProvider, ErrorBoundary, getAuthRedirect, isPublicAuthRoute, withCache } from "@hexo-cms/ui";
 import { WebDataProvider } from "../lib/web-data-provider";
 import { useSession } from "../lib/auth-client";
 import appCss from "../styles.css?url";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
-
-const BARE_ROUTES = ["/login", "/onboarding"];
 
 const webDataProvider = withCache(new WebDataProvider());
 
@@ -52,21 +50,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
-  const isBare = BARE_ROUTES.includes(pathname);
+  const isPublicRoute = isPublicAuthRoute(pathname);
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
 
   useEffect(() => {
-    if (isPending) return;
-
-    if (!session && !isBare) {
-      navigate({ to: "/login", replace: true });
-    }
-
-    if (session && isBare) {
-      navigate({ to: "/", replace: true });
-    }
-  }, [session, isPending, isBare, navigate]);
+    const redirect = getAuthRedirect({
+      pathname,
+      session: session ? { state: "authenticated" } : { state: "anonymous" },
+      isPending,
+    });
+    if (redirect) navigate({ to: redirect, replace: true });
+  }, [session, isPending, pathname, navigate]);
 
   if (isPending) {
     return (
@@ -76,9 +71,9 @@ function RootComponent() {
     );
   }
 
-  if (!session && !isBare) return null;
+  if (!session && !isPublicRoute) return null;
 
-  if (isBare) return <ErrorBoundary><Outlet /></ErrorBoundary>;
+  if (isPublicRoute) return <ErrorBoundary><Outlet /></ErrorBoundary>;
 
   return (
     <DataProviderProvider provider={webDataProvider}>

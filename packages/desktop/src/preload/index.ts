@@ -3,9 +3,10 @@ import type { ElectronAPI } from "@hexo-cms/ui";
 
 // IPC 通道白名单（安全限制）
 const ALLOWED_CHANNELS = [
-  "get-token",
-  "set-token",
-  "delete-token",
+  "auth:getSession",
+  "auth:startDeviceFlow",
+  "auth:signOut",
+  "auth:reauthorize",
   "config:get",
   "config:save",
   "github:get-posts",
@@ -35,10 +36,10 @@ const ALLOWED_CHANNELS = [
 ];
 
 const electronAPI: ElectronAPI = {
-  // Token 管理
-  getToken: (): Promise<string | null> => ipcRenderer.invoke("get-token"),
-  setToken: (token: string): Promise<boolean> => ipcRenderer.invoke("set-token", token),
-  deleteToken: (): Promise<boolean> => ipcRenderer.invoke("delete-token"),
+  getSession: () => ipcRenderer.invoke("auth:getSession"),
+  startDeviceFlow: () => ipcRenderer.invoke("auth:startDeviceFlow"),
+  signOut: () => ipcRenderer.invoke("auth:signOut"),
+  reauthorize: () => ipcRenderer.invoke("auth:reauthorize"),
 
   // 通用 IPC 调用（带白名单验证）
   invoke: <T = unknown>(channel: string, ...args: unknown[]): Promise<T> => {

@@ -1,38 +1,55 @@
 import { createRootRoute, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CMSLayout, DataProviderProvider, ErrorBoundary, withCache } from "@hexo-cms/ui";
+import {
+  CMSLayout,
+  DataProviderProvider,
+  ErrorBoundary,
+  getAuthRedirect,
+  isPublicAuthRoute,
+  withCache,
+  type AuthSession,
+} from "@hexo-cms/ui";
 import { DesktopDataProvider } from "../lib/desktop-data-provider";
-
-const BARE_ROUTES = ["/login", "/onboarding"];
+import { desktopAuthClient, subscribeToDesktopAuthChanges } from "../lib/desktop-auth-client";
 
 const desktopDataProvider = withCache(new DesktopDataProvider());
 
 function RootComponent() {
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
-  const isBare = BARE_ROUTES.includes(pathname);
+  const isPublicRoute = isPublicAuthRoute(pathname);
   const navigate = useNavigate();
-  const [token, setToken] = useState<string | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [isPending, setIsPending] = useState(true);
 
   useEffect(() => {
-    desktopDataProvider.getToken().then((t) => {
-      setToken(t);
-      setIsPending(false);
-    });
+    let active = true;
+    const refreshSession = () => {
+      desktopAuthClient.getSession()
+      .then((nextSession) => {
+        if (active) setSession(nextSession);
+      })
+      .catch(() => {
+        if (active) setSession({ state: "anonymous" });
+      })
+      .finally(() => {
+        if (active) setIsPending(false);
+      });
+    };
+
+    refreshSession();
+    const unsubscribe = subscribeToDesktopAuthChanges(refreshSession);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (isPending) return;
-
-    if (!token && !isBare) {
-      navigate({ to: "/login", replace: true });
-    }
-
-    if (token && isBare) {
-      navigate({ to: "/", replace: true });
-    }
-  }, [token, isPending, isBare, navigate]);
+    const redirect = getAuthRedirect({ pathname, session, isPending });
+    if (redirect) navigate({ to: redirect, replace: true });
+  }, [session, isPending, pathname, navigate]);
 
   if (isPending) {
     return (
@@ -42,9 +59,9 @@ function RootComponent() {
     );
   }
 
-  if (!token && !isBare) return null;
+  if (session?.state !== "authenticated" && !isPublicRoute) return null;
 
-  if (isBare) return <ErrorBoundary><Outlet /></ErrorBoundary>;
+  if (isPublicRoute) return <ErrorBoundary><Outlet /></ErrorBoundary>;
 
   return (
     <DataProviderProvider provider={desktopDataProvider}>

@@ -38,9 +38,18 @@ async function apiFetch(url: string, options?: Parameters<typeof fetch>[1] & { m
   }
 }
 
+async function optionalApiFetch(url: string): Promise<Response | null> {
+  try {
+    return await apiFetch(url);
+  } catch (error) {
+    if (DataProviderError.isAuthError(error)) throw error;
+    return null;
+  }
+}
+
 export class WebDataProvider implements DataProvider {
   async getConfig(): Promise<GitHubConfig | null> {
-    const res = await apiFetch("/api/github/config").catch(() => null);
+    const res = await optionalApiFetch("/api/github/config");
     if (!res) return null;
     const data = await res.json();
     return data.config ?? null;
@@ -50,17 +59,17 @@ export class WebDataProvider implements DataProvider {
     await apiFetch("/api/github/config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ config }),
+      body: JSON.stringify(config),
     });
   }
 
   // ==================== Token 管理 ====================
 
   async getToken(): Promise<string | null> {
-    const res = await apiFetch("/api/auth/token").catch(() => null);
+    const res = await optionalApiFetch("/api/auth/token");
     if (!res) return null;
     const data = await res.json();
-    return data.accessToken ?? null;
+    return data.authenticated ? "oauth-session" : null;
   }
 
   async saveToken(_token: string): Promise<void> {
@@ -74,7 +83,7 @@ export class WebDataProvider implements DataProvider {
   // ==================== 文章管理 ====================
 
   async getPosts(): Promise<HexoPost[]> {
-    const res = await apiFetch("/api/github/posts").catch(() => null);
+    const res = await optionalApiFetch("/api/github/posts");
     if (!res) return [];
     const data = await res.json();
     return data.posts ?? [];
@@ -105,7 +114,7 @@ export class WebDataProvider implements DataProvider {
   // ==================== 页面管理 ====================
 
   async getPages(): Promise<HexoPost[]> {
-    const res = await apiFetch("/api/github/pages").catch(() => null);
+    const res = await optionalApiFetch("/api/github/pages");
     if (!res) return [];
     const data = await res.json();
     return data.pages ?? [];
@@ -140,7 +149,7 @@ export class WebDataProvider implements DataProvider {
     categories: Array<{ id: string; name: string; slug: string; count: number }>;
     total: number;
   }> {
-    const res = await apiFetch("/api/github/tags").catch(() => null);
+    const res = await optionalApiFetch("/api/github/tags");
     if (!res) return { tags: [], categories: [], total: 0 };
     return res.json();
   }
@@ -166,7 +175,7 @@ export class WebDataProvider implements DataProvider {
   // ==================== 媒体管理 ====================
 
   async getMediaFiles(): Promise<Array<{ name: string; path: string; size: number; url: string; sha: string }>> {
-    const res = await apiFetch("/api/github/media").catch(() => null);
+    const res = await optionalApiFetch("/api/github/media");
     if (!res) return [];
     const data = await res.json();
     return data.files ?? [];
@@ -199,7 +208,7 @@ export class WebDataProvider implements DataProvider {
     draftPosts: number;
     totalViews: number;
   }> {
-    const res = await apiFetch("/api/github/stats").catch(() => null);
+    const res = await optionalApiFetch("/api/github/stats");
     if (!res) return { totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 };
     return res.json();
   }
@@ -207,7 +216,7 @@ export class WebDataProvider implements DataProvider {
   // ==================== 主题管理 ====================
 
   async getThemes(): Promise<{ currentTheme: string; installedThemes: Array<{ name: string; path: string }> }> {
-    const res = await apiFetch("/api/github/themes").catch(() => null);
+    const res = await optionalApiFetch("/api/github/themes");
     if (!res) return { currentTheme: "", installedThemes: [] };
     return res.json();
   }
@@ -223,7 +232,7 @@ export class WebDataProvider implements DataProvider {
   // ==================== 部署管理 ====================
 
   async getDeployments(): Promise<Array<{ id: string; status: string; createdAt: string; duration: number; conclusion: string }>> {
-    const res = await apiFetch("/api/deploy").catch(() => null);
+    const res = await optionalApiFetch("/api/deploy");
     if (!res) return [];
     const data = await res.json();
     return data.runs ?? [];

@@ -1,3 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SettingsPage } from "@hexo-cms/ui";
-export const Route = createFileRoute("/settings")({ component: SettingsPage });
+import { webAuthClient } from "../lib/auth-client";
+
+function WebSettingsPage() {
+  const navigate = useNavigate();
+  return (
+    <SettingsPage
+      authClient={webAuthClient}
+      onSignedOut={() => navigate({ to: "/login", replace: true })}
+    />
+  );
+}
+
+export const Route = createFileRoute("/settings")({ component: WebSettingsPage });

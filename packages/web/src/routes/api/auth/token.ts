@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { json, getAuth } from "../../../lib/server-utils";
+import { getAuth, getGitHubAccessTokenFromAuth, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/auth/token")({
   server: {
@@ -7,7 +7,12 @@ export const Route = createFileRoute("/api/auth/token")({
       GET: async ({ request }) => {
         const session = await getAuth(request);
         if (!session) return json({ error: "Unauthorized" }, 401);
-        return json({ token: (session as any).session?.token || null });
+        const { auth } = await import("../../../lib/auth");
+        const accessToken = await getGitHubAccessTokenFromAuth(auth.api, request.headers);
+        if (!accessToken) {
+          return json({ error: "REAUTH_REQUIRED" }, 401);
+        }
+        return json({ authenticated: true });
       },
     },
   },
