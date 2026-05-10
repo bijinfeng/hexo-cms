@@ -1,8 +1,8 @@
 # Hexo CMS 插件系统技术方案
 
-> **版本**: 1.0.0  
+> **版本**: 1.1.0
 > **最后更新**: 2026-05-10  
-> **状态**: 草案  
+> **状态**: v0.1 MVP 已实现，v0.2 设计中
 > **关联 PRD**: [PRD_PLUGIN_SYSTEM.md](./PRD_PLUGIN_SYSTEM.md)
 
 ---
@@ -27,25 +27,21 @@
 ```text
 packages/core
   plugin/
+    types.ts
     manifest.ts
     permissions.ts
     plugin-manager.ts
     extension-registry.ts
-    plugin-host.ts
+    builtin.ts
     errors.ts
 
 packages/ui
   plugin/
     plugin-provider.tsx
     extension-outlet.tsx
-    plugin-settings-page.tsx
-    built-in-renderers.tsx
-
-packages/web
-  src/lib/plugin-runtime.ts
-
-packages/desktop
-  src/renderer/src/lib/plugin-runtime.ts
+    plugin-settings.tsx
+    renderers/
+      attachments-summary-widget.tsx
 ```
 
 运行时分层:
@@ -55,6 +51,28 @@ packages/desktop
 3. `PermissionBroker`: 负责所有 API 调用的权限校验。
 4. `ExtensionRegistry`: 保存 UI、命令、事件等贡献点。
 5. `ExtensionOutlet`: React 宿主组件，在固定位置渲染声明式贡献。
+
+当前 v0.1 已实现:
+
+1. `types.ts`: 插件 manifest、状态、权限、贡献点和只读 Content API 类型。
+2. `manifest.ts`: 轻量运行时校验，当前未引入 Zod。
+3. `permissions.ts`: `PermissionBroker.assert` 权限拦截。
+4. `extension-registry.ts`: dashboard/settings/sidebar/command 贡献注册与清理。
+5. `plugin-manager.ts`: 内存和浏览器 localStorage 状态存储、启用/停用、snapshot。
+6. `builtin.ts`: Attachments Helper 内置插件清单。
+7. `plugin-provider.tsx`: UI 侧创建 PluginManager，并默认启用 Attachments Helper。
+8. `extension-outlet.tsx`: Dashboard widget renderer 映射。
+9. Web/Desktop root route: 统一包裹 `PluginProvider`。
+
+v0.1 尚未实现:
+
+1. `PluginHost` 独立运行时和消息协议。
+2. Zod manifest schema。
+3. Settings panel schema renderer。
+4. Sidebar item 实际挂载。
+5. Command/Event 执行通道。
+6. Secret Store、受控网络代理和插件配置/存储落库。
+7. 插件级 ErrorBoundary 与错误阈值熔断。
 
 ---
 
@@ -116,7 +134,7 @@ packages/desktop
 2. `source` 首版只能是 `builtin` 或受开发配置保护的 `local-dev`。
 3. `renderer` 首版只能引用宿主已注册的 renderer key。
 4. `network.allowedHosts` 必须与 `network.fetch` 权限同时声明。
-5. manifest 通过 Zod schema 进行运行时校验。
+5. manifest 当前通过轻量 TypeScript 运行时校验；v0.2 可迁移到 Zod schema。
 6. Web 生产环境不接受用户上传的本地插件包。
 
 ### 3.2 插件状态
@@ -139,7 +157,16 @@ interface PluginRecord {
 }
 ```
 
-Web 存储在 SQLite 表中，Desktop 存储在 Electron userData 目录。存储格式通过平台 DataStore 适配。
+v0.1 状态存储:
+
+1. Web 与 Desktop renderer 当前共用 `BrowserPluginStateStore`，存储在 `localStorage` 的 `hexo-cms:plugin-state`。
+2. 单元测试使用 `MemoryPluginStateStore`。
+
+v0.2+ 目标状态:
+
+1. Web 存储在 SQLite 表中。
+2. Desktop 存储在 Electron userData 目录。
+3. 存储格式通过平台 DataStore 适配。
 
 ---
 
@@ -178,8 +205,8 @@ interface DashboardWidgetContribution {
 
 ```ts
 const builtInRenderers = {
-  "builtin.attachments.filter": AttachmentsFilterPanel,
-  "builtin.analytics.summary": AnalyticsSummaryWidget,
+  "builtin.attachments.summary": AttachmentsSummaryWidget,
+  "builtin.comments.overview": CommentsOverviewWidget,
 };
 ```
 
@@ -545,14 +572,18 @@ Desktop 使用:
 
 ### Phase 1: MVP 基础
 
-1. `PluginManifest` Zod schema。
+状态: 已落地。
+
+1. `PluginManifest` 轻量 schema 校验。
 2. `PluginManager`。
 3. `ExtensionRegistry`。
 4. `PluginProvider`。
 5. Dashboard widget outlet。
 6. Settings 插件管理页。
 7. 权限拦截基础。
-8. 一个内置插件。
+8. Attachments Helper 内置插件。
+9. Web/Desktop 根布局接入。
+10. Media 页面根据插件状态收起插件相关筛选和搜索入口。
 
 验收:
 
@@ -563,18 +594,23 @@ Desktop 使用:
 
 ### Phase 2: 可信插件完善
 
+状态: 下一阶段。
+
 1. Settings panel schema renderer。
 2. Sidebar item。
 3. Command API。
 4. Event API。
 5. 插件日志面板。
-6. 三个内置插件。
+6. 插件配置与存储持久化。
+7. 插件级 ErrorBoundary。
+8. Comments Overview 内置插件。
 
 验收:
 
 1. 插件配置可保存。
 2. 命令可执行并被权限控制。
 3. 事件只读通知可用。
+4. Comments Overview 可被启用/停用，并贡献 dashboard widget 与 settings panel。
 
 ### Phase 3: 沙箱预研
 
@@ -607,6 +643,7 @@ Desktop 使用:
 5. Web/Desktop 插件配置持久化测试。
 6. 插件 ErrorBoundary 组件测试。
 7. 至少一个启停插件的 E2E 测试。
+8. 第二个内置插件启停、renderer 映射和 dashboard 布局测试。
 
 ---
 
@@ -626,8 +663,8 @@ Desktop 使用:
 ## 14. 待确认问题
 
 1. Web 网络代理是否需要按用户限流。
-2. 首个内置插件的 renderer 是否放在 `packages/ui`。
-3. 插件状态是否按用户隔离，还是按应用实例全局。
+2. 插件状态 v0.2 是否按登录用户隔离，还是继续按应用实例全局。
+3. Comments Overview 是否先复用静态评论示例数据，还是先抽象 `CommentProvider`。
 
 ---
 
@@ -642,3 +679,5 @@ Desktop 使用:
 7. 第三方 API Key 必须进入 Secret Store。
 8. Desktop 私有插件首版不得任意读取本地文件。
 9. Web 首版不支持用户上传本地插件包。
+10. 内置插件 renderer 放在 `packages/ui/src/plugin/renderers`。
+11. 第二个内置插件选择 Comments Overview，Analytics Dashboard 等 Secret Store 与 network permission 稳定后再做。

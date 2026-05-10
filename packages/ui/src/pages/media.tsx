@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useDataProvider } from "../context/data-provider-context";
+import { ATTACHMENTS_HELPER_PLUGIN_ID } from "@hexo-cms/core";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { usePluginSystem } from "../plugin";
 import {
   Upload,
   Search,
@@ -24,7 +26,8 @@ const typeConfig = {
   document: { icon: FileText, color: "var(--text-secondary)", label: "文档" },
 };
 
-const filterOptions = ["全部", "图片", "视频", "音频", "文档"];
+const CORE_FILTER_OPTIONS = ["全部", "图片", "视频", "音频"];
+const ATTACHMENT_FILTER_OPTION = "文档";
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "gif", "webp", "svg", "avif"];
 const VIDEO_EXTS = ["mp4", "webm", "mov", "avi"];
@@ -46,6 +49,13 @@ function formatSize(bytes: number): string {
 
 export function MediaPage() {
   const dataProvider = useDataProvider();
+  const { snapshot } = usePluginSystem();
+  const attachmentsPluginEnabled = snapshot.plugins.some(
+    ({ manifest, record }) => manifest.id === ATTACHMENTS_HELPER_PLUGIN_ID && record.state === "enabled",
+  );
+  const filterOptions = attachmentsPluginEnabled
+    ? [...CORE_FILTER_OPTIONS, ATTACHMENT_FILTER_OPTION]
+    : CORE_FILTER_OPTIONS;
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeFilter, setActiveFilter] = useState("全部");
@@ -59,6 +69,15 @@ export function MediaPage() {
   useEffect(() => {
     loadMedia();
   }, []);
+
+  useEffect(() => {
+    if (!attachmentsPluginEnabled && activeFilter === ATTACHMENT_FILTER_OPTION) {
+      setActiveFilter("全部");
+    }
+    if (!attachmentsPluginEnabled && search) {
+      setSearch("");
+    }
+  }, [activeFilter, attachmentsPluginEnabled, search]);
 
   async function loadMedia() {
     setLoading(true);
@@ -123,7 +142,7 @@ export function MediaPage() {
       (activeFilter === "图片" && type === "image") ||
       (activeFilter === "视频" && type === "video") ||
       (activeFilter === "音频" && type === "audio") ||
-      (activeFilter === "文档" && type === "document");
+      (attachmentsPluginEnabled && activeFilter === ATTACHMENT_FILTER_OPTION && type === "document");
     return matchSearch && matchFilter;
   });
 
@@ -181,16 +200,18 @@ export function MediaPage() {
           ))}
         </div>
 
-        <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors">
-          <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="搜索文件名..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
-          />
-        </div>
+        {attachmentsPluginEnabled && (
+          <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors">
+            <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="搜索文件名..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+            />
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">

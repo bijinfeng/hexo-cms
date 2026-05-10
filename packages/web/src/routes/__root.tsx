@@ -1,6 +1,6 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { CMSLayout, DataProviderProvider, ErrorBoundary, getAuthRedirect, isPublicAuthRoute, withCache } from "@hexo-cms/ui";
+import { CMSLayout, DataProviderProvider, ErrorBoundary, PluginProvider, getAuthRedirect, isPublicAuthRoute, withCache } from "@hexo-cms/ui";
 import { WebDataProvider } from "../lib/web-data-provider";
 import { useSession } from "../lib/auth-client";
 import appCss from "../styles.css?url";
@@ -77,13 +77,15 @@ function RootComponent() {
 
   return (
     <DataProviderProvider provider={webDataProvider}>
-      <ErrorBoundary>
-        <CMSLayout>
-          <ErrorBoundary>
-            <Outlet />
-          </ErrorBoundary>
-        </CMSLayout>
-      </ErrorBoundary>
+      <PluginProvider>
+        <ErrorBoundary>
+          <CMSLayout>
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
+          </CMSLayout>
+        </ErrorBoundary>
+      </PluginProvider>
     </DataProviderProvider>
   );
 }

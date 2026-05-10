@@ -34,6 +34,7 @@ export { ErrorBoundary } from "./components/error-boundary";
 export { ListPage } from "./components/list-page";
 export { DashboardWidgetGrid } from "./components/dashboard-widgets";
 export { Skeleton, SkeletonCard } from "./components/skeleton";
+export { DashboardExtensionOutlet, PluginProvider, PluginSettingsPanel, usePluginSystem } from "./plugin";
 
 // Utils
 export { cn } from "./utils";

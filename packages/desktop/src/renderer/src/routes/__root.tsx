@@ -4,6 +4,7 @@ import {
   CMSLayout,
   DataProviderProvider,
   ErrorBoundary,
+  PluginProvider,
   getAuthRedirect,
   isPublicAuthRoute,
   withCache,
@@ -65,13 +66,15 @@ function RootComponent() {
 
   return (
     <DataProviderProvider provider={desktopDataProvider}>
-      <ErrorBoundary>
-        <CMSLayout isElectron>
-          <ErrorBoundary>
-            <Outlet />
-          </ErrorBoundary>
-        </CMSLayout>
-      </ErrorBoundary>
+      <PluginProvider>
+        <ErrorBoundary>
+          <CMSLayout isElectron>
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
+          </CMSLayout>
+        </ErrorBoundary>
+      </PluginProvider>
     </DataProviderProvider>
   );
 }

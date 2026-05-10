@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { DashboardWidgetGrid } from "../components/dashboard-widgets";
 import { Skeleton, SkeletonCard } from "../components/skeleton";
+import { DashboardExtensionOutlet, usePluginSystem } from "../plugin";
 import {
   FileText,
   Tags,
@@ -34,6 +35,7 @@ const statColorMap: Record<string, string> = {
 export function DashboardPage() {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
+  const { snapshot } = usePluginSystem();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [stats, setStats] = useState({
@@ -87,6 +89,10 @@ export function DashboardPage() {
     { label: "草稿", value: String(stats.draftPosts), change: "待发布", icon: Clock, color: "warning" },
     { label: "已发布", value: String(stats.publishedPosts), change: "公开文章", icon: Eye, color: "info" },
   ], [stats]);
+
+  const pluginWidgets = DashboardExtensionOutlet({
+    widgets: snapshot.extensions.dashboardWidgets,
+  });
 
   if (loading) {
     return (
@@ -231,6 +237,7 @@ export function DashboardPage() {
               </Card>
             ),
           },
+          ...pluginWidgets,
         ]}
       />
     </div>

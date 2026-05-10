@@ -8,9 +8,10 @@ interface TopbarProps {
   title?: string;
   isElectron?: boolean;
   onMenuToggle?: () => void;
+  showSearch?: boolean;
 }
 
-export function Topbar({ title, isElectron, onMenuToggle }: TopbarProps) {
+export function Topbar({ title, isElectron, onMenuToggle, showSearch = true }: TopbarProps) {
   const [isDark, setIsDark] = useState(false);
   const isMac = /Mac|Darwin/i.test(navigator.userAgent || navigator.platform);
 
@@ -49,14 +50,15 @@ export function Topbar({ title, isElectron, onMenuToggle }: TopbarProps) {
         </h1>
       )}
 
-      {/* Search */}
-      <div className="flex-1 max-w-sm hidden md:flex items-center gap-2 h-8 px-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)] text-sm text-[var(--text-tertiary)] cursor-text hover:border-[var(--border-strong)] transition-colors">
-        <Search size={14} />
-        <span>搜索...</span>
-        <kbd className="ml-auto text-[10px] font-mono bg-[var(--bg-surface)] border border-[var(--border-default)] rounded px-1.5 py-0.5 text-[var(--text-tertiary)]">
-          ⌘K
-        </kbd>
-      </div>
+      {showSearch && (
+        <div className="flex-1 max-w-sm hidden md:flex items-center gap-2 h-8 px-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)] text-sm text-[var(--text-tertiary)] cursor-text hover:border-[var(--border-strong)] transition-colors">
+          <Search size={14} />
+          <span>搜索...</span>
+          <kbd className="ml-auto text-[10px] font-mono bg-[var(--bg-surface)] border border-[var(--border-default)] rounded px-1.5 py-0.5 text-[var(--text-tertiary)]">
+            ⌘K
+          </kbd>
+        </div>
+      )}
 
       <div className="ml-auto flex items-center gap-1" style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : undefined}>
         {/* Notifications */}

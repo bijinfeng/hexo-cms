@@ -78,7 +78,7 @@ function DraggableWidget({ id, children }: DraggableWidgetProps) {
 }
 
 interface DashboardWidgetGridProps {
-  children: Array<{ id: string; content: React.ReactNode }>;
+  children: Array<{ id: string; title?: string; content: React.ReactNode }>;
 }
 
 export function DashboardWidgetGrid({ children }: DashboardWidgetGridProps) {
@@ -106,12 +106,25 @@ export function DashboardWidgetGrid({ children }: DashboardWidgetGridProps) {
     });
   }, []);
 
+  const widgetDefinitions = [
+    ...AVAILABLE_WIDGETS,
+    ...children
+      .filter((child) => !AVAILABLE_WIDGETS.some((widget) => widget.id === child.id))
+      .map((child) => ({
+        id: child.id,
+        title: child.title ?? child.id,
+        defaultVisible: true,
+      })),
+  ];
+
   const visibleChildren = children.filter((c) => !layout.hidden.includes(c.id));
   const sortedChildren = layout.order
     .map((id) => visibleChildren.find((c) => c.id === id))
     .filter(Boolean) as Array<{ id: string; content: React.ReactNode }>;
+  const unorderedChildren = visibleChildren.filter((child) => !layout.order.includes(child.id));
+  const renderedChildren = [...sortedChildren, ...unorderedChildren];
 
-  const visibleIds = sortedChildren.map((c) => c.id);
+  const visibleIds = renderedChildren.map((c) => c.id);
 
   function toggleWidget(id: string) {
     setLayout((prev) => ({
@@ -136,7 +149,7 @@ export function DashboardWidgetGrid({ children }: DashboardWidgetGridProps) {
           </button>
           {showPicker && (
             <div className="absolute right-0 top-full mt-1 w-56 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl shadow-lg z-50 p-2">
-              {AVAILABLE_WIDGETS.map((w) => {
+              {widgetDefinitions.map((w) => {
                 const isVisible = !layout.hidden.includes(w.id);
                 return (
                   <button
@@ -168,7 +181,7 @@ export function DashboardWidgetGrid({ children }: DashboardWidgetGridProps) {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={visibleIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-6">
-            {sortedChildren.map((child) => (
+            {renderedChildren.map((child) => (
               <DraggableWidget key={child.id} id={child.id}>
                 {child.content}
               </DraggableWidget>

@@ -7,6 +7,7 @@ import {
   User,
   Bell,
   Shield,
+  Puzzle,
   Save,
   ExternalLink,
   CheckCircle2,
@@ -18,12 +19,14 @@ import {
 import { GithubIcon } from "../components/ui/github-icon";
 import type { GitHubConfig } from "@hexo-cms/core";
 import type { AuthClient, AuthSession } from "../types/auth";
+import { PluginSettingsPanel } from "../plugin";
 
 const settingsSections = [
   { id: "site", label: "站点信息", icon: Globe },
   { id: "github", label: "GitHub 集成", icon: GithubIcon },
   { id: "profile", label: "个人资料", icon: User },
   { id: "notifications", label: "通知设置", icon: Bell },
+  { id: "plugins", label: "插件管理", icon: Puzzle },
   { id: "security", label: "安全设置", icon: Shield },
 ];
 
@@ -99,6 +102,7 @@ export function SettingsPage({ authClient, onSignedOut }: SettingsPageProps) {
           {activeSection === "github" && <GitHubSettings authClient={authClient} onSignedOut={onSignedOut} />}
           {activeSection === "profile" && <ProfileSettings />}
           {activeSection === "notifications" && <NotificationSettings />}
+          {activeSection === "plugins" && <PluginSettingsPanel />}
           {activeSection === "security" && <SecuritySettings />}
         </div>
       </div>
@@ -654,14 +658,15 @@ function ToggleField({
       <button
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={handleToggle}
-        className={`relative w-10 h-5.5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${
+        className={`relative h-5 w-10 flex-shrink-0 rounded-full border-0 p-0 transition-colors cursor-pointer ${
           checked ? "bg-[var(--brand-primary)]" : "bg-[var(--border-strong)]"
         }`}
       >
         <span
-          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
-            checked ? "translate-x-5" : "translate-x-0.5"
+          className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+            checked ? "translate-x-5" : "translate-x-0"
           }`}
         />
       </button>

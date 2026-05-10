@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { ATTACHMENTS_HELPER_PLUGIN_ID } from "@hexo-cms/core";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { cn } from "../../utils";
+import { usePluginSystem } from "../../plugin";
 
 const routeTitles: Record<string, string> = {
   "/": "数据大盘",
@@ -20,9 +22,14 @@ const routeTitles: Record<string, string> = {
 export function CMSLayout({ children, isElectron }: { children: ReactNode; isElectron?: boolean }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { snapshot } = usePluginSystem();
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
   const title = routeTitles[pathname] ?? "";
+  const attachmentsPluginEnabled = snapshot.plugins.some(
+    ({ manifest, record }) => manifest.id === ATTACHMENTS_HELPER_PLUGIN_ID && record.state === "enabled",
+  );
+  const showTopbarSearch = pathname !== "/media" || attachmentsPluginEnabled;
   const isMac = /Mac|Darwin/i.test(navigator.userAgent || navigator.platform);
 
   return (
@@ -59,7 +66,12 @@ export function CMSLayout({ children, isElectron }: { children: ReactNode; isEle
 
         {/* Main content */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <Topbar title={title} isElectron={isElectron} onMenuToggle={() => setMobileSidebarOpen((v) => !v)} />
+          <Topbar
+            title={title}
+            isElectron={isElectron}
+            onMenuToggle={() => setMobileSidebarOpen((v) => !v)}
+            showSearch={showTopbarSearch}
+          />
           <main className="flex-1 overflow-y-auto p-6">
             {children}
           </main>

@@ -40,8 +40,8 @@
 - 最近发布的文章列表
 - GitHub Actions 部署状态实时监控
 - 最近 git 提交历史
-- 流量数据图表（需接入第三方统计，如 Google Analytics / Umami）
-- 待处理评论提醒
+- 流量数据图表（后续通过 Analytics Dashboard 插件接入 Umami / Plausible）
+- 待处理评论提醒（规划通过 Comments Overview 插件提供）
 - 草稿文章提醒
 
 ### 3. 文章管理
@@ -131,6 +131,12 @@
 - 通知设置
 - API Token 管理
 
+### 15. 插件系统
+- v0.1 已支持可信内置插件、manifest 校验、权限拦截、启用/停用和 Dashboard 声明式扩展点
+- 首个内置插件 Attachments Helper 已落地，用于附件摘要、媒体文档筛选和复制链接辅助
+- v0.2 规划 Comments Overview 插件，验证第二个内置插件、插件配置和 Settings 扩展面板
+- Analytics Dashboard 延后到 Secret Store 与 network permission 稳定后实现
+
 ## 技术栈
 
 ### 前端
@@ -215,10 +221,12 @@
 - 主题管理
 - 部署管理
 - 数据大盘图表
+- 插件系统 v0.1 MVP（可信内置插件 + Dashboard 扩展点）
 
 ### Phase 5 - 优化与完善（Week 7-8）
 - 性能优化
 - 移动端适配
 - 错误处理完善
 - 文档编写
+- 插件系统 v0.2（Comments Overview + 插件配置/Settings 扩展）
 
