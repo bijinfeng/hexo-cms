@@ -1,6 +1,7 @@
 import type { RegisteredDashboardWidget } from "@hexo-cms/core";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { AttachmentsSummaryWidget } from "./renderers/attachments-summary-widget";
+import { CommentsOverviewWidget } from "./renderers/comments-overview-widget";
 
 interface DashboardExtensionOutletProps {
   widgets: RegisteredDashboardWidget[];
@@ -31,6 +32,8 @@ function PluginRenderer({ widget }: { widget: RegisteredDashboardWidget }) {
   switch (widget.renderer) {
     case "builtin.attachments.summary":
       return <AttachmentsSummaryWidget />;
+    case "builtin.comments.overview":
+      return <CommentsOverviewWidget />;
     default:
       return (
         <div className="rounded-lg border border-[var(--status-warning)] bg-[var(--status-warning-bg)] p-3 text-sm text-[var(--status-warning)]">

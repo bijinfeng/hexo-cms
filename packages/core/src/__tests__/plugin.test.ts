@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
+  COMMENTS_OVERVIEW_PLUGIN_ID,
   MemoryPluginStateStore,
   PermissionBroker,
   PluginManager,
@@ -45,6 +46,28 @@ describe("plugin system", () => {
     ]);
 
     manager.disable(ATTACHMENTS_HELPER_PLUGIN_ID);
+    expect(manager.snapshot().extensions.dashboardWidgets).toHaveLength(0);
+  });
+
+  it("registers comments overview as a second built-in plugin", () => {
+    expect(builtinPluginManifests.map((manifest) => manifest.id)).toContain(COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+    });
+
+    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    expect(manager.snapshot().extensions.dashboardWidgets).toEqual([
+      expect.objectContaining({
+        pluginId: COMMENTS_OVERVIEW_PLUGIN_ID,
+        renderer: "builtin.comments.overview",
+        title: "评论概览",
+      }),
+    ]);
+
+    manager.disable(COMMENTS_OVERVIEW_PLUGIN_ID);
     expect(manager.snapshot().extensions.dashboardWidgets).toHaveLength(0);
   });
 

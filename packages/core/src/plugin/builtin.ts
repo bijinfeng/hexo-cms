@@ -1,6 +1,7 @@
 import type { PluginManifest } from "./types";
 
 export const ATTACHMENTS_HELPER_PLUGIN_ID = "hexo-cms-attachments-helper";
+export const COMMENTS_OVERVIEW_PLUGIN_ID = "hexo-cms-comments-overview";
 
 export const builtinPluginManifests: PluginManifest[] = [
   {
@@ -49,6 +50,49 @@ export const builtinPluginManifests: PluginManifest[] = [
         {
           id: "attachments.copyLink",
           title: "复制附件链接",
+        },
+      ],
+    },
+  },
+  {
+    id: COMMENTS_OVERVIEW_PLUGIN_ID,
+    name: "Comments Overview",
+    version: "0.1.0",
+    description: "汇总评论状态，并在仪表板展示待处理评论入口。",
+    source: "builtin",
+    engine: {
+      hexoCms: ">=0.1.0",
+    },
+    activation: ["onDashboard"],
+    permissions: ["ui.contribute", "pluginConfig.write", "command.register"],
+    contributes: {
+      dashboardWidgets: [
+        {
+          id: "comments.overview",
+          title: "评论概览",
+          renderer: "builtin.comments.overview",
+          size: "medium",
+          order: 90,
+        },
+      ],
+      settingsPanels: [
+        {
+          id: "comments.settings",
+          title: "评论概览",
+          schema: "comments.settings",
+        },
+      ],
+      sidebarItems: [
+        {
+          id: "comments.entry",
+          title: "评论概览",
+          target: "plugin.settings",
+        },
+      ],
+      commands: [
+        {
+          id: "comments.openModeration",
+          title: "打开评论管理",
         },
       ],
     },
