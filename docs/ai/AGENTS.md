@@ -53,7 +53,7 @@
 
 ### 推迟到以后
 - 智能 Frontmatter 编辑（SEO 描述、OG 图片、一键 slug）
-- 插件系统 MVP（Web Worker 沙箱 + UI 扩展点）
+- 插件系统 MVP（可信内置插件 + 声明式 UI 扩展点 + 权限控制）
 
 ## 已知技术债务（已修复）
 - ~~github.ts 静默吞所有 Octokit 错误~~ ✅ 改为抛 DataProviderError
