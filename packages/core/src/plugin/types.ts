@@ -46,6 +46,7 @@ export interface PluginManifest {
 export interface PluginContributions {
   dashboardWidgets?: DashboardWidgetContribution[];
   settingsPanels?: SettingsPanelContribution[];
+  settingsSchemas?: Record<string, PluginSettingsSchema>;
   sidebarItems?: SidebarItemContribution[];
   commands?: CommandContribution[];
 }
@@ -62,6 +63,33 @@ export interface SettingsPanelContribution {
   id: string;
   title: string;
   schema: string;
+}
+
+export type PluginSettingsFieldType = "string" | "password" | "select" | "boolean" | "url";
+
+export type PluginConfigFieldValue = string | boolean;
+
+export type PluginConfigValue = Record<string, PluginConfigFieldValue>;
+
+export interface PluginSettingsOption {
+  label: string;
+  value: string;
+}
+
+export interface PluginSettingsField {
+  key: string;
+  label: string;
+  type: PluginSettingsFieldType;
+  description?: string;
+  placeholder?: string;
+  defaultValue?: PluginConfigFieldValue;
+  options?: PluginSettingsOption[];
+  required?: boolean;
+}
+
+export interface PluginSettingsSchema {
+  id: string;
+  fields: PluginSettingsField[];
 }
 
 export interface SidebarItemContribution {
@@ -163,11 +191,14 @@ export interface PluginManagerSnapshot {
   plugins: Array<{
     manifest: PluginManifest;
     record: PluginRecord;
+    config: PluginConfigValue;
   }>;
   extensions: PluginExtensionRegistrySnapshot;
 }
 
 export type PluginStateStoreValue = Record<string, PluginRecord>;
+
+export type PluginConfigStoreValue = Record<string, PluginConfigValue>;
 
 export function createContentReadAPI(
   pluginId: string,

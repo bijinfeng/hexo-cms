@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
 import { DataProviderProvider } from "../context/data-provider-context";
-import { DashboardExtensionOutlet, PluginProvider } from "../plugin";
+import { DashboardExtensionOutlet, PluginProvider, usePluginSystem } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import { AttachmentsSummaryWidget } from "../plugin/renderers/attachments-summary-widget";
 import type { DataProvider } from "@hexo-cms/core";
@@ -44,6 +44,13 @@ function renderWithProviders(ui: React.ReactNode, provider = createDataProvider(
       <PluginProvider>{ui}</PluginProvider>
     </DataProviderProvider>,
   );
+}
+
+function EnabledPluginDashboardWidgets() {
+  const { snapshot } = usePluginSystem();
+  const configs = Object.fromEntries(snapshot.plugins.map(({ manifest, config }) => [manifest.id, config]));
+  const dashboardWidgets = DashboardExtensionOutlet({ widgets: snapshot.extensions.dashboardWidgets, configs });
+  return <>{dashboardWidgets.map((widget) => widget.content)}</>;
 }
 
 describe("plugin UI", () => {
@@ -120,5 +127,50 @@ describe("plugin UI", () => {
 
     expect(within(commentsCard as HTMLElement).getByText("未启用")).toBeInTheDocument();
     expect(screen.getByText("Attachments Helper").closest(".rounded-xl")).toHaveTextContent("已启用");
+  });
+
+  it("renders comments settings schema and persists config after remount", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderWithProviders(<PluginSettingsPanel />);
+
+    const commentsCard = screen.getByText("Comments Overview").closest(".rounded-xl");
+    expect(commentsCard).not.toBeNull();
+
+    await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
+    await user.selectOptions(screen.getByLabelText("评论服务"), "waline");
+    await user.type(screen.getByLabelText("评论后台 URL"), "https://comments.example.com");
+    await user.click(screen.getByRole("switch", { name: "展示待审核提醒" }));
+
+    unmount();
+    renderWithProviders(<PluginSettingsPanel />);
+
+    expect(screen.getByLabelText("评论服务")).toHaveValue("waline");
+    expect(screen.getByLabelText("评论后台 URL")).toHaveValue("https://comments.example.com");
+    expect(screen.getByRole("switch", { name: "展示待审核提醒" })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("applies comments settings to the dashboard widget", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <PluginSettingsPanel />
+        <EnabledPluginDashboardWidgets />
+      </>,
+    );
+
+    const commentsCard = screen.getByText("Comments Overview").closest(".rounded-xl");
+    expect(commentsCard).not.toBeNull();
+
+    await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
+    expect(screen.getByText("待审核")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("评论后台 URL"), "https://comments.example.com");
+    await user.click(screen.getByRole("switch", { name: "展示待审核提醒" }));
+
+    expect(screen.queryByText("待审核")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "打开评论管理" })).toHaveAttribute(
+      "href",
+      "https://comments.example.com",
+    );
   });
 });

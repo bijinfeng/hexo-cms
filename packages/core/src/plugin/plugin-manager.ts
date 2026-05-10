@@ -3,6 +3,8 @@ import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
 import type {
+  PluginConfigStoreValue,
+  PluginConfigValue,
   PluginManifest,
   PluginManagerSnapshot,
   PluginStateStoreValue,
@@ -11,6 +13,11 @@ import type {
 export interface PluginStateStore {
   load(): PluginStateStoreValue;
   save(value: PluginStateStoreValue): void;
+}
+
+export interface PluginConfigStore {
+  load(): PluginConfigStoreValue;
+  save(value: PluginConfigStoreValue): void;
 }
 
 export class MemoryPluginStateStore implements PluginStateStore {
@@ -44,9 +51,41 @@ export class BrowserPluginStateStore implements PluginStateStore {
   }
 }
 
+export class MemoryPluginConfigStore implements PluginConfigStore {
+  constructor(private value: PluginConfigStoreValue = {}) {}
+
+  load(): PluginConfigStoreValue {
+    return { ...this.value };
+  }
+
+  save(value: PluginConfigStoreValue): void {
+    this.value = { ...value };
+  }
+}
+
+export class BrowserPluginConfigStore implements PluginConfigStore {
+  constructor(private readonly key = "hexo-cms:plugin-config") {}
+
+  load(): PluginConfigStoreValue {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = window.localStorage.getItem(this.key);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  save(value: PluginConfigStoreValue): void {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(this.key, JSON.stringify(value));
+  }
+}
+
 export interface PluginManagerOptions {
   manifests: unknown[];
   store?: PluginStateStore;
+  configStore?: PluginConfigStore;
   defaultEnabledPluginIds?: string[];
 }
 
@@ -56,18 +95,23 @@ export class PluginManager {
   private readonly manifestsById = new Map<string, PluginManifest>();
   private readonly extensionRegistry = new ExtensionRegistry();
   private readonly store: PluginStateStore;
+  private readonly configStore: PluginConfigStore;
   private records: PluginStateStoreValue;
+  private configs: PluginConfigStoreValue;
 
   constructor({
     manifests,
     store = new MemoryPluginStateStore(),
+    configStore = new MemoryPluginConfigStore(),
     defaultEnabledPluginIds = [],
   }: PluginManagerOptions) {
     this.manifests = validatePluginManifests(manifests);
     this.manifests.forEach((manifest) => this.manifestsById.set(manifest.id, manifest));
     this.permissionBroker = new PermissionBroker(this.manifests);
     this.store = store;
+    this.configStore = configStore;
     this.records = this.hydrateRecords(defaultEnabledPluginIds);
+    this.configs = this.hydrateConfigs();
     this.rebuildExtensions();
   }
 
@@ -76,6 +120,7 @@ export class PluginManager {
       plugins: this.manifests.map((manifest) => ({
         manifest,
         record: this.records[manifest.id],
+        config: this.configs[manifest.id] ?? {},
       })),
       extensions: this.extensionRegistry.snapshot(),
     };
@@ -113,6 +158,20 @@ export class PluginManager {
     return this.snapshot();
   }
 
+  updatePluginConfig(pluginId: string, patch: PluginConfigValue): PluginManagerSnapshot {
+    this.getManifest(pluginId);
+    this.permissionBroker.assert(pluginId, "pluginConfig.write", "plugin.config.write");
+    this.configs = {
+      ...this.configs,
+      [pluginId]: {
+        ...(this.configs[pluginId] ?? {}),
+        ...patch,
+      },
+    };
+    this.configStore.save(this.configs);
+    return this.snapshot();
+  }
+
   private getManifest(pluginId: string): PluginManifest {
     const manifest = this.manifestsById.get(pluginId);
     if (!manifest) throw new PluginNotFoundError(pluginId);
@@ -137,6 +196,17 @@ export class PluginManager {
     });
 
     return records;
+  }
+
+  private hydrateConfigs(): PluginConfigStoreValue {
+    const stored = this.configStore.load();
+    const configs: PluginConfigStoreValue = {};
+
+    this.manifests.forEach((manifest) => {
+      configs[manifest.id] = { ...(stored[manifest.id] ?? {}) };
+    });
+
+    return configs;
   }
 
   private persistAndRebuild(): void {

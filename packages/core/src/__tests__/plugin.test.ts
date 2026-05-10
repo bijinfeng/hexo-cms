@@ -3,6 +3,7 @@ import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
   COMMENTS_OVERVIEW_PLUGIN_ID,
   MemoryPluginStateStore,
+  MemoryPluginConfigStore,
   PermissionBroker,
   PluginManager,
   PluginManifestError,
@@ -80,5 +81,54 @@ describe("plugin system", () => {
     expect(() =>
       broker.assert(ATTACHMENTS_HELPER_PLUGIN_ID, "network.fetch", "http.fetch"),
     ).toThrow(PluginPermissionError);
+  });
+
+  it("persists plugin config across manager instances", () => {
+    const configStore = new MemoryPluginConfigStore();
+    const firstManager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      configStore,
+    });
+
+    firstManager.updatePluginConfig(COMMENTS_OVERVIEW_PLUGIN_ID, {
+      provider: "waline",
+      moderationUrl: "https://comments.example.com",
+      showPendingAlert: false,
+    });
+
+    const secondManager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      configStore,
+    });
+
+    expect(
+      secondManager.snapshot().plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID)?.config,
+    ).toEqual({
+      provider: "waline",
+      moderationUrl: "https://comments.example.com",
+      showPendingAlert: false,
+    });
+  });
+
+  it("requires pluginConfig.write permission to persist plugin config", () => {
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-readonly-plugin",
+          name: "Readonly Plugin",
+          version: "0.1.0",
+          description: "Readonly test plugin",
+          source: "builtin",
+          permissions: ["ui.contribute"],
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+    });
+
+    expect(() => manager.updatePluginConfig("hexo-cms-readonly-plugin", { enabled: true })).toThrow(
+      PluginPermissionError,
+    );
   });
 });

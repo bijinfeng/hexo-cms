@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import type { PluginConfigValue } from "@hexo-cms/core";
 import { AlertTriangle, CheckCircle2, MessageSquare, ShieldAlert } from "lucide-react";
 import { Button } from "../../components/ui/button";
 
@@ -9,11 +10,14 @@ const summary = {
   spam: 1,
 };
 
-export function CommentsOverviewWidget() {
+export function CommentsOverviewWidget({ config = {} }: { config?: PluginConfigValue }) {
+  const showPendingAlert = config.showPendingAlert !== false;
+  const moderationUrl = typeof config.moderationUrl === "string" && config.moderationUrl ? config.moderationUrl : "/comments";
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2">
-        <SummaryTile icon={AlertTriangle} label="待审核" value={summary.pending} tone="warning" />
+        {showPendingAlert && <SummaryTile icon={AlertTriangle} label="待审核" value={summary.pending} tone="warning" />}
         <SummaryTile icon={CheckCircle2} label="已通过" value={summary.approved} tone="success" />
         <SummaryTile icon={ShieldAlert} label="垃圾" value={summary.spam} tone="error" />
       </div>
@@ -23,7 +27,7 @@ export function CommentsOverviewWidget() {
           <div className="text-xs text-[var(--text-secondary)]">共 {summary.total} 条示例评论</div>
         </div>
         <Button asChild variant="outline" size="sm">
-          <a href="/comments">
+          <a href={moderationUrl}>
             <MessageSquare size={14} />
             打开评论管理
           </a>

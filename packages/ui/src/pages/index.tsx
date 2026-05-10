@@ -92,6 +92,7 @@ export function DashboardPage() {
 
   const pluginWidgets = DashboardExtensionOutlet({
     widgets: snapshot.extensions.dashboardWidgets,
+    configs: Object.fromEntries(snapshot.plugins.map(({ manifest, config }) => [manifest.id, config])),
   });
 
   if (loading) {

@@ -1,4 +1,11 @@
-import { AlertCircle, CheckCircle2, Package, Power, Shield } from "lucide-react";
+import { AlertCircle, CheckCircle2, Package, Power, Shield, SlidersHorizontal } from "lucide-react";
+import type {
+  PluginConfigFieldValue,
+  PluginConfigValue,
+  PluginSettingsField,
+  PluginSettingsSchema,
+  RegisteredSettingsPanel,
+} from "@hexo-cms/core";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -16,7 +23,7 @@ const permissionLabels: Record<string, string> = {
 };
 
 export function PluginSettingsPanel() {
-  const { snapshot, enablePlugin, disablePlugin } = usePluginSystem();
+  const { snapshot, enablePlugin, disablePlugin, updatePluginConfig } = usePluginSystem();
 
   return (
     <div className="space-y-4">
@@ -26,8 +33,9 @@ export function PluginSettingsPanel() {
           <CardDescription>管理可信内置插件和声明式扩展能力</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {snapshot.plugins.map(({ manifest, record }) => {
+          {snapshot.plugins.map(({ manifest, record, config }) => {
             const enabled = record.state === "enabled";
+            const settingsPanels = snapshot.extensions.settingsPanels.filter((panel) => panel.pluginId === manifest.id);
             return (
               <div
                 key={manifest.id}
@@ -81,6 +89,23 @@ export function PluginSettingsPanel() {
                     {record.lastError.message}
                   </div>
                 )}
+
+                {enabled && settingsPanels.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    {settingsPanels.map((panel) => {
+                      const schema = manifest.contributes?.settingsSchemas?.[panel.schema];
+                      return (
+                        <PluginSettingsSchemaPanel
+                          key={panel.id}
+                          panel={panel}
+                          schema={schema}
+                          config={config}
+                          onChange={(patch) => updatePluginConfig(manifest.id, patch)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -107,6 +132,126 @@ export function PluginSettingsPanel() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function PluginSettingsSchemaPanel({
+  panel,
+  schema,
+  config,
+  onChange,
+}: {
+  panel: RegisteredSettingsPanel;
+  schema?: PluginSettingsSchema;
+  config: PluginConfigValue;
+  onChange: (patch: PluginConfigValue) => void;
+}) {
+  if (!schema) {
+    return (
+      <div className="rounded-lg border border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] p-3 text-sm text-[var(--status-warning)]">
+        未找到插件配置 schema: {panel.schema}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3">
+      <div className="mb-3 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+        <SlidersHorizontal size={13} />
+        {panel.title}配置
+      </div>
+      <div className="space-y-3">
+        {schema.fields.map((field) => (
+          <PluginSettingsFieldControl
+            key={field.key}
+            field={field}
+            value={config[field.key] ?? field.defaultValue}
+            inputId={`${panel.pluginId}-${field.key}`}
+            onChange={(value) => onChange({ [field.key]: value })}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PluginSettingsFieldControl({
+  field,
+  value,
+  inputId,
+  onChange,
+}: {
+  field: PluginSettingsField;
+  value?: PluginConfigFieldValue;
+  inputId: string;
+  onChange: (value: PluginConfigFieldValue) => void;
+}) {
+  if (field.type === "boolean") {
+    const checked = value !== false;
+    return (
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-[var(--text-primary)]">{field.label}</div>
+          {field.description && <div className="text-xs text-[var(--text-tertiary)]">{field.description}</div>}
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={checked}
+          aria-label={field.label}
+          onClick={() => onChange(!checked)}
+          className={`relative h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-0 p-0 transition-colors ${
+            checked ? "bg-[var(--brand-primary)]" : "bg-[var(--border-strong)]"
+          }`}
+        >
+          <span
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+              checked ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+    );
+  }
+
+  if (field.type === "select") {
+    return (
+      <div>
+        <label htmlFor={inputId} className="text-sm font-medium text-[var(--text-primary)]">
+          {field.label}
+        </label>
+        {field.description && <div className="mt-0.5 text-xs text-[var(--text-tertiary)]">{field.description}</div>}
+        <select
+          id={inputId}
+          className="form-input mt-2"
+          value={typeof value === "string" ? value : ""}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {field.options?.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <label htmlFor={inputId} className="text-sm font-medium text-[var(--text-primary)]">
+        {field.label}
+      </label>
+      {field.description && <div className="mt-0.5 text-xs text-[var(--text-tertiary)]">{field.description}</div>}
+      <input
+        id={inputId}
+        type={field.type === "password" ? "password" : field.type === "url" ? "url" : "text"}
+        className="form-input mt-2"
+        value={typeof value === "string" ? value : ""}
+        placeholder={field.placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </div>
   );
 }

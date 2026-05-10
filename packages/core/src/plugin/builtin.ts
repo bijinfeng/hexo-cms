@@ -39,6 +39,20 @@ export const builtinPluginManifests: PluginManifest[] = [
           schema: "attachments.settings",
         },
       ],
+      settingsSchemas: {
+        "attachments.settings": {
+          id: "attachments.settings",
+          fields: [
+            {
+              key: "showDocumentFilter",
+              label: "显示文档筛选",
+              type: "boolean",
+              defaultValue: true,
+              description: "在媒体库显示文档筛选和附件搜索入口。",
+            },
+          ],
+        },
+      },
       sidebarItems: [
         {
           id: "attachments.media-entry",
@@ -82,6 +96,39 @@ export const builtinPluginManifests: PluginManifest[] = [
           schema: "comments.settings",
         },
       ],
+      settingsSchemas: {
+        "comments.settings": {
+          id: "comments.settings",
+          fields: [
+            {
+              key: "provider",
+              label: "评论服务",
+              type: "select",
+              defaultValue: "giscus",
+              options: [
+                { label: "Giscus", value: "giscus" },
+                { label: "Waline", value: "waline" },
+              ],
+              description: "用于展示评论入口和后续同步策略。",
+            },
+            {
+              key: "moderationUrl",
+              label: "评论后台 URL",
+              type: "url",
+              defaultValue: "",
+              placeholder: "https://comments.example.com",
+              description: "打开评论管理时跳转的后台地址。",
+            },
+            {
+              key: "showPendingAlert",
+              label: "展示待审核提醒",
+              type: "boolean",
+              defaultValue: true,
+              description: "在仪表板中显示待审核评论提醒。",
+            },
+          ],
+        },
+      },
       sidebarItems: [
         {
           id: "comments.entry",
