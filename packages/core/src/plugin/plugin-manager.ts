@@ -7,6 +7,7 @@ import type {
   PluginConfigValue,
   PluginManifest,
   PluginManagerSnapshot,
+  PluginRuntimeErrorInput,
   PluginStateStoreValue,
 } from "./types";
 
@@ -172,6 +173,31 @@ export class PluginManager {
     return this.snapshot();
   }
 
+  recordPluginError(pluginId: string, error: PluginRuntimeErrorInput): PluginManagerSnapshot {
+    const manifest = this.getManifest(pluginId);
+    const existing = this.records[pluginId];
+    this.records = {
+      ...this.records,
+      [pluginId]: {
+        ...existing,
+        id: pluginId,
+        version: manifest.version,
+        source: manifest.source,
+        state: existing?.state ?? "installed",
+        lastError: {
+          message: redactPluginErrorText(error.message),
+          code: error.code,
+          at: error.at ?? new Date().toISOString(),
+          contributionId: error.contributionId,
+          contributionType: error.contributionType,
+          stack: error.stack ? redactPluginErrorText(error.stack) : undefined,
+        },
+      },
+    };
+    this.store.save(this.records);
+    return this.snapshot();
+  }
+
   private getManifest(pluginId: string): PluginManifest {
     const manifest = this.manifestsById.get(pluginId);
     if (!manifest) throw new PluginNotFoundError(pluginId);
@@ -222,4 +248,11 @@ export class PluginManager {
       }
     });
   }
+}
+
+function redactPluginErrorText(value: string): string {
+  return value
+    .replace(/\b(token|api[-_ ]?key|password|secret|cookie)=([^\s"'`]+)/gi, "$1=[redacted]")
+    .replace(/[A-Za-z]:\\(?:[^\\\s"'`]+\\)*[^\\\s"'`]+/g, "[redacted-path]")
+    .replace(/\/(?:Users|home)\/[^\s"'`]+/g, "[redacted-path]");
 }

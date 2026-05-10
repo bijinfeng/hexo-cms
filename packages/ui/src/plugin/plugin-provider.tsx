@@ -7,6 +7,7 @@ import {
   builtinPluginManifests,
   type PluginConfigValue,
   type PluginManagerSnapshot,
+  type PluginRuntimeErrorInput,
 } from "@hexo-cms/core";
 import { useDataProvider } from "../context/data-provider-context";
 
@@ -16,6 +17,7 @@ interface PluginContextValue {
   enablePlugin: (pluginId: string) => void;
   disablePlugin: (pluginId: string) => void;
   updatePluginConfig: (pluginId: string, config: PluginConfigValue) => void;
+  recordPluginError: (pluginId: string, error: PluginRuntimeErrorInput) => void;
 }
 
 const PluginContext = createContext<PluginContextValue | null>(null);
@@ -45,8 +47,14 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
     setSnapshot(manager.updatePluginConfig(pluginId, config));
   }
 
+  function recordPluginError(pluginId: string, error: PluginRuntimeErrorInput) {
+    setSnapshot(manager.recordPluginError(pluginId, error));
+  }
+
   return (
-    <PluginContext.Provider value={{ manager, snapshot, enablePlugin, disablePlugin, updatePluginConfig }}>
+    <PluginContext.Provider
+      value={{ manager, snapshot, enablePlugin, disablePlugin, updatePluginConfig, recordPluginError }}
+    >
       {children}
     </PluginContext.Provider>
   );

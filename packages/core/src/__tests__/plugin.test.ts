@@ -131,4 +131,38 @@ describe("plugin system", () => {
       PluginPermissionError,
     );
   });
+
+  it("records sanitized plugin runtime errors without disabling the plugin", () => {
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+    });
+
+    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+    const snapshot = manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+      contributionId: "comments.overview",
+      contributionType: "dashboard.widget",
+      message: "Renderer failed with token=secret-token at C:\\Users\\demo\\project\\.env",
+      stack: "Error: Renderer failed\n    at C:\\Users\\demo\\project\\.env:1:1",
+    });
+
+    const plugin = snapshot.plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    expect(plugin?.record.state).toBe("enabled");
+    expect(snapshot.extensions.dashboardWidgets).toEqual([
+      expect.objectContaining({
+        pluginId: COMMENTS_OVERVIEW_PLUGIN_ID,
+      }),
+    ]);
+    expect(plugin?.record.lastError).toEqual(
+      expect.objectContaining({
+        contributionId: "comments.overview",
+        contributionType: "dashboard.widget",
+        message: expect.stringContaining("[redacted]"),
+      }),
+    );
+    expect(plugin?.record.lastError?.message).not.toContain("secret-token");
+    expect(plugin?.record.lastError?.message).not.toContain("C:\\Users");
+    expect(plugin?.record.lastError?.stack).not.toContain("C:\\Users");
+  });
 });

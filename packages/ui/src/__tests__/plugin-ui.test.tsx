@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
+import { ATTACHMENTS_HELPER_PLUGIN_ID, COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
 import { DataProviderProvider } from "../context/data-provider-context";
-import { DashboardExtensionOutlet, PluginProvider, usePluginSystem } from "../plugin";
+import { DashboardExtensionOutlet, PluginErrorBoundary, PluginProvider, usePluginSystem } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import { AttachmentsSummaryWidget } from "../plugin/renderers/attachments-summary-widget";
 import type { DataProvider } from "@hexo-cms/core";
@@ -173,4 +173,97 @@ describe("plugin UI", () => {
       "https://comments.example.com",
     );
   });
+
+  it("isolates dashboard widget failures and records a sanitized last error", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const widgets = [
+      {
+        pluginId: ATTACHMENTS_HELPER_PLUGIN_ID,
+        pluginName: "Attachments Helper",
+        id: "attachments.summary",
+        title: "Attachments Helper",
+        renderer: "builtin.attachments.summary",
+        size: "medium" as const,
+        order: 80,
+      },
+      {
+        pluginId: COMMENTS_OVERVIEW_PLUGIN_ID,
+        pluginName: "Comments Overview",
+        id: "comments.overview",
+        title: "Comments Overview",
+        renderer: "builtin.comments.overview",
+        size: "medium" as const,
+        order: 90,
+      },
+    ];
+    const dashboardWidgets = DashboardExtensionOutlet({
+      widgets,
+      renderers: {
+        "builtin.attachments.summary": () => <div>Healthy plugin widget</div>,
+        "builtin.comments.overview": () => {
+          throw new Error("Renderer failed with token=secret-token at C:\\Users\\demo\\project\\.env");
+        },
+      },
+    });
+
+    try {
+      renderWithProviders(
+        <>
+          {dashboardWidgets.map((widget) => widget.content)}
+          <PluginSettingsPanel />
+        </>,
+      );
+
+      expect(screen.getByText("Healthy plugin widget")).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent("插件渲染失败");
+
+      await waitFor(() => {
+        const commentsCard = screen.getByText(/hexo-cms-comments-overview/).closest(".rounded-xl");
+        expect(commentsCard).not.toBeNull();
+        expect(within(commentsCard as HTMLElement).getByText(/Renderer failed/)).toBeInTheDocument();
+      });
+
+      const commentsCard = screen.getByText(/hexo-cms-comments-overview/).closest(".rounded-xl");
+      expect(commentsCard).not.toHaveTextContent("secret-token");
+      expect(commentsCard).not.toHaveTextContent("C:\\Users");
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it("isolates settings schema failures from the plugin settings page", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    try {
+      renderWithProviders(
+        <>
+          <PluginSettingsPanel />
+          <PluginErrorBoundary
+            pluginId={ATTACHMENTS_HELPER_PLUGIN_ID}
+            contributionId="attachments.settings"
+            contributionType="settings.panel"
+          >
+            <ThrowingSettingsContribution />
+          </PluginErrorBoundary>
+        </>,
+      );
+
+      expect(screen.getByText("插件管理")).toBeInTheDocument();
+      expect(screen.getByText("Attachments Helper")).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent("插件渲染失败");
+
+      await waitFor(() => {
+        const attachmentsCard = screen.getByText(/hexo-cms-attachments-helper/).closest(".rounded-xl");
+        expect(attachmentsCard).not.toBeNull();
+        expect(within(attachmentsCard as HTMLElement).getByText(/Settings failed/)).toBeInTheDocument();
+        expect(attachmentsCard).not.toHaveTextContent("session-token");
+      });
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
 });
+
+function ThrowingSettingsContribution(): never {
+  throw new Error("Settings failed with cookie=session-token");
+}

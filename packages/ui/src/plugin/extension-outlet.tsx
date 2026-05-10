@@ -1,14 +1,30 @@
+import type { ComponentType } from "react";
 import type { PluginConfigValue, RegisteredDashboardWidget } from "@hexo-cms/core";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { PluginErrorBoundary } from "./plugin-error-boundary";
 import { AttachmentsSummaryWidget } from "./renderers/attachments-summary-widget";
 import { CommentsOverviewWidget } from "./renderers/comments-overview-widget";
+
+type DashboardWidgetRenderer = ComponentType<{ config?: PluginConfigValue }>;
+type DashboardWidgetRenderers = Record<string, DashboardWidgetRenderer>;
 
 interface DashboardExtensionOutletProps {
   widgets: RegisteredDashboardWidget[];
   configs?: Record<string, PluginConfigValue>;
+  renderers?: DashboardWidgetRenderers;
 }
 
-export function DashboardExtensionOutlet({ widgets, configs }: DashboardExtensionOutletProps) {
+const defaultDashboardWidgetRenderers: DashboardWidgetRenderers = {
+  "builtin.attachments.summary": AttachmentsSummaryWidget,
+  "builtin.comments.overview": CommentsOverviewWidget,
+};
+
+export function DashboardExtensionOutlet({ widgets, configs, renderers }: DashboardExtensionOutletProps) {
+  const resolvedRenderers = {
+    ...defaultDashboardWidgetRenderers,
+    ...renderers,
+  };
+
   return widgets.map((widget) => ({
     id: `${widget.pluginId}:${widget.id}`,
     title: widget.title,
@@ -17,6 +33,7 @@ export function DashboardExtensionOutlet({ widgets, configs }: DashboardExtensio
         key={`${widget.pluginId}:${widget.id}`}
         widget={widget}
         config={configs?.[widget.pluginId]}
+        renderers={resolvedRenderers}
       />
     ),
   }));
@@ -25,9 +42,11 @@ export function DashboardExtensionOutlet({ widgets, configs }: DashboardExtensio
 function DashboardWidgetFrame({
   widget,
   config,
+  renderers,
 }: {
   widget: RegisteredDashboardWidget;
   config?: PluginConfigValue;
+  renderers: DashboardWidgetRenderers;
 }) {
   return (
     <Card>
@@ -35,7 +54,13 @@ function DashboardWidgetFrame({
         <CardTitle>{widget.title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <PluginRenderer widget={widget} config={config} />
+        <PluginErrorBoundary
+          pluginId={widget.pluginId}
+          contributionId={widget.id}
+          contributionType="dashboard.widget"
+        >
+          <PluginRenderer widget={widget} config={config} renderers={renderers} />
+        </PluginErrorBoundary>
       </CardContent>
     </Card>
   );
@@ -44,20 +69,18 @@ function DashboardWidgetFrame({
 function PluginRenderer({
   widget,
   config,
+  renderers,
 }: {
   widget: RegisteredDashboardWidget;
   config?: PluginConfigValue;
+  renderers: DashboardWidgetRenderers;
 }) {
-  switch (widget.renderer) {
-    case "builtin.attachments.summary":
-      return <AttachmentsSummaryWidget />;
-    case "builtin.comments.overview":
-      return <CommentsOverviewWidget config={config} />;
-    default:
-      return (
-        <div className="rounded-lg border border-[var(--status-warning)] bg-[var(--status-warning-bg)] p-3 text-sm text-[var(--status-warning)]">
-          未找到插件渲染器: {widget.renderer}
-        </div>
-      );
-  }
+  const Renderer = renderers[widget.renderer];
+  if (Renderer) return <Renderer config={config} />;
+
+  return (
+    <div className="rounded-lg border border-[var(--status-warning)] bg-[var(--status-warning-bg)] p-3 text-sm text-[var(--status-warning)]">
+      未找到插件渲染器: {widget.renderer}
+    </div>
+  );
 }

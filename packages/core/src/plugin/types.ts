@@ -103,10 +103,24 @@ export interface CommandContribution {
   title: string;
 }
 
+export type PluginContributionType = "dashboard.widget" | "settings.panel" | "sidebar.item" | "command";
+
+export interface PluginRuntimeErrorInput {
+  contributionId: string;
+  contributionType: PluginContributionType;
+  message: string;
+  code?: string;
+  stack?: string;
+  at?: string;
+}
+
 export interface PluginErrorSummary {
   message: string;
   code?: string;
   at: string;
+  contributionId?: string;
+  contributionType?: PluginContributionType;
+  stack?: string;
 }
 
 export interface PluginRecord {

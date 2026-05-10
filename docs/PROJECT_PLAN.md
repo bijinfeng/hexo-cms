@@ -134,8 +134,8 @@
 ### 15. 插件系统
 - v0.1 已支持可信内置插件、manifest 校验、权限拦截、启用/停用和 Dashboard 声明式扩展点
 - 首个内置插件 Attachments Helper 已落地，用于附件摘要、媒体文档筛选和复制链接辅助
-- v0.2 已落地 Comments Overview、Settings schema renderer 和插件配置持久化基础能力
-- 下一轮优先实现插件级 ErrorBoundary，保证插件渲染失败不导致核心页面白屏
+- v0.2 已落地 Comments Overview、Settings schema renderer、插件配置持久化基础能力和插件级 ErrorBoundary
+- 下一轮优先补 Sidebar item、CommandRegistry 与错误阈值熔断，继续保证插件失败不影响核心页面
 - 后续可插件化方向包括 SEO Inspector、Draft Coach、Link Checker、Theme Config Helper 和企业规范包
 - Analytics Dashboard 延后到 Secret Store 与 network permission 稳定后实现
 

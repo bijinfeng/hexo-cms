@@ -73,7 +73,7 @@ packages/ui
 3. Sidebar item 实际挂载。
 4. Command/Event 执行通道。
 5. 插件日志面板。
-6. 插件级 ErrorBoundary 与错误阈值熔断。
+6. 错误阈值熔断。
 7. 插件 Storage API 与跨平台持久化适配。
 8. Secret Store、受控网络代理和第三方插件沙箱。
 
@@ -529,9 +529,9 @@ discovered -> installed -> enabled
 3. 命令执行失败返回插件错误，不抛到全局。
 4. 同一插件连续失败超过阈值后自动进入 `error`。
 
-### 7.4 插件级 ErrorBoundary 下一轮设计
+### 7.4 插件级 ErrorBoundary 已落地设计
 
-下一轮优先实现插件级 ErrorBoundary，用于补齐“插件失败不影响核心页面白屏”的验收点。
+插件级 ErrorBoundary 已落地，用于补齐“插件失败不影响核心页面白屏”的验收点。
 
 覆盖范围:
 
@@ -551,12 +551,11 @@ discovered -> installed -> enabled
 
 ```ts
 interface PluginRuntimeError {
-  pluginId: string;
   contributionId: string;
   contributionType: "dashboard.widget" | "settings.panel" | "sidebar.item" | "command";
   message: string;
   stack?: string;
-  at: string;
+  at?: string;
 }
 ```
 
@@ -564,7 +563,7 @@ interface PluginRuntimeError {
 
 1. 首次渲染失败时只隐藏该贡献区域，并展示可恢复提示。
 2. `PluginManager.recordPluginError(pluginId, error)` 写入 `record.lastError`。
-3. Settings 插件管理卡片展示最近错误和“停用插件”入口。
+3. Settings 插件管理卡片展示最近错误和启停入口。
 4. 后续引入错误计数，连续失败超过阈值后将插件状态置为 `error`。
 
 用户体验:
@@ -575,10 +574,10 @@ interface PluginRuntimeError {
 
 测试要求:
 
-1. 构造一个测试 renderer 抛错，验证 Dashboard 页面仍渲染其他 widget。
-2. 验证 Settings 插件卡片显示 `lastError`。
-3. 验证停用故障插件会移除对应贡献区域。
-4. 验证错误 payload 不包含敏感字段。
+1. 已构造测试 renderer 抛错，验证 Dashboard 页面仍渲染其他 widget。
+2. 已验证 Settings 插件卡片显示 `lastError`。
+3. 已验证 Settings 类型贡献失败时插件设置页仍可用。
+4. 已验证错误 payload 不包含 token、cookie 和本地路径。
 
 ---
 
@@ -661,10 +660,16 @@ Desktop 侧负责:
 
 ### 10.1 P0: 稳定性与诊断
 
+已完成:
+
 1. 插件级 ErrorBoundary。
 2. `recordPluginError` 与 `lastError` 更新。
-3. 插件日志面板，按 `pluginId` 过滤。
-4. 错误阈值熔断，避免同一插件反复破坏用户体验。
+3. Dashboard/Settings 插件贡献区域失败隔离。
+
+待补齐:
+
+1. 插件日志面板，按 `pluginId` 过滤。
+2. 错误阈值熔断，避免同一插件反复破坏用户体验。
 
 ### 10.2 P1: 扩展点完整性
 
@@ -778,7 +783,7 @@ Desktop 使用:
 
 ### Phase 2: 可信插件完善
 
-状态: 部分落地，下一步优先做插件级 ErrorBoundary。
+状态: 部分落地，ErrorBoundary 稳定性补强已完成，下一步推进扩展点完整性。
 
 已完成:
 
@@ -786,12 +791,15 @@ Desktop 使用:
 2. Comments Overview 内置插件。
 3. 插件配置持久化基础能力。
 4. Dashboard widget 读取插件配置。
+5. 插件级 ErrorBoundary。
+6. `recordPluginError` 与最近错误展示。
+7. Dashboard/Settings 插件贡献区域失败隔离。
 
 下一轮 P0:
 
-1. 插件级 ErrorBoundary。
-2. `recordPluginError` 与最近错误展示。
-3. Dashboard/Settings 插件贡献区域失败隔离。
+1. Sidebar item 实际挂载到 `CMSLayout`。
+2. CommandRegistry 注册、执行、权限校验和错误返回。
+3. `recordPluginError` 错误计数与阈值熔断。
 
 后续 P1:
 
@@ -840,7 +848,7 @@ Desktop 使用:
 3. PluginManager 状态流转测试。
 4. ExtensionRegistry 注册/清理测试。
 5. Web/Desktop 插件配置持久化测试。
-6. 插件 ErrorBoundary 组件测试。
+6. 插件 ErrorBoundary 与 `recordPluginError` 测试。
 7. 至少一个启停插件的 E2E 测试。
 8. 第二个内置插件启停、renderer 映射和 dashboard 布局测试。
 
@@ -882,4 +890,4 @@ Desktop 使用:
 10. 内置插件 renderer 放在 `packages/ui/src/plugin/renderers`。
 11. 第二个内置插件选择 Comments Overview，Analytics Dashboard 等 Secret Store 与 network permission 稳定后再做。
 12. Comments Overview 先复用静态示例数据和配置入口验证架构，后续再抽象 `CommentProvider`。
-13. 下一轮优先实现插件级 ErrorBoundary，先覆盖 Dashboard widget 和 Settings schema renderer。
+13. 插件级 ErrorBoundary 已覆盖 Dashboard widget 和 Settings schema renderer；下一轮优先补 Sidebar item、CommandRegistry 和错误阈值熔断。

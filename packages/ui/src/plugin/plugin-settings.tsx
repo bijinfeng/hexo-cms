@@ -9,6 +9,7 @@ import type {
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { PluginErrorBoundary } from "./plugin-error-boundary";
 import { usePluginSystem } from "./plugin-provider";
 
 const permissionLabels: Record<string, string> = {
@@ -95,13 +96,19 @@ export function PluginSettingsPanel() {
                     {settingsPanels.map((panel) => {
                       const schema = manifest.contributes?.settingsSchemas?.[panel.schema];
                       return (
-                        <PluginSettingsSchemaPanel
+                        <PluginErrorBoundary
                           key={panel.id}
-                          panel={panel}
-                          schema={schema}
-                          config={config}
-                          onChange={(patch) => updatePluginConfig(manifest.id, patch)}
-                        />
+                          pluginId={panel.pluginId}
+                          contributionId={panel.id}
+                          contributionType="settings.panel"
+                        >
+                          <PluginSettingsSchemaPanel
+                            panel={panel}
+                            schema={schema}
+                            config={config}
+                            onChange={(patch) => updatePluginConfig(manifest.id, patch)}
+                          />
+                        </PluginErrorBoundary>
                       );
                     })}
                   </div>
