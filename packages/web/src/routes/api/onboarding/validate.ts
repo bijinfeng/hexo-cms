@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { validateHexoRepository, type OctokitLike } from "../../../lib/onboarding-github";
+import { getRepositoryValidationHttpStatus, validateHexoRepository, type OctokitLike } from "../../../lib/onboarding-github";
 import { getAuth, getGitHubAccessTokenFromAuth, json } from "../../../lib/server-utils";
 
 function isRepositorySelection(input: unknown): input is { owner: string; repo: string; branch?: string } {
@@ -34,11 +34,9 @@ export const Route = createFileRoute("/api/onboarding/validate")({
           branch: selection.branch?.trim() || undefined,
         });
 
-        if (validation.error === "REAUTH_REQUIRED") {
-          return json({ error: "REAUTH_REQUIRED", validation }, 401);
-        }
-
-        return json({ validation }, validation.ok ? 200 : 400);
+        const status = getRepositoryValidationHttpStatus(validation);
+        const payload = validation.error ? { error: validation.error, validation } : { validation };
+        return json(payload, status);
       },
     },
   },

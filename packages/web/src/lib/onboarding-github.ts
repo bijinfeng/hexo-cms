@@ -48,6 +48,25 @@ export function getGitHubErrorStatus(error: unknown): number | null {
     : null;
 }
 
+export function getRepositoryValidationHttpStatus(validation: RepositoryValidation): number {
+  if (validation.ok) return 200;
+
+  switch (validation.error) {
+    case "REAUTH_REQUIRED":
+      return 401;
+    case "PERMISSION_REQUIRED":
+      return 403;
+    case "REPO_NOT_FOUND":
+      return 404;
+    case "NETWORK_ERROR":
+      return 502;
+    case "BRANCH_NOT_FOUND":
+    case "NOT_HEXO_REPO":
+    default:
+      return 400;
+  }
+}
+
 function isGitHubUnauthorized(error: unknown) {
   return getGitHubErrorStatus(error) === 401;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { listWritableRepositories, validateHexoRepository } from "./onboarding-github";
+import { getRepositoryValidationHttpStatus, listWritableRepositories, validateHexoRepository } from "./onboarding-github";
 
 type MockOctokit = Parameters<typeof listWritableRepositories>[0];
 
@@ -224,6 +224,37 @@ describe("validateHexoRepository", () => {
     });
   });
 
+  it("accepts repositories with source posts directory even when root config is missing", async () => {
+    const request = vi.fn().mockResolvedValue({
+      data: {
+        id: 101,
+        owner: { login: "octo" },
+        name: "blog",
+        full_name: "octo/blog",
+        private: false,
+        default_branch: "main",
+        pushed_at: null,
+        permissions: { push: true },
+      },
+    });
+    const getBranch = vi.fn().mockResolvedValue({ data: { name: "main" } });
+    const getContent = vi.fn().mockImplementation((input) => {
+      if (input.path === "_config.yml") return Promise.reject(githubError(404));
+      if (input.path === "source/_posts") return Promise.resolve({ data: { type: "dir" } });
+      return Promise.reject(githubError(404));
+    });
+
+    await expect(validateHexoRepository(createOctokit({ request, getBranch, getContent }), {
+      owner: "octo",
+      repo: "blog",
+    })).resolves.toMatchObject({
+      ok: true,
+      defaultConfig: {
+        branch: "main",
+      },
+    });
+  });
+
   it("rejects repositories without Hexo config or posts directory", async () => {
     const request = vi.fn().mockResolvedValue({
       data: {
@@ -307,5 +338,15 @@ describe("validateHexoRepository", () => {
       ok: false,
       error: "REAUTH_REQUIRED",
     });
+  });
+
+  it("maps validation errors to HTTP statuses", () => {
+    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "REAUTH_REQUIRED" })).toBe(401);
+    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "PERMISSION_REQUIRED" })).toBe(403);
+    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "REPO_NOT_FOUND" })).toBe(404);
+    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "NETWORK_ERROR" })).toBe(502);
+    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "BRANCH_NOT_FOUND" })).toBe(400);
+    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "NOT_HEXO_REPO" })).toBe(400);
+    expect(getRepositoryValidationHttpStatus({ ok: true, checks: [] })).toBe(200);
   });
 });
