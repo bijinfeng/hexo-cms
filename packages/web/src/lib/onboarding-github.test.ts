@@ -5,11 +5,13 @@ type MockOctokit = Parameters<typeof listWritableRepositories>[0];
 
 function createOctokit(overrides: Partial<{
   request: ReturnType<typeof vi.fn>;
+  paginate: ReturnType<typeof vi.fn>;
   getBranch: ReturnType<typeof vi.fn>;
   getContent: ReturnType<typeof vi.fn>;
 }> = {}): MockOctokit {
   return {
     request: overrides.request ?? vi.fn(),
+    paginate: overrides.paginate,
     rest: {
       repos: {
         getBranch: overrides.getBranch ?? vi.fn(),
@@ -81,6 +83,46 @@ describe("listWritableRepositories", () => {
         pushedAt: "2026-05-02T12:00:00Z",
         permissions: { push: true },
       },
+    ]);
+  });
+
+  it("uses Octokit pagination when available", async () => {
+    const request = vi.fn();
+    const paginate = vi.fn().mockResolvedValue([
+      {
+        id: 201,
+        owner: { login: "octo" },
+        name: "blog",
+        full_name: "octo/blog",
+        private: false,
+        default_branch: "main",
+        permissions: { push: true },
+      },
+      {
+        id: 202,
+        owner: { login: "octo" },
+        name: "archive",
+        full_name: "octo/archive",
+        private: false,
+        default_branch: "main",
+        permissions: { push: true },
+      },
+    ]);
+
+    const repositories = await listWritableRepositories({
+      ...createOctokit({ request }),
+      paginate,
+    }, { query: "archive" });
+
+    expect(paginate).toHaveBeenCalledWith("GET /user/repos", {
+      affiliation: "owner,collaborator,organization_member",
+      sort: "updated",
+      direction: "desc",
+      per_page: 100,
+    });
+    expect(request).not.toHaveBeenCalled();
+    expect(repositories).toEqual([
+      expect.objectContaining({ fullName: "octo/archive" }),
     ]);
   });
 });
@@ -252,6 +294,18 @@ describe("validateHexoRepository", () => {
     })).resolves.toMatchObject({
       ok: false,
       error: "PERMISSION_REQUIRED",
+    });
+  });
+
+  it("maps GitHub authorization failures to reauthorization validation errors", async () => {
+    const request = vi.fn().mockRejectedValue(githubError(401));
+
+    await expect(validateHexoRepository(createOctokit({ request }), {
+      owner: "octo",
+      repo: "blog",
+    })).resolves.toMatchObject({
+      ok: false,
+      error: "REAUTH_REQUIRED",
     });
   });
 });

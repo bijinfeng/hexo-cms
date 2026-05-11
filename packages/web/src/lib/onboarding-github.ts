@@ -15,12 +15,13 @@ type GitHubRepo = {
   permissions?: { push?: boolean | null } | null;
 };
 
-type OctokitLike = {
+export type OctokitLike = {
   request: (route: string, options: Record<string, unknown>) => Promise<{ data: unknown }>;
+  paginate?: (route: string, options: Record<string, unknown>) => Promise<unknown[]>;
   rest: {
     repos: {
-      getBranch: (options: Record<string, unknown>) => Promise<unknown>;
-      getContent: (options: Record<string, unknown>) => Promise<unknown>;
+      getBranch: (options: { owner: string; repo: string; branch: string }) => Promise<unknown>;
+      getContent: (options: { owner: string; repo: string; path: string; ref?: string }) => Promise<unknown>;
     };
   };
 };
@@ -38,8 +39,21 @@ const CHECK_MESSAGES = {
 };
 
 function isGitHubNotFound(error: unknown) {
+  return getGitHubErrorStatus(error) === 404;
+}
+
+export function getGitHubErrorStatus(error: unknown): number | null {
   return typeof error === "object" && error !== null && "status" in error
-    && Number((error as { status?: unknown }).status) === 404;
+    ? Number((error as { status?: unknown }).status)
+    : null;
+}
+
+function isGitHubUnauthorized(error: unknown) {
+  return getGitHubErrorStatus(error) === 401;
+}
+
+function isGitHubForbidden(error: unknown) {
+  return getGitHubErrorStatus(error) === 403;
 }
 
 function mapRepository(repo: GitHubRepo): RepositoryOption {
@@ -63,12 +77,15 @@ export async function listWritableRepositories(
   octokit: OctokitLike,
   input: { query?: string } = {},
 ): Promise<RepositoryOption[]> {
-  const { data } = await octokit.request("GET /user/repos", {
+  const requestOptions = {
     affiliation: "owner,collaborator,organization_member",
     sort: "updated",
     direction: "desc",
     per_page: 100,
-  });
+  };
+  const data = octokit.paginate
+    ? await octokit.paginate("GET /user/repos", requestOptions)
+    : (await octokit.request("GET /user/repos", requestOptions)).data;
 
   const query = input.query?.trim().toLowerCase() ?? "";
   return (Array.isArray(data) ? data : [])
@@ -185,6 +202,26 @@ export async function validateHexoRepository(
           { id: "access", status: "error", message: CHECK_MESSAGES.accessError },
         ],
         error: "REPO_NOT_FOUND",
+      };
+    }
+
+    if (isGitHubUnauthorized(error)) {
+      return {
+        ok: false,
+        checks: [
+          { id: "access", status: "error", message: CHECK_MESSAGES.permissionError },
+        ],
+        error: "REAUTH_REQUIRED",
+      };
+    }
+
+    if (isGitHubForbidden(error)) {
+      return {
+        ok: false,
+        checks: [
+          { id: "permission", status: "error", message: CHECK_MESSAGES.permissionError },
+        ],
+        error: "PERMISSION_REQUIRED",
       };
     }
 

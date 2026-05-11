@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { listWritableRepositories } from "../../../lib/onboarding-github";
+import { getGitHubErrorStatus, listWritableRepositories, type OctokitLike } from "../../../lib/onboarding-github";
 import { getAuth, getGitHubAccessTokenFromAuth, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/onboarding/repositories")({
@@ -15,11 +15,18 @@ export const Route = createFileRoute("/api/onboarding/repositories")({
 
         const { Octokit } = await import("octokit");
         const url = new URL(request.url);
-        const repositories = await listWritableRepositories(new Octokit({ auth: accessToken }) as any, {
-          query: url.searchParams.get("q") ?? undefined,
-        });
+        try {
+          const repositories = await listWritableRepositories(new Octokit({ auth: accessToken }) as OctokitLike, {
+            query: url.searchParams.get("q") ?? undefined,
+          });
 
-        return json({ repositories });
+          return json({ repositories });
+        } catch (error) {
+          const status = getGitHubErrorStatus(error);
+          if (status === 401) return json({ error: "REAUTH_REQUIRED" }, 401);
+          if (status === 403) return json({ error: "PERMISSION_REQUIRED" }, 403);
+          return json({ error: "NETWORK_ERROR" }, 502);
+        }
       },
     },
   },
