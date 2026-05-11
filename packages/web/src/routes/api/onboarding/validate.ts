@@ -34,6 +34,10 @@ export const Route = createFileRoute("/api/onboarding/validate")({
           branch: selection.branch?.trim() || undefined,
         });
 
+        if (validation.error === "REAUTH_REQUIRED") {
+          return json({ error: "REAUTH_REQUIRED", validation }, 401);
+        }
+
         return json({ validation }, validation.ok ? 200 : 400);
       },
     },
