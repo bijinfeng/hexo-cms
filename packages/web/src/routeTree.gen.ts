@@ -25,6 +25,8 @@ import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 import { Route as PagesNewRouteImport } from './routes/pages.new'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as ApiDeployRouteImport } from './routes/api/deploy'
+import { Route as ApiOnboardingValidateRouteImport } from './routes/api/onboarding/validate'
+import { Route as ApiOnboardingRepositoriesRouteImport } from './routes/api/onboarding/repositories'
 import { Route as ApiGithubThemesRouteImport } from './routes/api/github/themes'
 import { Route as ApiGithubTagsRouteImport } from './routes/api/github/tags'
 import { Route as ApiGithubStatsRouteImport } from './routes/api/github/stats'
@@ -115,6 +117,17 @@ const ApiDeployRoute = ApiDeployRouteImport.update({
   path: '/api/deploy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOnboardingValidateRoute = ApiOnboardingValidateRouteImport.update({
+  id: '/api/onboarding/validate',
+  path: '/api/onboarding/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOnboardingRepositoriesRoute =
+  ApiOnboardingRepositoriesRouteImport.update({
+    id: '/api/onboarding/repositories',
+    path: '/api/onboarding/repositories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiGithubThemesRoute = ApiGithubThemesRouteImport.update({
   id: '/api/github/themes',
   path: '/api/github/themes',
@@ -187,6 +200,8 @@ export interface FileRoutesByFullPath {
   '/api/github/stats': typeof ApiGithubStatsRoute
   '/api/github/tags': typeof ApiGithubTagsRoute
   '/api/github/themes': typeof ApiGithubThemesRoute
+  '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
+  '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -214,6 +229,8 @@ export interface FileRoutesByTo {
   '/api/github/stats': typeof ApiGithubStatsRoute
   '/api/github/tags': typeof ApiGithubTagsRoute
   '/api/github/themes': typeof ApiGithubThemesRoute
+  '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
+  '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -242,6 +259,8 @@ export interface FileRoutesById {
   '/api/github/stats': typeof ApiGithubStatsRoute
   '/api/github/tags': typeof ApiGithubTagsRoute
   '/api/github/themes': typeof ApiGithubThemesRoute
+  '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
+  '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -271,6 +290,8 @@ export interface FileRouteTypes {
     | '/api/github/stats'
     | '/api/github/tags'
     | '/api/github/themes'
+    | '/api/onboarding/repositories'
+    | '/api/onboarding/validate'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -298,6 +319,8 @@ export interface FileRouteTypes {
     | '/api/github/stats'
     | '/api/github/tags'
     | '/api/github/themes'
+    | '/api/onboarding/repositories'
+    | '/api/onboarding/validate'
   id:
     | '__root__'
     | '/'
@@ -325,6 +348,8 @@ export interface FileRouteTypes {
     | '/api/github/stats'
     | '/api/github/tags'
     | '/api/github/themes'
+    | '/api/onboarding/repositories'
+    | '/api/onboarding/validate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -349,6 +374,8 @@ export interface RootRouteChildren {
   ApiGithubStatsRoute: typeof ApiGithubStatsRoute
   ApiGithubTagsRoute: typeof ApiGithubTagsRoute
   ApiGithubThemesRoute: typeof ApiGithubThemesRoute
+  ApiOnboardingRepositoriesRoute: typeof ApiOnboardingRepositoriesRoute
+  ApiOnboardingValidateRoute: typeof ApiOnboardingValidateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -465,6 +492,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDeployRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/onboarding/validate': {
+      id: '/api/onboarding/validate'
+      path: '/api/onboarding/validate'
+      fullPath: '/api/onboarding/validate'
+      preLoaderRoute: typeof ApiOnboardingValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/onboarding/repositories': {
+      id: '/api/onboarding/repositories'
+      path: '/api/onboarding/repositories'
+      fullPath: '/api/onboarding/repositories'
+      preLoaderRoute: typeof ApiOnboardingRepositoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/github/themes': {
       id: '/api/github/themes'
       path: '/api/github/themes'
@@ -577,6 +618,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGithubStatsRoute: ApiGithubStatsRoute,
   ApiGithubTagsRoute: ApiGithubTagsRoute,
   ApiGithubThemesRoute: ApiGithubThemesRoute,
+  ApiOnboardingRepositoriesRoute: ApiOnboardingRepositoriesRoute,
+  ApiOnboardingValidateRoute: ApiOnboardingValidateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

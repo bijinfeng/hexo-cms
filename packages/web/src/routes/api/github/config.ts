@@ -36,11 +36,11 @@ export const Route = createFileRoute("/api/github/config")({
           owner: body.owner,
           repo: body.repo,
           branch: body.branch || "main",
-          postsDir: body.posts_dir || "source/_posts",
-          mediaDir: body.media_dir || "source/images",
-          workflowFile: body.workflow_file || ".github/workflows/deploy.yml",
-          autoDeploy: body.auto_deploy !== false,
-          deployNotifications: body.deploy_notifications !== false,
+          postsDir: body.postsDir || body.posts_dir || "source/_posts",
+          mediaDir: body.mediaDir || body.media_dir || "source/images",
+          workflowFile: body.workflowFile || body.workflow_file || ".github/workflows/deploy.yml",
+          autoDeploy: body.autoDeploy ?? (body.auto_deploy !== false),
+          deployNotifications: body.deployNotifications ?? (body.deploy_notifications !== false),
           updatedAt: new Date().toISOString(),
         };
 
