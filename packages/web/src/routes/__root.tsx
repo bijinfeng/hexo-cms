@@ -6,17 +6,15 @@ import {
   ErrorBoundary,
   PluginProvider,
   getAuthRedirect,
+  isOnboardingRoute,
   isPublicAuthRoute,
-  withCache,
   type AuthSession,
 } from "@hexo-cms/ui";
-import { WebDataProvider } from "../lib/web-data-provider";
 import { webAuthClient } from "../lib/auth-client";
+import { webDataProvider } from "../lib/web-data-provider-instance";
 import appCss from "../styles.css?url";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
-
-const webDataProvider = withCache(new WebDataProvider());
 
 function NotFound() {
   return <div className="flex items-center justify-center h-full text-sm">404 — 页面不存在</div>;
@@ -60,41 +58,59 @@ function RootComponent() {
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
   const isPublicRoute = isPublicAuthRoute(pathname);
+  const isSetupRoute = isOnboardingRoute(pathname);
   const navigate = useNavigate();
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [hasConfig, setHasConfig] = useState<boolean | null>(null);
   const [isPending, setIsPending] = useState(true);
 
   useEffect(() => {
     let active = true;
-    setIsPending(true);
-    webAuthClient
-      .getSession()
-      .then((nextSession) => {
-        if (active) setSession(nextSession);
-      })
-      .catch(() => {
-        if (active) setSession({ state: "anonymous" });
-      })
-      .finally(() => {
+
+    async function loadSessionAndConfig() {
+      setIsPending(true);
+      setHasConfig(null);
+      try {
+        const nextSession = await webAuthClient.getSession();
+        if (!active) return;
+        setSession(nextSession);
+
+        if (nextSession.state === "authenticated") {
+          const config = await webDataProvider.getConfig();
+          if (active) setHasConfig(Boolean(config));
+        } else if (active) {
+          setHasConfig(null);
+        }
+      } catch {
+        if (active) {
+          setSession({ state: "anonymous" });
+          setHasConfig(null);
+        }
+      } finally {
         if (active) setIsPending(false);
-      });
+      }
+    }
+
+    void loadSessionAndConfig();
 
     return () => {
       active = false;
     };
   }, [pathname]);
 
+  const guardPending = isPending || (session?.state === "authenticated" && hasConfig === null && !isSetupRoute);
+
   useEffect(() => {
     const redirect = getAuthRedirect({
       pathname,
       session,
-      hasConfig: null,
-      isPending,
+      hasConfig,
+      isPending: guardPending,
     });
     if (redirect) navigate({ to: redirect, replace: true });
-  }, [session, isPending, pathname, navigate]);
+  }, [session, hasConfig, guardPending, pathname, navigate]);
 
-  if (isPending) {
+  if (guardPending) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[var(--bg-base)]">
         <div className="w-6 h-6 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
@@ -104,7 +120,7 @@ function RootComponent() {
 
   if (session?.state !== "authenticated" && !isPublicRoute) return null;
 
-  if (isPublicRoute) return <ErrorBoundary><Outlet /></ErrorBoundary>;
+  if (isPublicRoute || isSetupRoute) return <ErrorBoundary><Outlet /></ErrorBoundary>;
 
   return (
     <DataProviderProvider provider={webDataProvider}>
