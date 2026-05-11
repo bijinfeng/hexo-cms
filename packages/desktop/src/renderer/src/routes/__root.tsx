@@ -7,13 +7,10 @@ import {
   PluginProvider,
   getAuthRedirect,
   isPublicAuthRoute,
-  withCache,
   type AuthSession,
 } from "@hexo-cms/ui";
-import { DesktopDataProvider } from "../lib/desktop-data-provider";
 import { desktopAuthClient, subscribeToDesktopAuthChanges } from "../lib/desktop-auth-client";
-
-const desktopDataProvider = withCache(new DesktopDataProvider());
+import { desktopDataProvider } from "../lib/desktop-data-provider-instance";
 
 function RootComponent() {
   const routerState = useRouterState();

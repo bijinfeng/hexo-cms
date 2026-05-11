@@ -16,6 +16,7 @@ import {
   startGitHubDeviceFlow,
   type StoredOAuthSession,
 } from "./auth";
+import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
 
 const KEYTAR_SERVICE = "hexo-cms";
 const LEGACY_TOKEN_ACCOUNT = "github-token";
@@ -358,6 +359,29 @@ ipcMain.handle("config:save", (_event, config: GitHubConfig) => {
     console.error(JSON.stringify({ level: "error", message: "IPC: config:save failed", error: String(error) }));
     throw error;
   }
+});
+
+// Onboarding repository import
+ipcMain.handle("onboarding:listRepositories", async (_event, input: { query?: string } = {}) => {
+  const token = await getGitHubAccessToken();
+  if (!token) return [];
+
+  const { Octokit } = await import("octokit");
+  return listWritableRepositories(new Octokit({ auth: token }) as OctokitLike, input);
+});
+
+ipcMain.handle("onboarding:validateRepository", async (_event, input: { owner: string; repo: string; branch?: string }) => {
+  const token = await getGitHubAccessToken();
+  if (!token) {
+    return {
+      ok: false,
+      checks: [{ id: "access", status: "error", message: "当前授权缺少仓库读写权限，请重新授权" }],
+      error: "REAUTH_REQUIRED",
+    };
+  }
+
+  const { Octokit } = await import("octokit");
+  return validateHexoRepository(new Octokit({ auth: token }) as OctokitLike, input);
 });
 
 // 文章管理

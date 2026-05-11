@@ -7,6 +7,8 @@ const ALLOWED_CHANNELS = [
   "auth:startDeviceFlow",
   "auth:signOut",
   "auth:reauthorize",
+  "onboarding:listRepositories",
+  "onboarding:validateRepository",
   "config:get",
   "config:save",
   "github:get-posts",
@@ -40,6 +42,8 @@ const electronAPI: ElectronAPI = {
   startDeviceFlow: () => ipcRenderer.invoke("auth:startDeviceFlow"),
   signOut: () => ipcRenderer.invoke("auth:signOut"),
   reauthorize: () => ipcRenderer.invoke("auth:reauthorize"),
+  listOnboardingRepositories: (input) => ipcRenderer.invoke("onboarding:listRepositories", input),
+  validateOnboardingRepository: (input) => ipcRenderer.invoke("onboarding:validateRepository", input),
 
   // 通用 IPC 调用（带白名单验证）
   invoke: <T = unknown>(channel: string, ...args: unknown[]): Promise<T> => {
