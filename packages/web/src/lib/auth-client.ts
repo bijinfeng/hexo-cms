@@ -36,10 +36,38 @@ function normalizeSession(session: unknown): AuthSession {
   };
 }
 
+async function hasGitHubToken(): Promise<boolean | "reauthorization_required"> {
+  const response = await fetch("/api/auth/token");
+  if (response.ok) {
+    const data = await response.json() as { authenticated?: boolean };
+    return data.authenticated === true;
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    const data = await response.json().catch(() => null) as { error?: string } | null;
+    if (data?.error === "REAUTH_REQUIRED") return "reauthorization_required";
+    return false;
+  }
+
+  return false;
+}
+
 export const webAuthClient: AuthClient = {
   async getSession() {
     const session = await authClient.getSession();
-    return normalizeSession(session.data);
+    const authSession = normalizeSession(session.data);
+    if (authSession.state !== "authenticated") return authSession;
+
+    const hasToken = await hasGitHubToken();
+    if (hasToken === true) return authSession;
+    if (hasToken === "reauthorization_required") {
+      return {
+        state: "reauthorization_required",
+        user: authSession.user,
+        error: "AUTH_SCOPE_INSUFFICIENT",
+      };
+    }
+    return { state: "anonymous" };
   },
   async startLogin() {
     await authClient.signIn.social({

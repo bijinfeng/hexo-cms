@@ -1,8 +1,17 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { CMSLayout, DataProviderProvider, ErrorBoundary, PluginProvider, getAuthRedirect, isPublicAuthRoute, withCache } from "@hexo-cms/ui";
+import { useEffect, useState } from "react";
+import {
+  CMSLayout,
+  DataProviderProvider,
+  ErrorBoundary,
+  PluginProvider,
+  getAuthRedirect,
+  isPublicAuthRoute,
+  withCache,
+  type AuthSession,
+} from "@hexo-cms/ui";
 import { WebDataProvider } from "../lib/web-data-provider";
-import { useSession } from "../lib/auth-client";
+import { webAuthClient } from "../lib/auth-client";
 import appCss from "../styles.css?url";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
@@ -52,12 +61,33 @@ function RootComponent() {
   const pathname = routerState.location.pathname;
   const isPublicRoute = isPublicAuthRoute(pathname);
   const navigate = useNavigate();
-  const { data: session, isPending } = useSession();
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [isPending, setIsPending] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setIsPending(true);
+    webAuthClient
+      .getSession()
+      .then((nextSession) => {
+        if (active) setSession(nextSession);
+      })
+      .catch(() => {
+        if (active) setSession({ state: "anonymous" });
+      })
+      .finally(() => {
+        if (active) setIsPending(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     const redirect = getAuthRedirect({
       pathname,
-      session: session ? { state: "authenticated" } : { state: "anonymous" },
+      session,
       isPending,
     });
     if (redirect) navigate({ to: redirect, replace: true });
@@ -71,7 +101,7 @@ function RootComponent() {
     );
   }
 
-  if (!session && !isPublicRoute) return null;
+  if (session?.state !== "authenticated" && !isPublicRoute) return null;
 
   if (isPublicRoute) return <ErrorBoundary><Outlet /></ErrorBoundary>;
 
