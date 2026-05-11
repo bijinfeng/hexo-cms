@@ -4,7 +4,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ATTACHMENTS_HELPER_PLUGIN_ID, COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
 import { DataProviderProvider } from "../context/data-provider-context";
-import { DashboardExtensionOutlet, PluginErrorBoundary, PluginProvider, usePluginSystem } from "../plugin";
+import { DashboardExtensionOutlet, PluginErrorBoundary, PluginProvider, WebPluginStorageStore, usePluginSystem } from "../plugin";
 import { usePluginDataProvider } from "../plugin/plugin-provider";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import { AttachmentsSummaryWidget } from "../plugin/renderers/attachments-summary-widget";
@@ -381,6 +381,34 @@ describe("plugin UI", () => {
     expect(emitSpy.mock.calls.find(([eventName]) => eventName === "deploy.statusChange")?.[1]).toEqual(
       expect.objectContaining({ id: "deploy-1", status: "success", previousStatus: "running" }),
     );
+  });
+
+  it("persists plugin storage through the web platform storage endpoint", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ storage: { "hexo-cms-attachments-helper": { copyCount: 2 } } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const store = new WebPluginStorageStore();
+
+    await expect(store.load()).resolves.toEqual({
+      "hexo-cms-attachments-helper": { copyCount: 2 },
+    });
+    await store.save({
+      "hexo-cms-attachments-helper": { copyCount: 3 },
+    });
+
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/plugin/storage", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ storage: { "hexo-cms-attachments-helper": { copyCount: 3 } } }),
+    });
   });
 });
 

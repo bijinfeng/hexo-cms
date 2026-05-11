@@ -4,7 +4,6 @@ import {
   COMMENTS_OVERVIEW_PLUGIN_ID,
   BrowserPluginConfigStore,
   BrowserPluginLogStore,
-  BrowserPluginStorageStore,
   BrowserPluginStateStore,
   PluginManager,
   builtinPluginManifests,
@@ -12,8 +11,10 @@ import {
   type PluginConfigValue,
   type PluginManagerSnapshot,
   type PluginRuntimeErrorInput,
+  type PluginStorageStore,
 } from "@hexo-cms/core";
 import { DataProviderProvider, useDataProvider } from "../context/data-provider-context";
+import { createPlatformPluginStorageStore } from "./platform-plugin-storage";
 import { withPluginEvents } from "./plugin-event-data-provider";
 
 interface PluginContextValue {
@@ -28,12 +29,12 @@ interface PluginContextValue {
 
 const PluginContext = createContext<PluginContextValue | null>(null);
 
-function createDefaultPluginManager(): PluginManager {
+function createDefaultPluginManager(storageStore: PluginStorageStore): PluginManager {
   return new PluginManager({
     manifests: builtinPluginManifests,
     store: new BrowserPluginStateStore(),
     configStore: new BrowserPluginConfigStore(),
-    storageStore: new BrowserPluginStorageStore(),
+    storageStore,
     logStore: new BrowserPluginLogStore(),
     defaultEnabledPluginIds: [ATTACHMENTS_HELPER_PLUGIN_ID],
     commandHandlers: {
@@ -54,7 +55,8 @@ function createDefaultPluginManager(): PluginManager {
 
 export function PluginProvider({ children }: { children: React.ReactNode }) {
   const dataProvider = useDataProvider();
-  const manager = useMemo(() => createDefaultPluginManager(), []);
+  const storageStore = useMemo(() => createPlatformPluginStorageStore(), []);
+  const manager = useMemo(() => createDefaultPluginManager(storageStore), [storageStore]);
   const [snapshot, setSnapshot] = useState<PluginManagerSnapshot>(() => manager.snapshot());
   const eventDataProvider = useMemo(
     () =>

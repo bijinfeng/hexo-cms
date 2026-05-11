@@ -1,9 +1,9 @@
 import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } from "electron";
-import { join } from "path";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { dirname, join } from "path";
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { GitHubService } from "@hexo-cms/core";
-import type { GitHubConfig } from "@hexo-cms/core";
+import type { GitHubConfig, PluginStorageStoreValue } from "@hexo-cms/core";
 import type { DeviceFlowInfo } from "@hexo-cms/ui";
 import {
   createAnonymousSession,
@@ -83,6 +83,26 @@ function loadConfig(): GitHubConfig | null {
 
 function saveConfigToFile(config: GitHubConfig): void {
   writeFileSync(getConfigPath(), JSON.stringify(config, null, 2));
+}
+
+function getPluginStoragePath(): string {
+  return join(app.getPath("userData"), "plugins", "storage.json");
+}
+
+function loadPluginStorage(): PluginStorageStoreValue {
+  const storagePath = getPluginStoragePath();
+  if (!existsSync(storagePath)) return {};
+  try {
+    return JSON.parse(readFileSync(storagePath, "utf-8")) as PluginStorageStoreValue;
+  } catch {
+    return {};
+  }
+}
+
+function savePluginStorage(value: PluginStorageStoreValue): void {
+  const storagePath = getPluginStoragePath();
+  mkdirSync(dirname(storagePath), { recursive: true });
+  writeFileSync(storagePath, JSON.stringify(value, null, 2));
 }
 
 // ==================== GitHubService 工厂（带缓存）====================
@@ -359,6 +379,14 @@ ipcMain.handle("config:save", (_event, config: GitHubConfig) => {
     console.error(JSON.stringify({ level: "error", message: "IPC: config:save failed", error: String(error) }));
     throw error;
   }
+});
+
+ipcMain.handle("plugin-storage:load", () => {
+  return loadPluginStorage();
+});
+
+ipcMain.handle("plugin-storage:save", (_event, value: PluginStorageStoreValue) => {
+  savePluginStorage(value);
 });
 
 // Onboarding repository import

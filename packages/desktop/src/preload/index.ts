@@ -30,6 +30,8 @@ const ALLOWED_CHANNELS = [
   "github:switch-theme",
   "github:get-deployments",
   "github:trigger-deploy",
+  "plugin-storage:load",
+  "plugin-storage:save",
   "window:minimize",
   "window:maximize",
   "window:unmaximize",

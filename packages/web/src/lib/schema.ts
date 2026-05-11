@@ -60,3 +60,11 @@ export const githubConfig = sqliteTable("github_config", {
   createdAt: text("created_at"),
   updatedAt: text("updated_at"),
 });
+
+export const pluginStorage = sqliteTable("plugin_storage", {
+  userId: text("user_id").notNull(),
+  pluginId: text("plugin_id").notNull(),
+  key: text("key").notNull(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at"),
+});

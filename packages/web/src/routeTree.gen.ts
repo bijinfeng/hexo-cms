@@ -25,6 +25,7 @@ import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 import { Route as PagesNewRouteImport } from './routes/pages.new'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as ApiDeployRouteImport } from './routes/api/deploy'
+import { Route as ApiPluginStorageRouteImport } from './routes/api/plugin/storage'
 import { Route as ApiOnboardingValidateRouteImport } from './routes/api/onboarding/validate'
 import { Route as ApiOnboardingRepositoriesRouteImport } from './routes/api/onboarding/repositories'
 import { Route as ApiGithubThemesRouteImport } from './routes/api/github/themes'
@@ -117,6 +118,11 @@ const ApiDeployRoute = ApiDeployRouteImport.update({
   path: '/api/deploy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPluginStorageRoute = ApiPluginStorageRouteImport.update({
+  id: '/api/plugin/storage',
+  path: '/api/plugin/storage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOnboardingValidateRoute = ApiOnboardingValidateRouteImport.update({
   id: '/api/onboarding/validate',
   path: '/api/onboarding/validate',
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/api/github/themes': typeof ApiGithubThemesRoute
   '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
+  '/api/plugin/storage': typeof ApiPluginStorageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByTo {
   '/api/github/themes': typeof ApiGithubThemesRoute
   '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
+  '/api/plugin/storage': typeof ApiPluginStorageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/api/github/themes': typeof ApiGithubThemesRoute
   '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
+  '/api/plugin/storage': typeof ApiPluginStorageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/api/github/themes'
     | '/api/onboarding/repositories'
     | '/api/onboarding/validate'
+    | '/api/plugin/storage'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/api/github/themes'
     | '/api/onboarding/repositories'
     | '/api/onboarding/validate'
+    | '/api/plugin/storage'
   id:
     | '__root__'
     | '/'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/api/github/themes'
     | '/api/onboarding/repositories'
     | '/api/onboarding/validate'
+    | '/api/plugin/storage'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -376,6 +388,7 @@ export interface RootRouteChildren {
   ApiGithubThemesRoute: typeof ApiGithubThemesRoute
   ApiOnboardingRepositoriesRoute: typeof ApiOnboardingRepositoriesRoute
   ApiOnboardingValidateRoute: typeof ApiOnboardingValidateRoute
+  ApiPluginStorageRoute: typeof ApiPluginStorageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -490,6 +503,13 @@ declare module '@tanstack/react-router' {
       path: '/api/deploy'
       fullPath: '/api/deploy'
       preLoaderRoute: typeof ApiDeployRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/plugin/storage': {
+      id: '/api/plugin/storage'
+      path: '/api/plugin/storage'
+      fullPath: '/api/plugin/storage'
+      preLoaderRoute: typeof ApiPluginStorageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/onboarding/validate': {
@@ -620,6 +640,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGithubThemesRoute: ApiGithubThemesRoute,
   ApiOnboardingRepositoriesRoute: ApiOnboardingRepositoriesRoute,
   ApiOnboardingValidateRoute: ApiOnboardingValidateRoute,
+  ApiPluginStorageRoute: ApiPluginStorageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

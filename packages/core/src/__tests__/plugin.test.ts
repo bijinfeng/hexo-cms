@@ -10,6 +10,7 @@ import {
   PluginManager,
   PluginManifestError,
   PluginPermissionError,
+  type PluginStorageStoreValue,
   builtinPluginManifests,
   validatePluginManifest,
 } from "../plugin";
@@ -280,6 +281,29 @@ describe("plugin system", () => {
 
     await expect(readonlyStorage.set("draft", true)).rejects.toThrow(PluginPermissionError);
     await expect(writeonlyStorage.keys()).rejects.toThrow(PluginPermissionError);
+  });
+
+  it("supports asynchronous plugin storage stores", async () => {
+    const storageStore = {
+      value: {} as PluginStorageStoreValue,
+      async load() {
+        return this.value;
+      },
+      async save(value: PluginStorageStoreValue) {
+        this.value = value;
+      },
+    };
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      storageStore,
+    });
+    const storage = manager.createStorageAPI(ATTACHMENTS_HELPER_PLUGIN_ID);
+
+    await storage.set("lastPath", "source/images/guide.pdf");
+
+    await expect(storage.get("lastPath")).resolves.toBe("source/images/guide.pdf");
+    await expect(storage.keys()).resolves.toEqual(["lastPath"]);
   });
 
   it("records scoped and sanitized plugin logs", () => {

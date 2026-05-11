@@ -6,8 +6,8 @@ import type {
 } from "./types";
 
 export interface PluginStorageStore {
-  load(): PluginStorageStoreValue;
-  save(value: PluginStorageStoreValue): void;
+  load(): PluginStorageStoreValue | Promise<PluginStorageStoreValue>;
+  save(value: PluginStorageStoreValue): void | Promise<void>;
 }
 
 export class MemoryPluginStorageStore implements PluginStorageStore {
@@ -50,14 +50,15 @@ export function createPluginStorageAPI(
     async get<T extends PluginStorageJsonValue>(key: string): Promise<T | undefined> {
       assertStorageKey(key);
       permissionBroker.assert(pluginId, "pluginStorage.read", "plugin.storage.get");
-      return store.load()[pluginId]?.[key] as T | undefined;
+      const current = await store.load();
+      return current[pluginId]?.[key] as T | undefined;
     },
 
     async set<T extends PluginStorageJsonValue>(key: string, value: T): Promise<void> {
       assertStorageKey(key);
       permissionBroker.assert(pluginId, "pluginStorage.write", "plugin.storage.set");
-      const current = store.load();
-      store.save({
+      const current = await store.load();
+      await store.save({
         ...current,
         [pluginId]: {
           ...(current[pluginId] ?? {}),
@@ -69,10 +70,10 @@ export function createPluginStorageAPI(
     async delete(key: string): Promise<void> {
       assertStorageKey(key);
       permissionBroker.assert(pluginId, "pluginStorage.write", "plugin.storage.delete");
-      const current = store.load();
+      const current = await store.load();
       const pluginStorage = { ...(current[pluginId] ?? {}) };
       delete pluginStorage[key];
-      store.save({
+      await store.save({
         ...current,
         [pluginId]: pluginStorage,
       });
@@ -80,7 +81,8 @@ export function createPluginStorageAPI(
 
     async keys(): Promise<string[]> {
       permissionBroker.assert(pluginId, "pluginStorage.read", "plugin.storage.keys");
-      return Object.keys(store.load()[pluginId] ?? {}).sort((a, b) => a.localeCompare(b));
+      const current = await store.load();
+      return Object.keys(current[pluginId] ?? {}).sort((a, b) => a.localeCompare(b));
     },
   };
 }
