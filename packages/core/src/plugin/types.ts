@@ -18,6 +18,7 @@ export type PluginPermission =
   | "pluginConfig.write"
   | "ui.contribute"
   | "command.register"
+  | "event.subscribe"
   | "network.fetch";
 
 export type PluginActivationEvent =
@@ -103,7 +104,7 @@ export interface CommandContribution {
   title: string;
 }
 
-export type PluginContributionType = "dashboard.widget" | "settings.panel" | "sidebar.item" | "command";
+export type PluginContributionType = "dashboard.widget" | "settings.panel" | "sidebar.item" | "command" | "event";
 
 export interface PluginCommandHandlerContext {
   pluginId: string;
@@ -141,6 +142,48 @@ export interface PluginStorageAPI {
   set<T extends PluginStorageJsonValue>(key: string, value: T): Promise<void>;
   delete(key: string): Promise<void>;
   keys(): Promise<string[]>;
+}
+
+export type BuiltinPluginEventName =
+  | "post.afterSave"
+  | "post.afterDelete"
+  | "page.afterSave"
+  | "page.afterDelete"
+  | "media.afterUpload"
+  | "media.afterDelete"
+  | "deploy.afterTrigger"
+  | "deploy.statusChange";
+
+export type PluginEventName = BuiltinPluginEventName | (string & {});
+
+export interface PluginEvent<TPayload = unknown> {
+  name: PluginEventName;
+  payload: TPayload;
+  at: string;
+}
+
+export type PluginEventHandler<TPayload = unknown> = (event: PluginEvent<TPayload>) => void | Promise<void>;
+
+export interface PluginEventSubscription {
+  dispose(): void;
+}
+
+export interface PluginEventAPI {
+  on<TPayload = unknown>(
+    eventName: PluginEventName,
+    handler: PluginEventHandler<TPayload>,
+  ): PluginEventSubscription;
+}
+
+export interface PluginEventDispatchResult {
+  ok: boolean;
+  pluginId: string;
+  eventName: PluginEventName;
+  error?: {
+    code: string;
+    message: string;
+    stack?: string;
+  };
 }
 
 export interface PluginRuntimeErrorInput {
@@ -238,6 +281,7 @@ export interface PluginContext {
   readonly plugin: PluginManifest;
   readonly content: ContentReadAPI;
   readonly storage: PluginStorageAPI;
+  readonly events: PluginEventAPI;
   readonly logger: PluginLogger;
 }
 

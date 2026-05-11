@@ -11,6 +11,7 @@ const VALID_PERMISSIONS = new Set<PluginPermission>([
   "pluginConfig.write",
   "ui.contribute",
   "command.register",
+  "event.subscribe",
   "network.fetch",
 ]);
 

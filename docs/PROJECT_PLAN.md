@@ -137,7 +137,8 @@
 - v0.2 已落地 Comments Overview、Settings schema renderer、插件配置持久化基础能力和插件级 ErrorBoundary
 - v0.2 已继续补齐 Sidebar item、CommandRegistry 与错误阈值熔断，插件入口、命令执行和失败隔离链路已可验证
 - 插件 Storage API core 已开始落地，支持 Memory/Browser store、插件级 namespace 隔离和权限校验
-- 下一轮优先补 Event API、日志面板与 Storage API 平台持久化，继续保证插件失败不影响核心页面
+- Event API core 已开始落地，支持只读订阅、宿主事件派发、权限校验和事件 handler 失败隔离
+- 下一轮优先补日志面板、核心页面事件派发接入与 Storage API 平台持久化，继续保证插件失败不影响核心页面
 - 后续可插件化方向包括 SEO Inspector、Draft Coach、Link Checker、Theme Config Helper 和企业规范包
 - Analytics Dashboard 延后到 Secret Store 与 network permission 稳定后实现
 

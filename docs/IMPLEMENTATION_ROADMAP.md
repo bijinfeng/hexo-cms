@@ -29,14 +29,14 @@
 |------|------|------|---------|
 | **架构设计** | 4.55/5 | ✅ 优秀 - 已达商业级水准 | ARCHITECTURE_REVIEW.md |
 | **工程实践** | 3.65/5 | ⚠️ 良好 - 需要补齐基础设施 | ENGINEERING_REVIEW.md |
-| **插件系统** | 4.0/5 | ✅ v0.2 稳定性补强继续落地 - Attachments Helper、Comments Overview、Settings schema renderer、插件配置持久化、插件级 ErrorBoundary、Sidebar item、CommandRegistry、错误阈值熔断和 Storage API core 已可用；下一步补 Event/日志/平台持久化 | plugin/PRD_PLUGIN_SYSTEM.md / plugin/TECHNICAL_DESIGN_PLUGIN_SYSTEM.md |
+| **插件系统** | 4.1/5 | ✅ v0.2 稳定性补强继续落地 - Attachments Helper、Comments Overview、Settings schema renderer、插件配置持久化、插件级 ErrorBoundary、Sidebar item、CommandRegistry、错误阈值熔断、Storage API core 和 Event API core 已可用；下一步补日志/页面事件接入/平台持久化 | plugin/PRD_PLUGIN_SYSTEM.md / plugin/TECHNICAL_DESIGN_PLUGIN_SYSTEM.md |
 
 **核心发现**：
 
 1. ✅ **架构设计优秀**：DataProvider 模式与 VS Code、Notion 等大厂产品理念一致
 2. ❌ **工程化缺口大**：缺少 CI/CD (1/5)、测试 (1/5)、ESLint、README
 3. ⚠️ **质量问题**：错误处理不统一 (3/5)、日志监控缺失 (2/5)、依赖使用 `latest`
-4. ✅ **插件系统 v0.2 稳定性补强继续落地**：Attachments Helper 与 Comments Overview 已验证多内置插件、配置持久化、Dashboard renderer、插件级 ErrorBoundary、Sidebar/Command、错误阈值熔断和 Storage API core 链路，下一步优先补 Event/日志/平台持久化
+4. ✅ **插件系统 v0.2 稳定性补强继续落地**：Attachments Helper 与 Comments Overview 已验证多内置插件、配置持久化、Dashboard renderer、插件级 ErrorBoundary、Sidebar/Command、错误阈值熔断、Storage API core 和 Event API core 链路，下一步优先补日志/页面事件接入/平台持久化
 
 ### 1.2 战略方向
 
@@ -193,7 +193,7 @@ Week 9-13  ░░░░░░░░░░░░░░░░░░░░░░█
 | 阶段 | 周次 | 主题 | 关键产出 |
 |------|------|------|---------|
 | Phase 1 | Week 3-5 | MVP 基础 | ✅ 已完成: Manifest 校验, PluginManager, ExtensionRegistry, Dashboard widget, Settings 管理, Attachments Helper |
-| Phase 2 | Week 6-8 | 可信插件完善 | ✅ 已完成: Settings panel schema, 插件配置持久化, Comments Overview, 插件级 ErrorBoundary, Sidebar item, CommandRegistry, 错误阈值熔断, Storage API core；下一步: Event API, 插件日志面板, Storage 平台持久化 |
+| Phase 2 | Week 6-8 | 可信插件完善 | ✅ 已完成: Settings panel schema, 插件配置持久化, Comments Overview, 插件级 ErrorBoundary, Sidebar item, CommandRegistry, 错误阈值熔断, Storage API core, Event API core；下一步: 插件日志面板, 页面事件派发接入, Storage 平台持久化 |
 | Phase 3 | Week 9-11 | 内置插件扩展 | Analytics 前置能力, Secret Store, network permission, 更多 renderer |
 | Phase 4 | Week 12-13 | 沙箱与生态预研 | iframe/Worker/独立进程原型, 插件签名, 私有源方案 |
 

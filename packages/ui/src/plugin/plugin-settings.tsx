@@ -20,6 +20,7 @@ const permissionLabels: Record<string, string> = {
   "pluginConfig.write": "写入插件配置",
   "ui.contribute": "贡献 UI",
   "command.register": "注册命令",
+  "event.subscribe": "订阅事件",
   "network.fetch": "网络请求",
 };
 

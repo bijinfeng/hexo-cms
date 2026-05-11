@@ -281,6 +281,115 @@ describe("plugin system", () => {
     await expect(writeonlyStorage.keys()).rejects.toThrow(PluginPermissionError);
   });
 
+  it("dispatches plugin events to enabled subscribers and supports disposal", async () => {
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-event-listener",
+          name: "Event Listener",
+          version: "0.1.0",
+          description: "Event listener test plugin",
+          source: "builtin",
+          permissions: ["event.subscribe"],
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+    });
+    const received: unknown[] = [];
+
+    manager.enable("hexo-cms-event-listener");
+    const events = manager.createEventAPI("hexo-cms-event-listener");
+    const subscription = events.on("post.afterSave", (event) => {
+      received.push(event.payload);
+    });
+
+    await expect(manager.emitEvent("post.afterSave", { path: "source/_posts/hello.md" })).resolves.toEqual([
+      expect.objectContaining({
+        ok: true,
+        pluginId: "hexo-cms-event-listener",
+        eventName: "post.afterSave",
+      }),
+    ]);
+    expect(received).toEqual([{ path: "source/_posts/hello.md" }]);
+
+    subscription.dispose();
+    await manager.emitEvent("post.afterSave", { path: "source/_posts/second.md" });
+    expect(received).toEqual([{ path: "source/_posts/hello.md" }]);
+  });
+
+  it("requires event.subscribe permission for event subscriptions", () => {
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-event-without-permission",
+          name: "Event Without Permission",
+          version: "0.1.0",
+          description: "Event permission test plugin",
+          source: "builtin",
+          permissions: ["ui.contribute"],
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+    });
+
+    manager.enable("hexo-cms-event-without-permission");
+    const events = manager.createEventAPI("hexo-cms-event-without-permission");
+
+    expect(() => events.on("post.afterSave", () => undefined)).toThrow(PluginPermissionError);
+  });
+
+  it("records event handler failures and clears subscriptions when the error fuse trips", async () => {
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-throwing-event-listener",
+          name: "Throwing Event Listener",
+          version: "0.1.0",
+          description: "Event failure test plugin",
+          source: "builtin",
+          permissions: ["event.subscribe"],
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+      errorThreshold: 2,
+    });
+
+    manager.enable("hexo-cms-throwing-event-listener");
+    manager.createEventAPI("hexo-cms-throwing-event-listener").on("post.afterSave", () => {
+      throw new Error("Event failed with token=event-secret");
+    });
+
+    const firstResults = await manager.emitEvent("post.afterSave", { path: "source/_posts/hello.md" });
+    expect(firstResults).toEqual([
+      expect.objectContaining({
+        ok: false,
+        pluginId: "hexo-cms-throwing-event-listener",
+        error: expect.objectContaining({ code: "PLUGIN_EVENT_HANDLER_FAILED" }),
+      }),
+    ]);
+    expect(
+      manager.snapshot().plugins.find(({ manifest }) => manifest.id === "hexo-cms-throwing-event-listener")?.record,
+    ).toEqual(
+      expect.objectContaining({
+        state: "enabled",
+        lastError: expect.objectContaining({
+          contributionType: "event",
+          message: expect.stringContaining("[redacted]"),
+          count: 1,
+        }),
+      }),
+    );
+
+    await manager.emitEvent("post.afterSave", { path: "source/_posts/second.md" });
+    const plugin = manager.snapshot().plugins.find(({ manifest }) => manifest.id === "hexo-cms-throwing-event-listener");
+
+    expect(plugin?.record.state).toBe("error");
+    expect(plugin?.record.lastError?.count).toBe(2);
+    expect(plugin?.record.lastError?.message).not.toContain("event-secret");
+
+    await expect(manager.emitEvent("post.afterSave", { path: "source/_posts/third.md" })).resolves.toEqual([]);
+  });
+
   it("records sanitized plugin runtime errors without disabling the plugin", () => {
     const manager = new PluginManager({
       manifests: builtinPluginManifests,

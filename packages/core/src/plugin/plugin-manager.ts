@@ -1,5 +1,6 @@
 import { PluginNotFoundError } from "./errors";
 import { CommandRegistry } from "./command-registry";
+import { createPluginEventAPI, EventBus } from "./event-bus";
 import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
@@ -9,6 +10,9 @@ import type {
   PluginCommandHandler,
   PluginConfigStoreValue,
   PluginConfigValue,
+  PluginEventAPI,
+  PluginEventDispatchResult,
+  PluginEventName,
   PluginManifest,
   PluginManagerSnapshot,
   PluginRuntimeErrorInput,
@@ -104,6 +108,7 @@ export class PluginManager {
   private readonly manifestsById = new Map<string, PluginManifest>();
   private readonly extensionRegistry = new ExtensionRegistry();
   private readonly commandRegistry: CommandRegistry;
+  private readonly eventBus = new EventBus();
   private readonly store: PluginStateStore;
   private readonly configStore: PluginConfigStore;
   private readonly storageStore: PluginStorageStore;
@@ -172,6 +177,7 @@ export class PluginManager {
         state: "disabled",
       },
     };
+    this.eventBus.unregisterPlugin(pluginId);
     this.persistAndRebuild();
     return this.snapshot();
   }
@@ -205,11 +211,38 @@ export class PluginManager {
     return createPluginStorageAPI(pluginId, this.storageStore, this.permissionBroker);
   }
 
+  createEventAPI(pluginId: string): PluginEventAPI {
+    this.getEnabledManifest(pluginId);
+    return createPluginEventAPI(pluginId, this.eventBus, this.permissionBroker);
+  }
+
+  async emitEvent<TPayload = unknown>(
+    eventName: PluginEventName,
+    payload: TPayload,
+  ): Promise<PluginEventDispatchResult[]> {
+    const results = await this.eventBus.emit(eventName, payload);
+
+    results.forEach((result) => {
+      if (!result.ok && result.error) {
+        this.recordPluginError(result.pluginId, {
+          contributionId: result.eventName,
+          contributionType: "event",
+          message: result.error.message,
+          code: result.error.code,
+          stack: result.error.stack,
+        });
+      }
+    });
+
+    return results;
+  }
+
   recordPluginError(pluginId: string, error: PluginRuntimeErrorInput): PluginManagerSnapshot {
     const manifest = this.getManifest(pluginId);
     const existing = this.records[pluginId];
     const errorCount = (existing?.lastError?.count ?? 0) + 1;
     const state = errorCount >= this.errorThreshold ? "error" : existing?.state ?? "installed";
+    if (state === "error") this.eventBus.unregisterPlugin(pluginId);
     this.records = {
       ...this.records,
       [pluginId]: {
@@ -236,6 +269,14 @@ export class PluginManager {
   private getManifest(pluginId: string): PluginManifest {
     const manifest = this.manifestsById.get(pluginId);
     if (!manifest) throw new PluginNotFoundError(pluginId);
+    return manifest;
+  }
+
+  private getEnabledManifest(pluginId: string): PluginManifest {
+    const manifest = this.getManifest(pluginId);
+    if (this.records[pluginId]?.state !== "enabled") {
+      throw new Error(`Plugin ${pluginId} is not enabled`);
+    }
     return manifest;
   }
 
