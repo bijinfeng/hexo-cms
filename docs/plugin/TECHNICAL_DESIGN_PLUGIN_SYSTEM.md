@@ -71,15 +71,15 @@ packages/ui
 14. `event-bus.ts`: `PluginEventAPI`、宿主事件派发、`event.subscribe` 权限校验和 handler 失败隔离。
 15. `plugin-logger.ts` 与 `redaction.ts`: 插件日志 Memory/Browser store、`PluginLogger`、运行时日志脱敏与按 `pluginId` 过滤。
 16. `PluginManager.snapshot()`: 每个插件暴露最近日志，Settings 插件卡片展示最近日志。
-17. Web/Desktop root route: 统一包裹 `PluginProvider`。
+17. `plugin-event-data-provider.ts`: 在 UI DataProvider 层统一派发文章、页面、媒体和部署宿主事件。
+18. Web/Desktop root route: 统一包裹 `PluginProvider`。
 
 仍待实现:
 
 1. `PluginHost` 独立运行时和消息协议。
 2. Zod manifest schema。
-3. 核心页面接入宿主事件派发。
-4. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
-5. Secret Store、受控网络代理和第三方插件沙箱。
+3. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
+4. Secret Store、受控网络代理和第三方插件沙箱。
 
 ---
 
@@ -687,11 +687,11 @@ Desktop 侧负责:
 1. Sidebar item 实际挂载到 `CMSLayout`。
 2. CommandRegistry: 注册、执行、权限校验、错误返回。
 3. EventBus core: 只读订阅、宿主事件派发、权限校验、handler 失败隔离。
+4. 核心页面事件派发接入: `post.afterSave/delete`、`page.afterSave/delete`、`media.afterUpload/delete`、`deploy.afterTrigger/statusChange`。
 
 待补齐:
 
-1. 核心页面接入文章保存、媒体上传、部署状态变化等宿主事件派发。
-2. Diagnostics 扩展点: SEO、草稿健康度、发布前检查等插件返回结构化问题列表。
+1. Diagnostics 扩展点: SEO、草稿健康度、发布前检查等插件返回结构化问题列表。
 
 ### 10.3 P2: 平台持久化与 Secret
 
@@ -807,7 +807,7 @@ Desktop 使用:
 
 ### Phase 2: 可信插件完善
 
-状态: 部分落地，ErrorBoundary、Sidebar、CommandRegistry、错误阈值熔断、Storage API core、Event API core 和日志面板已完成，下一步推进核心页面事件派发与平台持久化。
+状态: 部分落地，ErrorBoundary、Sidebar、CommandRegistry、错误阈值熔断、Storage API core、Event API core、日志面板和核心页面事件派发已完成，下一步推进平台持久化。
 
 已完成:
 
@@ -824,11 +824,11 @@ Desktop 使用:
 11. 插件 Storage API core: Memory/Browser store、权限隔离和 namespace 管理。
 12. Event API core: 只读订阅、宿主事件派发、权限校验和 handler 失败隔离。
 13. 插件日志面板: Memory/Browser log store、logger API、错误/命令日志记录、Settings 最近日志展示与脱敏。
+14. 核心页面事件派发接入: DataProvider wrapper 覆盖文章、页面、媒体和部署事件。
 
 下一轮 P0:
 
-1. 核心页面接入宿主事件派发。
-2. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
+1. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
 
 后续 P1:
 
@@ -845,6 +845,7 @@ Desktop 使用:
 5. 事件只读通知可用。
 6. Comments Overview 可被启用/停用，并贡献 dashboard widget 与 settings panel。
 7. Settings 中可看到插件最近日志，且日志不泄漏 token、cookie、API Key 和本地路径。
+8. 文章、页面、媒体和部署操作会向 Event API 派发对应宿主事件。
 
 ### Phase 3: 沙箱预研
 
@@ -920,4 +921,5 @@ Desktop 使用:
 14. Sidebar item、CommandRegistry 和错误阈值熔断已落地。
 15. 插件 Storage API core 已落地。
 16. Event API core 已落地。
-17. 插件日志面板已落地；下一轮优先补核心页面事件派发接入和平台持久化适配。
+17. 插件日志面板已落地。
+18. 核心页面事件派发接入已落地；下一轮优先补平台持久化适配。

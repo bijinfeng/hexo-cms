@@ -13,7 +13,8 @@ import {
   type PluginManagerSnapshot,
   type PluginRuntimeErrorInput,
 } from "@hexo-cms/core";
-import { useDataProvider } from "../context/data-provider-context";
+import { DataProviderProvider, useDataProvider } from "../context/data-provider-context";
+import { withPluginEvents } from "./plugin-event-data-provider";
 
 interface PluginContextValue {
   manager: PluginManager;
@@ -52,8 +53,17 @@ function createDefaultPluginManager(): PluginManager {
 }
 
 export function PluginProvider({ children }: { children: React.ReactNode }) {
+  const dataProvider = useDataProvider();
   const manager = useMemo(() => createDefaultPluginManager(), []);
   const [snapshot, setSnapshot] = useState<PluginManagerSnapshot>(() => manager.snapshot());
+  const eventDataProvider = useMemo(
+    () =>
+      withPluginEvents(dataProvider, async (eventName, payload) => {
+        await manager.emitEvent(eventName, payload);
+        setSnapshot(manager.snapshot());
+      }),
+    [dataProvider, manager],
+  );
 
   function enablePlugin(pluginId: string) {
     setSnapshot(manager.enable(pluginId));
@@ -98,7 +108,7 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
         executePluginCommand,
       }}
     >
-      {children}
+      <DataProviderProvider provider={eventDataProvider}>{children}</DataProviderProvider>
     </PluginContext.Provider>
   );
 }

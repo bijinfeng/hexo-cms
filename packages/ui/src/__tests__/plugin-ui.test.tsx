@@ -1,12 +1,14 @@
+import { useEffect, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ATTACHMENTS_HELPER_PLUGIN_ID, COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
 import { DataProviderProvider } from "../context/data-provider-context";
 import { DashboardExtensionOutlet, PluginErrorBoundary, PluginProvider, usePluginSystem } from "../plugin";
+import { usePluginDataProvider } from "../plugin/plugin-provider";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import { AttachmentsSummaryWidget } from "../plugin/renderers/attachments-summary-widget";
-import type { DataProvider } from "@hexo-cms/core";
+import type { DataProvider, PluginManager } from "@hexo-cms/core";
 
 function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider {
   return {
@@ -306,8 +308,100 @@ describe("plugin UI", () => {
       consoleError.mockRestore();
     }
   });
+
+  it("emits host events from the plugin wrapped data provider", async () => {
+    const provider = createDataProvider({
+      uploadMedia: vi.fn().mockResolvedValue({ url: "/images/hero.png" }),
+      getDeployments: vi
+        .fn()
+        .mockResolvedValueOnce([
+          { id: "deploy-1", status: "running", createdAt: "2026-05-12T00:00:00.000Z", duration: 0, conclusion: "" },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: "deploy-1",
+            status: "success",
+            createdAt: "2026-05-12T00:00:00.000Z",
+            duration: 42,
+            conclusion: "success",
+          },
+        ]),
+    });
+    let ready: ((value: { dataProvider: DataProvider; manager: PluginManager }) => void) | undefined;
+    const readyPromise = new Promise<{ dataProvider: DataProvider; manager: PluginManager }>((resolve) => {
+      ready = resolve;
+    });
+
+    renderWithProviders(<PluginEventHarness onReady={(value) => ready?.(value)} />, provider);
+
+    const { dataProvider, manager } = await readyPromise;
+    const emitSpy = vi.spyOn(manager, "emitEvent").mockResolvedValue([]);
+
+    await act(async () => {
+      await dataProvider.savePost({
+        path: "source/_posts/hello.md",
+        title: "Hello",
+        date: "2026-05-12",
+        content: "Hello",
+        frontmatter: { title: "Hello" },
+      });
+      await dataProvider.deletePost("source/_posts/hello.md");
+      await dataProvider.savePage({
+        path: "source/about/index.md",
+        title: "About",
+        date: "2026-05-12",
+        content: "About",
+        frontmatter: { title: "About" },
+      });
+      await dataProvider.deletePage("source/about/index.md");
+      await dataProvider.uploadMedia(new File(["hero"], "hero.png", { type: "image/png" }), "source/images/hero.png");
+      await dataProvider.deleteMedia("source/images/hero.png");
+      await dataProvider.triggerDeploy("deploy.yml");
+      await dataProvider.getDeployments();
+      await dataProvider.getDeployments();
+    });
+
+    expect(emitSpy.mock.calls.map(([eventName]) => eventName)).toEqual([
+      "post.afterSave",
+      "post.afterDelete",
+      "page.afterSave",
+      "page.afterDelete",
+      "media.afterUpload",
+      "media.afterDelete",
+      "deploy.afterTrigger",
+      "deploy.statusChange",
+    ]);
+
+    expect(emitSpy.mock.calls.find(([eventName]) => eventName === "post.afterSave")?.[1]).toEqual(
+      expect.objectContaining({ path: "source/_posts/hello.md", title: "Hello" }),
+    );
+    expect(emitSpy.mock.calls.find(([eventName]) => eventName === "media.afterUpload")?.[1]).toEqual(
+      expect.objectContaining({ path: "source/images/hero.png", url: "/images/hero.png" }),
+    );
+    expect(emitSpy.mock.calls.find(([eventName]) => eventName === "deploy.statusChange")?.[1]).toEqual(
+      expect.objectContaining({ id: "deploy-1", status: "success", previousStatus: "running" }),
+    );
+  });
 });
 
 function ThrowingSettingsContribution(): never {
   throw new Error("Settings failed with cookie=session-token");
+}
+
+function PluginEventHarness({
+  onReady,
+}: {
+  onReady: (value: { dataProvider: DataProvider; manager: PluginManager }) => void;
+}) {
+  const dataProvider = usePluginDataProvider();
+  const { manager } = usePluginSystem();
+  const ran = useRef(false);
+
+  useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
+    onReady({ dataProvider, manager });
+  }, [dataProvider, manager, onReady]);
+
+  return null;
 }
