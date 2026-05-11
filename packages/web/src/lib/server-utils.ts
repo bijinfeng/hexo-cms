@@ -1,12 +1,7 @@
 import type { Octokit as OctokitType } from "octokit";
-
-type StatementLike = {
-  get: (...args: any[]) => unknown;
-};
-
-type DatabaseLike = {
-  prepare: (sql: string) => StatementLike;
-};
+import { eq, and, desc } from "drizzle-orm";
+import { db } from "./db";
+import { account, githubConfig } from "./schema";
 
 export type GitHubCtxError = "unauthorized" | "config_missing" | "reauthorization_required";
 
@@ -21,26 +16,16 @@ export async function getAuth(request: Request) {
   return session;
 }
 
-export async function getDb() {
-  const Database = (await import("better-sqlite3")).default;
-  const db = new Database("./hexo-cms.db");
-  db.exec(`CREATE TABLE IF NOT EXISTS github_config (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL,
-    owner TEXT NOT NULL, repo TEXT NOT NULL, branch TEXT DEFAULT 'main',
-    posts_dir TEXT DEFAULT 'source/_posts', media_dir TEXT DEFAULT 'source/images',
-    workflow_file TEXT DEFAULT '.github/workflows/deploy.yml',
-    auto_deploy INTEGER DEFAULT 1, deploy_notifications INTEGER DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-  return db;
-}
+export function getGitHubAccessToken(userId: string): string | null {
+  const row = db
+    .select({ accessToken: account.accessToken })
+    .from(account)
+    .where(and(eq(account.userId, userId), eq(account.providerId, "github")))
+    .orderBy(desc(account.updatedAt))
+    .limit(1)
+    .get();
 
-export function getGitHubAccessToken(db: DatabaseLike, userId: string): string | null {
-  const account = db
-    .prepare("SELECT accessToken FROM account WHERE userId = ? AND providerId = ? ORDER BY updatedAt DESC LIMIT 1")
-    .get(userId, "github") as { accessToken?: string | null } | undefined;
-
-  return account?.accessToken ?? null;
+  return row?.accessToken ?? null;
 }
 
 type BetterAuthAccessTokenApi = {
@@ -87,12 +72,19 @@ export function githubCtxErrorResponse(error: GitHubCtxError): Response {
 export async function getGitHubCtx(request: Request) {
   const session = await getAuth(request);
   if (!session) return { ok: false as const, error: "unauthorized" as const };
-  const db = await getDb();
-  const config = db.prepare("SELECT * FROM github_config WHERE user_id = ?").get(session.user.id) as any;
+
+  const config = db
+    .select()
+    .from(githubConfig)
+    .where(eq(githubConfig.userId, session.user.id))
+    .get();
+
   if (!config) return { ok: false as const, error: "config_missing" as const };
+
   const { auth } = await import("../lib/auth");
   const accessToken = await getGitHubAccessTokenFromAuth(auth.api, request.headers);
   if (!accessToken) return { ok: false as const, error: "reauthorization_required" as const };
+
   const { Octokit } = await import("octokit");
   return { ok: true as const, session, config, octokit: new Octokit({ auth: accessToken }) as OctokitType };
 }

@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { json, getAuth, getDb } from "../../../lib/server-utils";
+import { eq } from "drizzle-orm";
+import { db } from "../../../lib/db";
+import { githubConfig } from "../../../lib/schema";
+import { json, getAuth } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/github/config")({
   server: {
@@ -7,8 +10,13 @@ export const Route = createFileRoute("/api/github/config")({
       GET: async ({ request }) => {
         const session = await getAuth(request);
         if (!session) return json({ error: "Unauthorized" }, 401);
-        const db = await getDb();
-        const config = db.prepare("SELECT * FROM github_config WHERE user_id = ? ORDER BY id DESC LIMIT 1").get(session.user.id);
+
+        const config = db
+          .select()
+          .from(githubConfig)
+          .where(eq(githubConfig.userId, session.user.id))
+          .get();
+
         return json({ config });
       },
       POST: async ({ request }) => {
@@ -17,13 +25,35 @@ export const Route = createFileRoute("/api/github/config")({
         const payload = await request.json();
         const body = payload.config ?? payload;
         if (!body.owner || !body.repo) return json({ error: "Missing required fields" }, 400);
-        const db = await getDb();
-        const existing = db.prepare("SELECT id FROM github_config WHERE user_id = ?").get(session.user.id);
+
+        const existing = db
+          .select({ id: githubConfig.id })
+          .from(githubConfig)
+          .where(eq(githubConfig.userId, session.user.id))
+          .get();
+
+        const values = {
+          owner: body.owner,
+          repo: body.repo,
+          branch: body.branch || "main",
+          postsDir: body.posts_dir || "source/_posts",
+          mediaDir: body.media_dir || "source/images",
+          workflowFile: body.workflow_file || ".github/workflows/deploy.yml",
+          autoDeploy: body.auto_deploy !== false,
+          deployNotifications: body.deploy_notifications !== false,
+          updatedAt: new Date().toISOString(),
+        };
+
         if (existing) {
-          db.prepare("UPDATE github_config SET owner=?,repo=?,branch=?,posts_dir=?,media_dir=?,workflow_file=?,auto_deploy=?,deploy_notifications=?,updated_at=CURRENT_TIMESTAMP WHERE user_id=?").run(body.owner, body.repo, body.branch || "main", body.posts_dir || "source/_posts", body.media_dir || "source/images", body.workflow_file || ".github/workflows/deploy.yml", body.auto_deploy !== false ? 1 : 0, body.deploy_notifications !== false ? 1 : 0, session.user.id);
+          db.update(githubConfig).set(values).where(eq(githubConfig.userId, session.user.id)).run();
         } else {
-          db.prepare("INSERT INTO github_config (user_id,owner,repo,branch,posts_dir,media_dir,workflow_file,auto_deploy,deploy_notifications) VALUES (?,?,?,?,?,?,?,?,?)").run(session.user.id, body.owner, body.repo, body.branch || "main", body.posts_dir || "source/_posts", body.media_dir || "source/images", body.workflow_file || ".github/workflows/deploy.yml", body.auto_deploy !== false ? 1 : 0, body.deploy_notifications !== false ? 1 : 0);
+          db.insert(githubConfig).values({
+            userId: session.user.id,
+            ...values,
+            createdAt: new Date().toISOString(),
+          }).run();
         }
+
         return json({ success: true });
       },
     },

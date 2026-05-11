@@ -1,23 +1,34 @@
 import { describe, expect, it, vi } from "vitest";
-import { getGitHubAccessToken, getGitHubAccessTokenFromAuth, githubCtxErrorResponse } from "./server-utils";
+import { getGitHubAccessTokenFromAuth, githubCtxErrorResponse } from "./server-utils";
+
+vi.mock("./db", () => {
+  const get = vi.fn();
+  const limit = vi.fn(() => ({ get }));
+  const orderBy = vi.fn(() => ({ limit }));
+  const where = vi.fn(() => ({ orderBy }));
+  const from = vi.fn(() => ({ where }));
+  const select = vi.fn(() => ({ from }));
+  return { db: { select }, __mocks: { get, select, from, where, orderBy, limit } };
+});
 
 describe("server-utils auth token lookup", () => {
-  it("reads the GitHub access token from the linked Better Auth account", () => {
-    const get = vi.fn().mockReturnValue({ accessToken: "gho_oauth_token" });
-    const prepare = vi.fn().mockReturnValue({ get });
+  it("reads the GitHub access token via drizzle query", async () => {
+    const { __mocks } = await import("./db") as any;
+    __mocks.get.mockReturnValue({ accessToken: "gho_oauth_token" });
 
-    const token = getGitHubAccessToken({ prepare }, "user-1");
+    const { getGitHubAccessToken } = await import("./server-utils");
+    const token = getGitHubAccessToken("user-1");
 
     expect(token).toBe("gho_oauth_token");
-    expect(prepare).toHaveBeenCalledWith(expect.stringContaining("FROM account"));
-    expect(get).toHaveBeenCalledWith("user-1", "github");
+    expect(__mocks.select).toHaveBeenCalled();
   });
 
-  it("returns null when the current user has no GitHub account token", () => {
-    const get = vi.fn().mockReturnValue(undefined);
-    const prepare = vi.fn().mockReturnValue({ get });
+  it("returns null when no GitHub account token exists", async () => {
+    const { __mocks } = await import("./db") as any;
+    __mocks.get.mockReturnValue(undefined);
 
-    expect(getGitHubAccessToken({ prepare }, "user-1")).toBeNull();
+    const { getGitHubAccessToken } = await import("./server-utils");
+    expect(getGitHubAccessToken("user-1")).toBeNull();
   });
 
   it("uses Better Auth to resolve the linked GitHub access token", async () => {

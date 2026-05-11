@@ -8,7 +8,7 @@ export const Route = createFileRoute("/api/github/posts")({
         const ctx = await getGitHubCtx(request);
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         try {
-          const { data: contents } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: ctx.config.posts_dir || "source/_posts" });
+          const { data: contents } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: ctx.config.postsDir || "source/_posts" });
           const files = Array.isArray(contents) ? contents.filter((f: any) => f.name.endsWith(".md")) : [];
           const posts = (await Promise.all(files.map(async (f: any) => {
             try {
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/github/posts")({
         const ctx = await getGitHubCtx(request);
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         const post = await request.json();
-        const filePath = `${ctx.config.posts_dir || "source/_posts"}/${post.slug}.md`;
+        const filePath = `${ctx.config.postsDir || "source/_posts"}/${post.slug}.md`;
         try {
           let sha: string | undefined;
           try { const { data: existing } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: filePath }); sha = (existing as any).sha; } catch { void 0; }
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/api/github/posts")({
         const paths = Array.isArray(body) ? body : [body.path];
         try {
           await Promise.all(paths.map(async (p: string) => {
-            const fp = p.startsWith(ctx.config.posts_dir || "source/_posts") ? p : `${ctx.config.posts_dir || "source/_posts"}/${p}`;
+            const fp = p.startsWith(ctx.config.postsDir || "source/_posts") ? p : `${ctx.config.postsDir || "source/_posts"}/${p}`;
             try { const { data: existing } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: fp }); await ctx.octokit.request("DELETE /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: fp, message: `Delete: ${fp}`, sha: (existing as any).sha }); } catch { void 0; }
           }));
           return json({ success: true });

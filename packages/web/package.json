@@ -10,7 +10,10 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@hexo-cms/core": "workspace:*",
@@ -24,6 +27,7 @@
     "@tanstack/router-plugin": "^1.167.32",
     "better-auth": "^1.6.9",
     "better-sqlite3": "^12.9.0",
+    "drizzle-orm": "^0.45.2",
     "octokit": "^5.0.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -39,6 +43,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "drizzle-kit": "^0.31.10",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",

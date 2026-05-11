@@ -8,7 +8,7 @@ export const Route = createFileRoute("/api/github/tags")({
         const ctx = await getGitHubCtx(request);
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
         try {
-          const { data: contents } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: ctx.config.posts_dir || "source/_posts" });
+          const { data: contents } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: ctx.config.postsDir || "source/_posts" });
           const files = Array.isArray(contents) ? contents.filter((f: any) => f.name.endsWith(".md")) : [];
           const tags = new Set<string>(); const categories = new Set<string>();
           await Promise.all(files.map(async (f: any) => {
