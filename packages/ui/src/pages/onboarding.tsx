@@ -13,13 +13,8 @@ import type {
   RepositoryValidation,
   RepositoryValidationError,
 } from "../types/onboarding";
-import type { ReactElement } from "react";
 
 type OnboardingPageProps = { onboardingClient: OnboardingClient };
-type OnboardingPageComponent = {
-  (props: OnboardingPageProps): ReactElement;
-  (): ReactElement;
-};
 
 const VALIDATION_ERROR_MESSAGES: Record<RepositoryValidationError, string> = {
   REPO_NOT_FOUND: "未找到这个仓库，请确认已授权访问",
@@ -70,9 +65,8 @@ function createConfigFromSelection(
   };
 }
 
-export const OnboardingPage: OnboardingPageComponent = (props?: Partial<OnboardingPageProps>) => {
+export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const navigate = useNavigate();
-  const { onboardingClient } = props ?? {};
   const [currentUser, setCurrentUser] = useState<OnboardingUser | null>(null);
   const [repositories, setRepositories] = useState<RepositoryOption[]>([]);
   const [query, setQuery] = useState("");
@@ -90,7 +84,6 @@ export const OnboardingPage: OnboardingPageComponent = (props?: Partial<Onboardi
   const [manualBranch, setManualBranch] = useState("main");
 
   async function loadRepositories(nextQuery = query) {
-    if (!onboardingClient) return;
     setLoadingRepos(true);
     setRepoError("");
     try {
@@ -129,7 +122,6 @@ export const OnboardingPage: OnboardingPageComponent = (props?: Partial<Onboardi
   const validationError = getValidationErrorMessage(validation);
 
   async function validateSelection(selection: RepositorySelection, repository?: RepositoryOption) {
-    if (!onboardingClient) return;
     setSelectedRepoId(repository?.id ?? "");
     setSelectedRepository(repository ?? null);
     setSelectedSelection(selection);
@@ -170,13 +162,12 @@ export const OnboardingPage: OnboardingPageComponent = (props?: Partial<Onboardi
   }
 
   async function handleReauthorize() {
-    if (!onboardingClient) return;
     await onboardingClient.reauthorize();
     await loadRepositories("");
   }
 
   async function handleSave() {
-    if (!config || !onboardingClient) return;
+    if (!config) return;
     setSaving(true);
     try {
       await onboardingClient.saveRepositoryConfig(config);
@@ -184,16 +175,6 @@ export const OnboardingPage: OnboardingPageComponent = (props?: Partial<Onboardi
     } finally {
       setSaving(false);
     }
-  }
-
-  if (!onboardingClient) {
-    return (
-      <div className="min-h-screen bg-[var(--bg-base)] p-4 sm:p-8">
-        <div className="mx-auto max-w-md rounded-xl border border-[var(--status-error-border)] bg-[var(--status-error-bg)] p-5 text-sm text-[var(--status-error)]">
-          OnboardingClient is required to import a project.
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -453,4 +434,4 @@ export const OnboardingPage: OnboardingPageComponent = (props?: Partial<Onboardi
       </div>
     </div>
   );
-};
+}
