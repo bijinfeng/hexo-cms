@@ -6,6 +6,12 @@ import { OnboardingPage } from "../pages/onboarding";
 import { SettingsPage } from "../pages/settings";
 import { DataProviderProvider } from "../context/data-provider-context";
 import type { AuthClient } from "../types/auth";
+import type {
+  OnboardingClient,
+  RepositoryConfigInput,
+  RepositoryOption,
+  RepositoryValidation,
+} from "../types/onboarding";
 import type { DataProvider } from "@hexo-cms/core";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -54,6 +60,53 @@ function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),
     triggerDeploy: vi.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
+}
+
+function createOnboardingClient(overrides: Partial<OnboardingClient> = {}): OnboardingClient {
+  const repository: RepositoryOption = {
+    id: "repo-1",
+    owner: "kebai",
+    name: "blog",
+    fullName: "kebai/blog",
+    private: false,
+    defaultBranch: "main",
+    pushedAt: "2026-05-11T08:00:00.000Z",
+    permissions: { push: true },
+  };
+  const defaultConfig: RepositoryConfigInput = {
+    owner: "kebai",
+    repo: "blog",
+    branch: "main",
+    postsDir: "source/_posts",
+    mediaDir: "source/images",
+    workflowFile: ".github/workflows/deploy.yml",
+    autoDeploy: true,
+    deployNotifications: true,
+  };
+  const validation: RepositoryValidation = {
+    ok: true,
+    repository,
+    defaultConfig,
+    checks: [
+      { id: "access", status: "success", message: "仓库可访问" },
+      { id: "permission", status: "success", message: "具备写权限" },
+      { id: "branch", status: "success", message: "默认分支存在" },
+      { id: "hexo", status: "success", message: "检测到 Hexo 结构" },
+    ],
+  };
+
+  return {
+    getCurrentUser: vi.fn().mockResolvedValue({
+      login: "kebai",
+      name: "Kebai",
+      avatarUrl: "https://example.com/avatar.png",
+    }),
+    reauthorize: vi.fn().mockResolvedValue(undefined),
+    listRepositories: vi.fn().mockResolvedValue([repository]),
+    validateRepository: vi.fn().mockResolvedValue(validation),
+    saveRepositoryConfig: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -169,16 +222,68 @@ describe("OAuth UI", () => {
     }
   });
 
-  it("keeps onboarding focused on repository configuration instead of PAT entry", () => {
-    render(
-      <DataProviderProvider provider={createDataProvider()}>
-        <OnboardingPage />
-      </DataProviderProvider>,
-    );
+  it("shows repository import as the onboarding primary path", async () => {
+    const onboardingClient = createOnboardingClient();
 
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    expect(await screen.findByText("导入 Hexo 仓库")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("搜索仓库")).toBeInTheDocument();
+    expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
     expect(screen.queryByLabelText("GitHub Token")).not.toBeInTheDocument();
     expect(screen.queryByText(/Personal Access Token/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText("仓库所有者")).toBeInTheDocument();
+  });
+
+  it("validates a selected repository before saving onboarding config", async () => {
+    const user = userEvent.setup();
+    const onboardingClient = createOnboardingClient();
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    await user.click(await screen.findByText("kebai/blog"));
+    expect(await screen.findByText("检测到 Hexo 结构")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "开始管理" }));
+
+    expect(onboardingClient.validateRepository).toHaveBeenCalledWith({
+      owner: "kebai",
+      repo: "blog",
+      branch: "main",
+    });
+    expect(onboardingClient.saveRepositoryConfig).toHaveBeenCalledWith({
+      owner: "kebai",
+      repo: "blog",
+      branch: "main",
+      postsDir: "source/_posts",
+      mediaDir: "source/images",
+      workflowFile: ".github/workflows/deploy.yml",
+      autoDeploy: true,
+      deployNotifications: true,
+    });
+  });
+
+  it("does not save onboarding config when Hexo validation fails", async () => {
+    const user = userEvent.setup();
+    const onboardingClient = createOnboardingClient({
+      validateRepository: vi.fn().mockResolvedValue({
+        ok: false,
+        checks: [
+          { id: "access", status: "success", message: "仓库可访问" },
+          { id: "permission", status: "success", message: "具备写权限" },
+          { id: "branch", status: "success", message: "默认分支存在" },
+          { id: "hexo", status: "error", message: "未检测到 Hexo 配置" },
+        ],
+        error: "NOT_HEXO_REPO",
+      }),
+    });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    await user.click(await screen.findByText("kebai/blog"));
+
+    expect(await screen.findByText("未检测到 Hexo 配置，请选择已有 Hexo 博客仓库")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "开始管理" })).not.toBeInTheDocument();
+    expect(onboardingClient.saveRepositoryConfig).not.toHaveBeenCalled();
   });
 
   it("does not render a PAT management card in settings", async () => {
