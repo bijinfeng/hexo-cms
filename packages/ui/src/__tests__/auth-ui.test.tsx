@@ -111,6 +111,15 @@ function createOnboardingClient(overrides: Partial<OnboardingClient> = {}): Onbo
   };
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+}
+
 describe("OAuth UI", () => {
   it("starts login through AuthClient without showing an internal configuration error", async () => {
     const user = userEvent.setup();
@@ -284,6 +293,108 @@ describe("OAuth UI", () => {
     expect(await screen.findByText("未检测到 Hexo 配置，请选择已有 Hexo 博客仓库")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "开始管理" })).not.toBeInTheDocument();
     expect(onboardingClient.saveRepositoryConfig).not.toHaveBeenCalled();
+  });
+
+  it("ignores stale repository validation results when selection changes", async () => {
+    const user = userEvent.setup();
+    const firstRepository: RepositoryOption = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      pushedAt: "2026-05-11T08:00:00.000Z",
+      permissions: { push: true },
+    };
+    const secondRepository: RepositoryOption = {
+      id: "repo-2",
+      owner: "kebai",
+      name: "notes",
+      fullName: "kebai/notes",
+      private: true,
+      defaultBranch: "source",
+      pushedAt: "2026-05-11T09:00:00.000Z",
+      permissions: { push: true },
+    };
+    const firstValidation = createDeferred<RepositoryValidation>();
+    const secondValidation = createDeferred<RepositoryValidation>();
+    const onboardingClient = createOnboardingClient({
+      listRepositories: vi.fn().mockResolvedValue([firstRepository, secondRepository]),
+      validateRepository: vi
+        .fn()
+        .mockReturnValueOnce(firstValidation.promise)
+        .mockReturnValueOnce(secondValidation.promise),
+    });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    await user.click(await screen.findByText("kebai/blog"));
+    await user.click(await screen.findByText("kebai/notes"));
+
+    secondValidation.resolve({
+      ok: true,
+      repository: secondRepository,
+      defaultConfig: {
+        owner: "kebai",
+        repo: "notes",
+        branch: "source",
+        postsDir: "content/posts",
+        mediaDir: "content/images",
+        workflowFile: ".github/workflows/notes.yml",
+        autoDeploy: true,
+        deployNotifications: true,
+      },
+      checks: [{ id: "hexo", status: "success", message: "检测到 Notes Hexo 结构" }],
+    });
+    expect(await screen.findByText("检测到 Notes Hexo 结构")).toBeInTheDocument();
+
+    firstValidation.resolve({
+      ok: true,
+      repository: firstRepository,
+      defaultConfig: {
+        owner: "kebai",
+        repo: "blog",
+        branch: "main",
+        postsDir: "source/_posts",
+        mediaDir: "source/images",
+        workflowFile: ".github/workflows/deploy.yml",
+        autoDeploy: true,
+        deployNotifications: true,
+      },
+      checks: [{ id: "hexo", status: "success", message: "检测到 Blog Hexo 结构" }],
+    });
+
+    await user.click(screen.getByRole("button", { name: "开始管理" }));
+
+    expect(onboardingClient.saveRepositoryConfig).toHaveBeenCalledWith({
+      owner: "kebai",
+      repo: "notes",
+      branch: "source",
+      postsDir: "content/posts",
+      mediaDir: "content/images",
+      workflowFile: ".github/workflows/notes.yml",
+      autoDeploy: true,
+      deployNotifications: true,
+    });
+    expect(screen.queryByText("检测到 Blog Hexo 结构")).not.toBeInTheDocument();
+  });
+
+  it("shows a recoverable error when saving onboarding config fails", async () => {
+    const user = userEvent.setup();
+    const onboardingClient = createOnboardingClient({
+      saveRepositoryConfig: vi.fn().mockRejectedValue(new Error("save failed")),
+    });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    await user.click(await screen.findByText("kebai/blog"));
+    expect(await screen.findByText("检测到 Hexo 结构")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "开始管理" }));
+
+    expect(await screen.findByText("保存失败，请重试")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "开始管理" })).toBeInTheDocument();
   });
 
   it("does not render a PAT management card in settings", async () => {

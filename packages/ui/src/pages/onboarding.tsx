@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Search, Settings2 } from "lucide-react";
 import { Badge } from "../components/ui/badge";
@@ -67,6 +67,7 @@ function createConfigFromSelection(
 
 export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const navigate = useNavigate();
+  const validationRequestIdRef = useRef(0);
   const [currentUser, setCurrentUser] = useState<OnboardingUser | null>(null);
   const [repositories, setRepositories] = useState<RepositoryOption[]>([]);
   const [query, setQuery] = useState("");
@@ -78,6 +79,9 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const [validation, setValidation] = useState<RepositoryValidation | null>(null);
   const [validating, setValidating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [reauthorizing, setReauthorizing] = useState(false);
+  const [reauthorizeError, setReauthorizeError] = useState("");
   const [showManual, setShowManual] = useState(false);
   const [manualOwner, setManualOwner] = useState("");
   const [manualRepo, setManualRepo] = useState("");
@@ -122,22 +126,29 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const validationError = getValidationErrorMessage(validation);
 
   async function validateSelection(selection: RepositorySelection, repository?: RepositoryOption) {
+    const requestId = validationRequestIdRef.current + 1;
+    validationRequestIdRef.current = requestId;
     setSelectedRepoId(repository?.id ?? "");
     setSelectedRepository(repository ?? null);
     setSelectedSelection(selection);
     setValidation(null);
     setValidating(true);
+    setSaveError("");
     try {
       const nextValidation = await onboardingClient.validateRepository(selection);
+      if (validationRequestIdRef.current !== requestId) return;
       setValidation(nextValidation);
     } catch {
+      if (validationRequestIdRef.current !== requestId) return;
       setValidation({
         ok: false,
         checks: [],
         error: "NETWORK_ERROR",
       });
     } finally {
-      setValidating(false);
+      if (validationRequestIdRef.current === requestId) {
+        setValidating(false);
+      }
     }
   }
 
@@ -162,16 +173,27 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   }
 
   async function handleReauthorize() {
-    await onboardingClient.reauthorize();
-    await loadRepositories("");
+    setReauthorizing(true);
+    setReauthorizeError("");
+    try {
+      await onboardingClient.reauthorize();
+      await loadRepositories("");
+    } catch {
+      setReauthorizeError("重新授权失败，请重试");
+    } finally {
+      setReauthorizing(false);
+    }
   }
 
   async function handleSave() {
     if (!config) return;
     setSaving(true);
+    setSaveError("");
     try {
       await onboardingClient.saveRepositoryConfig(config);
       navigate({ to: "/" });
+    } catch {
+      setSaveError("保存失败，请重试");
     } finally {
       setSaving(false);
     }
@@ -211,10 +233,21 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 {currentUser?.login ? `@${currentUser.login}` : "正在读取账号"}
               </p>
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={handleReauthorize}>
-              <RefreshCw className="h-4 w-4" />
-              重新授权
-            </Button>
+            <div className="flex flex-col items-end gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleReauthorize()}
+                disabled={reauthorizing}
+              >
+                <RefreshCw className={`h-4 w-4 ${reauthorizing ? "animate-spin" : ""}`} />
+                重新授权
+              </Button>
+              {reauthorizeError && (
+                <p className="text-xs text-[var(--status-error)]">{reauthorizeError}</p>
+              )}
+            </div>
           </div>
         </header>
 
@@ -419,6 +452,9 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                           开始管理
                         </Button>
+                        {saveError && (
+                          <p className="text-sm text-[var(--status-error)]">{saveError}</p>
+                        )}
                       </div>
                     )}
                   </div>
