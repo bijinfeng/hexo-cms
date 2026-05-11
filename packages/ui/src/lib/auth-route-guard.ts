@@ -11,7 +11,7 @@ export function getAuthRedirect({
 }: {
   pathname: string;
   session: AuthSession | null;
-  hasConfig?: boolean | null;
+  hasConfig: boolean | null;
   isPending: boolean;
 }): "/" | "/login" | "/onboarding" | null {
   if (isPending) return null;

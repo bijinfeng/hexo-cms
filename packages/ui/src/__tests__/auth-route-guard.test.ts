@@ -6,19 +6,30 @@ describe("auth route guard", () => {
   it("requires authentication before onboarding", () => {
     const session: AuthSession = { state: "anonymous" };
 
-    expect(getAuthRedirect({ pathname: "/onboarding", session, isPending: false })).toBe("/login");
+    expect(getAuthRedirect({ pathname: "/onboarding", session, hasConfig: null, isPending: false })).toBe("/login");
   });
 
   it("keeps authenticated users on onboarding", () => {
     const session: AuthSession = { state: "authenticated" };
 
-    expect(getAuthRedirect({ pathname: "/onboarding", session, isPending: false })).toBeNull();
+    expect(getAuthRedirect({ pathname: "/onboarding", session, hasConfig: null, isPending: false })).toBeNull();
   });
 
   it("redirects authenticated users away from login", () => {
     const session: AuthSession = { state: "authenticated" };
 
-    expect(getAuthRedirect({ pathname: "/login", session, isPending: false })).toBe("/");
+    expect(getAuthRedirect({ pathname: "/login", session, hasConfig: null, isPending: false })).toBe("/");
+  });
+
+  it("allows an authenticated user through protected routes while config is unknown", () => {
+    const session: AuthSession = { state: "authenticated" };
+
+    expect(getAuthRedirect({
+      pathname: "/posts",
+      session,
+      hasConfig: null,
+      isPending: false,
+    })).toBeNull();
   });
 
   it("routes an authenticated user without repository config to onboarding", () => {

@@ -48,7 +48,7 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
-    const redirect = getAuthRedirect({ pathname, session, isPending });
+    const redirect = getAuthRedirect({ pathname, session, hasConfig: null, isPending });
     if (redirect) navigate({ to: redirect, replace: true });
   }, [session, isPending, pathname, navigate]);
 
