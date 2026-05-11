@@ -4,7 +4,15 @@ import { createPluginEventAPI, EventBus } from "./event-bus";
 import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
+import {
+  appendPluginLogEntry,
+  createPluginLogger,
+  MemoryPluginLogStore,
+  readPluginLogs,
+  type PluginLogStore,
+} from "./plugin-logger";
 import { createPluginStorageAPI, MemoryPluginStorageStore, type PluginStorageStore } from "./plugin-storage";
+import { redactPluginRuntimeText } from "./redaction";
 import type {
   PluginCommandExecutionResult,
   PluginCommandHandler,
@@ -13,6 +21,8 @@ import type {
   PluginEventAPI,
   PluginEventDispatchResult,
   PluginEventName,
+  PluginLogEntry,
+  PluginLogger,
   PluginManifest,
   PluginManagerSnapshot,
   PluginRuntimeErrorInput,
@@ -97,9 +107,11 @@ export interface PluginManagerOptions {
   store?: PluginStateStore;
   configStore?: PluginConfigStore;
   storageStore?: PluginStorageStore;
+  logStore?: PluginLogStore;
   defaultEnabledPluginIds?: string[];
   commandHandlers?: Record<string, PluginCommandHandler>;
   errorThreshold?: number;
+  maxLogEntriesPerPlugin?: number;
 }
 
 export class PluginManager {
@@ -112,7 +124,9 @@ export class PluginManager {
   private readonly store: PluginStateStore;
   private readonly configStore: PluginConfigStore;
   private readonly storageStore: PluginStorageStore;
+  private readonly logStore: PluginLogStore;
   private readonly errorThreshold: number;
+  private readonly maxLogEntriesPerPlugin: number;
   private records: PluginStateStoreValue;
   private configs: PluginConfigStoreValue;
 
@@ -121,9 +135,11 @@ export class PluginManager {
     store = new MemoryPluginStateStore(),
     configStore = new MemoryPluginConfigStore(),
     storageStore = new MemoryPluginStorageStore(),
+    logStore = new MemoryPluginLogStore(),
     defaultEnabledPluginIds = [],
     commandHandlers = {},
     errorThreshold = 3,
+    maxLogEntriesPerPlugin = 50,
   }: PluginManagerOptions) {
     this.manifests = validatePluginManifests(manifests);
     this.manifests.forEach((manifest) => this.manifestsById.set(manifest.id, manifest));
@@ -132,7 +148,9 @@ export class PluginManager {
     this.store = store;
     this.configStore = configStore;
     this.storageStore = storageStore;
+    this.logStore = logStore;
     this.errorThreshold = errorThreshold;
+    this.maxLogEntriesPerPlugin = maxLogEntriesPerPlugin;
     this.records = this.hydrateRecords(defaultEnabledPluginIds);
     this.configs = this.hydrateConfigs();
     this.rebuildExtensions();
@@ -144,6 +162,7 @@ export class PluginManager {
         manifest,
         record: this.records[manifest.id],
         config: this.configs[manifest.id] ?? {},
+        logs: this.getPluginLogs(manifest.id, 5),
       })),
       extensions: this.extensionRegistry.snapshot(),
     };
@@ -203,7 +222,17 @@ export class PluginManager {
 
   executeCommand(pluginId: string, commandId: string, args: unknown[] = []): Promise<PluginCommandExecutionResult> {
     this.getManifest(pluginId);
-    return this.commandRegistry.execute(pluginId, commandId, args);
+    return this.commandRegistry.execute(pluginId, commandId, args).then((result) => {
+      if (result.ok) {
+        this.writeLog(pluginId, "info", `Command ${commandId} executed`, { commandId });
+      } else {
+        this.writeLog(pluginId, "error", result.error?.message ?? `Command ${commandId} failed`, {
+          code: result.error?.code,
+          commandId,
+        });
+      }
+      return result;
+    });
   }
 
   createStorageAPI(pluginId: string): PluginStorageAPI {
@@ -214,6 +243,16 @@ export class PluginManager {
   createEventAPI(pluginId: string): PluginEventAPI {
     this.getEnabledManifest(pluginId);
     return createPluginEventAPI(pluginId, this.eventBus, this.permissionBroker);
+  }
+
+  createLogger(pluginId: string): PluginLogger {
+    this.getManifest(pluginId);
+    return createPluginLogger(pluginId, this.logStore, { maxEntries: this.maxLogEntriesPerPlugin });
+  }
+
+  getPluginLogs(pluginId: string, limit?: number): PluginLogEntry[] {
+    this.getManifest(pluginId);
+    return readPluginLogs(pluginId, this.logStore, limit);
   }
 
   async emitEvent<TPayload = unknown>(
@@ -243,6 +282,9 @@ export class PluginManager {
     const errorCount = (existing?.lastError?.count ?? 0) + 1;
     const state = errorCount >= this.errorThreshold ? "error" : existing?.state ?? "installed";
     if (state === "error") this.eventBus.unregisterPlugin(pluginId);
+    const at = error.at ?? new Date().toISOString();
+    const message = redactPluginRuntimeText(error.message);
+    const stack = error.stack ? redactPluginRuntimeText(error.stack) : undefined;
     this.records = {
       ...this.records,
       [pluginId]: {
@@ -252,16 +294,23 @@ export class PluginManager {
         source: manifest.source,
         state,
         lastError: {
-          message: redactPluginErrorText(error.message),
+          message,
           code: error.code,
-          at: error.at ?? new Date().toISOString(),
+          at,
           contributionId: error.contributionId,
           contributionType: error.contributionType,
-          stack: error.stack ? redactPluginErrorText(error.stack) : undefined,
+          stack,
           count: errorCount,
         },
       },
     };
+    this.writeLog(pluginId, "error", message, {
+      code: error.code,
+      contributionId: error.contributionId,
+      contributionType: error.contributionType,
+      stack,
+      count: errorCount,
+    });
     this.persistAndRebuild();
     return this.snapshot();
   }
@@ -316,6 +365,17 @@ export class PluginManager {
     this.rebuildExtensions();
   }
 
+  private writeLog(
+    pluginId: string,
+    level: PluginLogEntry["level"],
+    message: string,
+    meta?: Record<string, unknown>,
+  ): void {
+    appendPluginLogEntry(pluginId, level, message, meta, this.logStore, {
+      maxEntries: this.maxLogEntriesPerPlugin,
+    });
+  }
+
   private rebuildExtensions(): void {
     this.manifests.forEach((manifest) => this.extensionRegistry.unregisterPlugin(manifest.id));
     this.manifests.forEach((manifest) => this.commandRegistry.unregisterPlugin(manifest.id));
@@ -326,11 +386,4 @@ export class PluginManager {
       }
     });
   }
-}
-
-function redactPluginErrorText(value: string): string {
-  return value
-    .replace(/\b(token|api[-_ ]?key|password|secret|cookie)=([^\s"'`]+)/gi, "$1=[redacted]")
-    .replace(/[A-Za-z]:\\(?:[^\\\s"'`]+\\)*[^\\\s"'`]+/g, "[redacted-path]")
-    .replace(/\/(?:Users|home)\/[^\s"'`]+/g, "[redacted-path]");
 }

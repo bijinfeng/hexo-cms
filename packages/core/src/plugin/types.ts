@@ -205,6 +205,19 @@ export interface PluginErrorSummary {
   count?: number;
 }
 
+export type PluginLogLevel = "debug" | "info" | "warn" | "error";
+
+export interface PluginLogEntry {
+  id: string;
+  pluginId: string;
+  level: PluginLogLevel;
+  message: string;
+  meta?: Record<string, unknown>;
+  at: string;
+}
+
+export type PluginLogStoreValue = Record<string, PluginLogEntry[]>;
+
 export interface PluginRecord {
   id: string;
   version: string;
@@ -290,6 +303,7 @@ export interface PluginManagerSnapshot {
     manifest: PluginManifest;
     record: PluginRecord;
     config: PluginConfigValue;
+    logs: PluginLogEntry[];
   }>;
   extensions: PluginExtensionRegistrySnapshot;
 }

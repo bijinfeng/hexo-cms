@@ -4,6 +4,7 @@ import {
   COMMENTS_OVERVIEW_PLUGIN_ID,
   MemoryPluginStateStore,
   MemoryPluginConfigStore,
+  MemoryPluginLogStore,
   MemoryPluginStorageStore,
   PermissionBroker,
   PluginManager,
@@ -279,6 +280,70 @@ describe("plugin system", () => {
 
     await expect(readonlyStorage.set("draft", true)).rejects.toThrow(PluginPermissionError);
     await expect(writeonlyStorage.keys()).rejects.toThrow(PluginPermissionError);
+  });
+
+  it("records scoped and sanitized plugin logs", () => {
+    const logStore = new MemoryPluginLogStore();
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      logStore,
+      maxLogEntriesPerPlugin: 2,
+    });
+    const attachmentsLogger = manager.createLogger(ATTACHMENTS_HELPER_PLUGIN_ID);
+    const commentsLogger = manager.createLogger(COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    attachmentsLogger.debug("Preparing attachment scan");
+    attachmentsLogger.info("Copied link with token=secret-token at /Users/demo/blog/.env", {
+      token: "secret-token",
+      path: "/Users/demo/blog/.env",
+    });
+    attachmentsLogger.warn("Attachment scan finished");
+    commentsLogger.error("Comments sync failed with cookie=session-cookie");
+
+    const attachmentsLogs = manager.getPluginLogs(ATTACHMENTS_HELPER_PLUGIN_ID);
+    const commentsLogs = manager.getPluginLogs(COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    expect(attachmentsLogs).toHaveLength(2);
+    expect(attachmentsLogs[0].message).toBe("Copied link with token=[redacted] at [redacted-path]");
+    expect(attachmentsLogs[0].meta).toEqual({
+      token: "[redacted]",
+      path: "[redacted-path]",
+    });
+    expect(attachmentsLogs[1].message).toBe("Attachment scan finished");
+    expect(commentsLogs).toHaveLength(1);
+    expect(commentsLogs[0].message).not.toContain("session-cookie");
+  });
+
+  it("includes recent plugin logs in snapshots and writes runtime errors to the log store", () => {
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      logStore: new MemoryPluginLogStore(),
+    });
+
+    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+    manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+      contributionId: "comments.overview",
+      contributionType: "dashboard.widget",
+      message: "Renderer failed with apiKey=secret-key at C:\\Users\\demo\\.env",
+    });
+
+    const plugin = manager.snapshot().plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    expect(plugin?.logs).toEqual([
+      expect.objectContaining({
+        level: "error",
+        message: "Renderer failed with apiKey=[redacted] at [redacted-path]",
+        meta: expect.objectContaining({
+          contributionId: "comments.overview",
+          contributionType: "dashboard.widget",
+          count: 1,
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(plugin?.logs)).not.toContain("secret-key");
+    expect(JSON.stringify(plugin?.logs)).not.toContain("C:\\Users");
   });
 
   it("dispatches plugin events to enabled subscribers and supports disposal", async () => {

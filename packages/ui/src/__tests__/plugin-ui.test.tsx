@@ -220,7 +220,7 @@ describe("plugin UI", () => {
       await waitFor(() => {
         const commentsCard = screen.getByText(/hexo-cms-comments-overview/).closest(".rounded-xl");
         expect(commentsCard).not.toBeNull();
-        expect(within(commentsCard as HTMLElement).getByText(/Renderer failed/)).toBeInTheDocument();
+        expect(within(commentsCard as HTMLElement).getAllByText(/Renderer failed/).length).toBeGreaterThan(0);
       });
 
       const commentsCard = screen.getByText(/hexo-cms-comments-overview/).closest(".rounded-xl");
@@ -255,9 +255,53 @@ describe("plugin UI", () => {
       await waitFor(() => {
         const attachmentsCard = screen.getByText(/hexo-cms-attachments-helper/).closest(".rounded-xl");
         expect(attachmentsCard).not.toBeNull();
-        expect(within(attachmentsCard as HTMLElement).getByText(/Settings failed/)).toBeInTheDocument();
+        expect(within(attachmentsCard as HTMLElement).getAllByText(/Settings failed/).length).toBeGreaterThan(0);
         expect(attachmentsCard).not.toHaveTextContent("session-token");
       });
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it("shows sanitized recent plugin logs in plugin settings", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const widgets = [
+      {
+        pluginId: COMMENTS_OVERVIEW_PLUGIN_ID,
+        pluginName: "Comments Overview",
+        id: "comments.overview",
+        title: "Comments Overview",
+        renderer: "builtin.comments.overview",
+        size: "medium" as const,
+        order: 90,
+      },
+    ];
+    const dashboardWidgets = DashboardExtensionOutlet({
+      widgets,
+      renderers: {
+        "builtin.comments.overview": () => {
+          throw new Error("Renderer failed with token=secret-token at /Users/demo/blog/.env");
+        },
+      },
+    });
+
+    try {
+      renderWithProviders(
+        <>
+          {dashboardWidgets.map((widget) => widget.content)}
+          <PluginSettingsPanel />
+        </>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("最近日志")).toBeInTheDocument();
+        expect(screen.getAllByText(/Renderer failed with token=\[redacted\]/).length).toBeGreaterThan(0);
+      });
+
+      const commentsCard = screen.getByText(/hexo-cms-comments-overview/).closest(".rounded-xl");
+      expect(commentsCard).not.toBeNull();
+      expect(commentsCard).not.toHaveTextContent("secret-token");
+      expect(commentsCard).not.toHaveTextContent("/Users/demo");
     } finally {
       consoleError.mockRestore();
     }

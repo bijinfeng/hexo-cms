@@ -5,6 +5,7 @@ export * from "./event-bus";
 export * from "./extension-registry";
 export * from "./manifest";
 export * from "./permissions";
+export * from "./plugin-logger";
 export * from "./plugin-manager";
 export * from "./plugin-storage";
 export * from "./types";

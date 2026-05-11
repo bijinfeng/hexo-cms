@@ -1,7 +1,8 @@
-import { AlertCircle, CheckCircle2, Package, Power, Shield, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, CheckCircle2, Package, Power, ScrollText, Shield, SlidersHorizontal } from "lucide-react";
 import type {
   PluginConfigFieldValue,
   PluginConfigValue,
+  PluginLogEntry,
   PluginSettingsField,
   PluginSettingsSchema,
   RegisteredSettingsPanel,
@@ -35,7 +36,7 @@ export function PluginSettingsPanel() {
           <CardDescription>管理可信内置插件和声明式扩展能力</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {snapshot.plugins.map(({ manifest, record, config }) => {
+          {snapshot.plugins.map(({ manifest, record, config, logs }) => {
             const enabled = record.state === "enabled";
             const settingsPanels = snapshot.extensions.settingsPanels.filter((panel) => panel.pluginId === manifest.id);
             const stateLabel = record.state === "error" ? "错误" : enabled ? "已启用" : "未启用";
@@ -96,6 +97,8 @@ export function PluginSettingsPanel() {
                   </div>
                 )}
 
+                {logs.length > 0 && <PluginLogList logs={logs} />}
+
                 {enabled && settingsPanels.length > 0 && (
                   <div className="mt-4 space-y-3">
                     {settingsPanels.map((panel) => {
@@ -146,6 +149,63 @@ export function PluginSettingsPanel() {
       </Card>
     </div>
   );
+}
+
+const logLevelLabels: Record<PluginLogEntry["level"], string> = {
+  debug: "调试",
+  info: "信息",
+  warn: "警告",
+  error: "错误",
+};
+
+const logLevelClasses: Record<PluginLogEntry["level"], string> = {
+  debug: "border-[var(--border-default)] text-[var(--text-tertiary)]",
+  info: "border-[var(--status-info)] text-[var(--status-info)]",
+  warn: "border-[var(--status-warning)] text-[var(--status-warning)]",
+  error: "border-[var(--status-error)] text-[var(--status-error)]",
+};
+
+function PluginLogList({ logs }: { logs: PluginLogEntry[] }) {
+  const latestLogs = [...logs].reverse();
+
+  return (
+    <div className="mt-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3">
+      <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+        <ScrollText size={13} />
+        最近日志
+      </div>
+      <div className="space-y-2">
+        {latestLogs.map((log) => (
+          <div key={log.id} className="min-w-0 rounded-md bg-[var(--bg-surface)] px-2.5 py-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`rounded border px-1.5 py-0.5 text-[10px] ${logLevelClasses[log.level]}`}>
+                {logLevelLabels[log.level]}
+              </span>
+              <span className="text-[11px] text-[var(--text-tertiary)]">{formatLogTime(log.at)}</span>
+            </div>
+            <div className="mt-1 break-words text-xs text-[var(--text-secondary)]">{log.message}</div>
+            {log.meta && (
+              <pre className="mt-1 max-h-20 overflow-auto whitespace-pre-wrap break-words rounded bg-[var(--bg-muted)] p-2 text-[11px] text-[var(--text-tertiary)]">
+                {JSON.stringify(log.meta, null, 2)}
+              </pre>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatLogTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 function PluginSettingsSchemaPanel({

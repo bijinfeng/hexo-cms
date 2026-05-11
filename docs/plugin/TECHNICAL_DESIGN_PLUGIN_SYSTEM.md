@@ -1,7 +1,7 @@
 # Hexo CMS 插件系统技术方案
 
-> **版本**: 1.2.0
-> **最后更新**: 2026-05-11
+> **版本**: 1.2.1
+> **最后更新**: 2026-05-12
 > **状态**: v0.2 可信插件扩展与稳定性补强继续落地，继续设计中
 > **关联 PRD**: [PRD_PLUGIN_SYSTEM.md](./PRD_PLUGIN_SYSTEM.md)
 
@@ -69,16 +69,17 @@ packages/ui
 12. `recordPluginError`: 连续错误计数与默认 3 次阈值熔断。
 13. `plugin-storage.ts`: `PluginStorageAPI`、Memory/Browser store、`pluginId` namespace 隔离和 `pluginStorage.read/write` 权限校验。
 14. `event-bus.ts`: `PluginEventAPI`、宿主事件派发、`event.subscribe` 权限校验和 handler 失败隔离。
-15. Web/Desktop root route: 统一包裹 `PluginProvider`。
+15. `plugin-logger.ts` 与 `redaction.ts`: 插件日志 Memory/Browser store、`PluginLogger`、运行时日志脱敏与按 `pluginId` 过滤。
+16. `PluginManager.snapshot()`: 每个插件暴露最近日志，Settings 插件卡片展示最近日志。
+17. Web/Desktop root route: 统一包裹 `PluginProvider`。
 
 仍待实现:
 
 1. `PluginHost` 独立运行时和消息协议。
 2. Zod manifest schema。
-3. 插件日志面板。
-4. 核心页面接入宿主事件派发。
-5. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
-6. Secret Store、受控网络代理和第三方插件沙箱。
+3. 核心页面接入宿主事件派发。
+4. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
+5. Secret Store、受控网络代理和第三方插件沙箱。
 
 ---
 
@@ -449,6 +450,14 @@ interface PluginLogger {
 }
 ```
 
+当前实现:
+
+1. `PluginManager.createLogger(pluginId)` 返回插件级 `PluginLogger`。
+2. `MemoryPluginLogStore` 用于测试和非浏览器场景，`BrowserPluginLogStore` 暂存到 `localStorage` 的 `hexo-cms:plugin-logs`。
+3. `PluginManager.getPluginLogs(pluginId, limit)` 按插件读取日志，`snapshot.plugins[*].logs` 默认带最近 5 条日志。
+4. `recordPluginError` 会同步写入 error 级日志，`executeCommand` 会记录命令成功和失败。
+5. 日志 message、meta、Error stack 使用统一脱敏规则处理 token、cookie、API Key、secret、password 和本地路径。
+
 ---
 
 ## 6. 权限模型
@@ -669,10 +678,7 @@ Desktop 侧负责:
 2. `recordPluginError` 与 `lastError` 更新。
 3. Dashboard/Settings 插件贡献区域失败隔离。
 4. 错误阈值熔断，默认连续 3 次失败后将插件置为 `error` 并移除贡献入口。
-
-待补齐:
-
-1. 插件日志面板，按 `pluginId` 过滤。
+5. 插件日志面板，按 `pluginId` 过滤最近日志，并展示命令执行与运行时错误日志。
 
 ### 10.2 P1: 扩展点完整性
 
@@ -753,6 +759,15 @@ CREATE TABLE IF NOT EXISTS plugin_storage (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (plugin_id, key)
 );
+
+CREATE TABLE IF NOT EXISTS plugin_log (
+  id TEXT PRIMARY KEY,
+  plugin_id TEXT NOT NULL,
+  level TEXT NOT NULL,
+  message TEXT NOT NULL,
+  meta TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ### 11.2 Desktop
@@ -792,7 +807,7 @@ Desktop 使用:
 
 ### Phase 2: 可信插件完善
 
-状态: 部分落地，ErrorBoundary、Sidebar、CommandRegistry 与错误阈值熔断已完成，下一步推进 Storage API、Event API 和日志面板。
+状态: 部分落地，ErrorBoundary、Sidebar、CommandRegistry、错误阈值熔断、Storage API core、Event API core 和日志面板已完成，下一步推进核心页面事件派发与平台持久化。
 
 已完成:
 
@@ -808,12 +823,12 @@ Desktop 使用:
 10. `recordPluginError` 错误计数与阈值熔断。
 11. 插件 Storage API core: Memory/Browser store、权限隔离和 namespace 管理。
 12. Event API core: 只读订阅、宿主事件派发、权限校验和 handler 失败隔离。
+13. 插件日志面板: Memory/Browser log store、logger API、错误/命令日志记录、Settings 最近日志展示与脱敏。
 
 下一轮 P0:
 
-1. 插件日志面板，先记录命令执行与运行时错误。
-2. 核心页面接入宿主事件派发。
-3. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
+1. 核心页面接入宿主事件派发。
+2. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
 
 后续 P1:
 
@@ -829,6 +844,7 @@ Desktop 使用:
 4. 命令可执行并被权限控制。
 5. 事件只读通知可用。
 6. Comments Overview 可被启用/停用，并贡献 dashboard widget 与 settings panel。
+7. Settings 中可看到插件最近日志，且日志不泄漏 token、cookie、API Key 和本地路径。
 
 ### Phase 3: 沙箱预研
 
@@ -903,4 +919,5 @@ Desktop 使用:
 13. 插件级 ErrorBoundary 已覆盖 Dashboard widget 和 Settings schema renderer。
 14. Sidebar item、CommandRegistry 和错误阈值熔断已落地。
 15. 插件 Storage API core 已落地。
-16. Event API core 已落地；下一轮优先补插件日志面板、核心页面事件派发接入和平台持久化适配。
+16. Event API core 已落地。
+17. 插件日志面板已落地；下一轮优先补核心页面事件派发接入和平台持久化适配。
