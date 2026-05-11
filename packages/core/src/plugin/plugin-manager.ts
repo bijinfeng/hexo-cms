@@ -4,6 +4,7 @@ import { createPluginEventAPI, EventBus } from "./event-bus";
 import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
+import { createPluginHttpAPI, type PluginFetch } from "./plugin-http";
 import {
   appendPluginLogEntry,
   createPluginLogger,
@@ -11,6 +12,7 @@ import {
   readPluginLogs,
   type PluginLogStore,
 } from "./plugin-logger";
+import { createPluginSecretAPI, MemoryPluginSecretStore, type PluginSecretStore } from "./plugin-secret";
 import { createPluginStorageAPI, MemoryPluginStorageStore, type PluginStorageStore } from "./plugin-storage";
 import { redactPluginRuntimeText } from "./redaction";
 import type {
@@ -21,11 +23,13 @@ import type {
   PluginEventAPI,
   PluginEventDispatchResult,
   PluginEventName,
+  PluginHttpAPI,
   PluginLogEntry,
   PluginLogger,
   PluginManifest,
   PluginManagerSnapshot,
   PluginRuntimeErrorInput,
+  PluginSecretAPI,
   PluginStorageAPI,
   PluginStateStoreValue,
 } from "./types";
@@ -107,7 +111,9 @@ export interface PluginManagerOptions {
   store?: PluginStateStore;
   configStore?: PluginConfigStore;
   storageStore?: PluginStorageStore;
+  secretStore?: PluginSecretStore;
   logStore?: PluginLogStore;
+  fetchImpl?: PluginFetch;
   defaultEnabledPluginIds?: string[];
   commandHandlers?: Record<string, PluginCommandHandler>;
   errorThreshold?: number;
@@ -124,7 +130,9 @@ export class PluginManager {
   private readonly store: PluginStateStore;
   private readonly configStore: PluginConfigStore;
   private readonly storageStore: PluginStorageStore;
+  private readonly secretStore: PluginSecretStore;
   private readonly logStore: PluginLogStore;
+  private readonly fetchImpl?: PluginFetch;
   private readonly errorThreshold: number;
   private readonly maxLogEntriesPerPlugin: number;
   private records: PluginStateStoreValue;
@@ -135,7 +143,9 @@ export class PluginManager {
     store = new MemoryPluginStateStore(),
     configStore = new MemoryPluginConfigStore(),
     storageStore = new MemoryPluginStorageStore(),
+    secretStore = new MemoryPluginSecretStore(),
     logStore = new MemoryPluginLogStore(),
+    fetchImpl,
     defaultEnabledPluginIds = [],
     commandHandlers = {},
     errorThreshold = 3,
@@ -148,7 +158,9 @@ export class PluginManager {
     this.store = store;
     this.configStore = configStore;
     this.storageStore = storageStore;
+    this.secretStore = secretStore;
     this.logStore = logStore;
+    this.fetchImpl = fetchImpl;
     this.errorThreshold = errorThreshold;
     this.maxLogEntriesPerPlugin = maxLogEntriesPerPlugin;
     this.records = this.hydrateRecords(defaultEnabledPluginIds);
@@ -238,6 +250,16 @@ export class PluginManager {
   createStorageAPI(pluginId: string): PluginStorageAPI {
     this.getManifest(pluginId);
     return createPluginStorageAPI(pluginId, this.storageStore, this.permissionBroker);
+  }
+
+  createSecretAPI(pluginId: string): PluginSecretAPI {
+    this.getManifest(pluginId);
+    return createPluginSecretAPI(pluginId, this.secretStore, this.permissionBroker);
+  }
+
+  createHttpAPI(pluginId: string): PluginHttpAPI {
+    const manifest = this.getManifest(pluginId);
+    return createPluginHttpAPI(pluginId, manifest, this.permissionBroker, this.fetchImpl);
   }
 
   createEventAPI(pluginId: string): PluginEventAPI {

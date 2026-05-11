@@ -140,7 +140,8 @@
 - Event API core 已开始落地，支持只读订阅、宿主事件派发、权限校验和事件 handler 失败隔离
 - 插件日志面板已落地，支持插件级 logger、命令/运行时错误日志记录、Settings 最近日志展示和敏感信息脱敏
 - 核心页面事件派发已接入，文章、页面、媒体和部署操作会向插件 Event API 发出宿主事件
-- 下一轮优先补 Secret Store 与受控 network.fetch，继续保证插件失败不影响核心页面
+- Secret Store core 与 network.fetch core 已落地，支持密钥状态查询/写入/删除、HTTPS/allowedHosts/超时/cookie 限制
+- 下一轮优先补 Secret Store 平台持久化与受控 network.fetch 平台代理，继续保证插件失败不影响核心页面
 - 后续可插件化方向包括 SEO Inspector、Draft Coach、Link Checker、Theme Config Helper 和企业规范包
 - Analytics Dashboard 延后到 Secret Store 与 network permission 稳定后实现
 

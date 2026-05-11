@@ -1,15 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
   COMMENTS_OVERVIEW_PLUGIN_ID,
   MemoryPluginStateStore,
   MemoryPluginConfigStore,
   MemoryPluginLogStore,
+  MemoryPluginSecretStore,
   MemoryPluginStorageStore,
   PermissionBroker,
   PluginManager,
   PluginManifestError,
   PluginPermissionError,
+  type PluginFetch,
   type PluginStorageStoreValue,
   builtinPluginManifests,
   validatePluginManifest,
@@ -304,6 +306,131 @@ describe("plugin system", () => {
 
     await expect(storage.get("lastPath")).resolves.toBe("source/images/guide.pdf");
     await expect(storage.keys()).resolves.toEqual(["lastPath"]);
+  });
+
+  it("isolates plugin secrets and never exposes secret values", async () => {
+    const secretStore = new MemoryPluginSecretStore();
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-secret-writer",
+          name: "Secret Writer",
+          version: "0.1.0",
+          description: "Secret writer test plugin",
+          source: "builtin",
+          permissions: ["pluginSecret.read", "pluginSecret.write"],
+        },
+        {
+          id: "hexo-cms-secret-reader",
+          name: "Secret Reader",
+          version: "0.1.0",
+          description: "Secret reader test plugin",
+          source: "builtin",
+          permissions: ["pluginSecret.read"],
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+      secretStore,
+    });
+    const writerSecrets = manager.createSecretAPI("hexo-cms-secret-writer");
+    const readerSecrets = manager.createSecretAPI("hexo-cms-secret-reader");
+
+    await expect(writerSecrets.has("apiKey")).resolves.toBe(false);
+    await writerSecrets.set("apiKey", "secret-token");
+
+    await expect(writerSecrets.has("apiKey")).resolves.toBe(true);
+    await expect(readerSecrets.has("apiKey")).resolves.toBe(false);
+    expect(Object.keys(writerSecrets)).toEqual(["has", "set", "delete"]);
+
+    await writerSecrets.delete("apiKey");
+    await expect(writerSecrets.has("apiKey")).resolves.toBe(false);
+  });
+
+  it("requires plugin secret permissions", async () => {
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-secret-readonly",
+          name: "Secret Readonly",
+          version: "0.1.0",
+          description: "Secret permission test plugin",
+          source: "builtin",
+          permissions: ["pluginSecret.read"],
+        },
+        {
+          id: "hexo-cms-secret-writeonly",
+          name: "Secret Writeonly",
+          version: "0.1.0",
+          description: "Secret permission test plugin",
+          source: "builtin",
+          permissions: ["pluginSecret.write"],
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+    });
+
+    await expect(manager.createSecretAPI("hexo-cms-secret-readonly").set("apiKey", "secret")).rejects.toThrow(
+      PluginPermissionError,
+    );
+    await expect(manager.createSecretAPI("hexo-cms-secret-writeonly").has("apiKey")).rejects.toThrow(
+      PluginPermissionError,
+    );
+  });
+
+  it("enforces controlled network fetch permissions and allowed hosts", async () => {
+    const fetchImpl = vi.fn<PluginFetch>().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      headers: { get: (name: string) => (name.toLowerCase() === "content-type" ? "application/json" : null) },
+      json: async () => ({ ok: true }),
+      text: async () => "ok",
+    });
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-network-plugin",
+          name: "Network Plugin",
+          version: "0.1.0",
+          description: "Network permission test plugin",
+          source: "builtin",
+          permissions: ["network.fetch"],
+          network: { allowedHosts: ["api.example.com", "*.trusted.example"] },
+        },
+        {
+          id: "hexo-cms-network-without-permission",
+          name: "Network Without Permission",
+          version: "0.1.0",
+          description: "Network permission test plugin",
+          source: "builtin",
+          permissions: ["ui.contribute"],
+          network: { allowedHosts: ["api.example.com"] },
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+      fetchImpl,
+    });
+    const http = manager.createHttpAPI("hexo-cms-network-plugin");
+
+    await expect(
+      http.fetch("https://api.example.com/status", {
+        headers: {
+          Cookie: "session=secret",
+          Authorization: "Bearer plugin-token",
+        },
+      }),
+    ).resolves.toEqual({ ok: true });
+    await expect(http.fetch("https://nested.trusted.example/status")).resolves.toEqual({ ok: true });
+    expect(fetchImpl.mock.calls[0][1].credentials).toBe("omit");
+    expect(fetchImpl.mock.calls[0][1].headers).toEqual({
+      Authorization: "Bearer plugin-token",
+    });
+
+    await expect(http.fetch("http://api.example.com/status")).rejects.toThrow(/HTTPS/);
+    await expect(http.fetch("https://evil.example.com/status")).rejects.toThrow(/not allowed/);
+    await expect(
+      manager.createHttpAPI("hexo-cms-network-without-permission").fetch("https://api.example.com/status"),
+    ).rejects.toThrow(PluginPermissionError);
   });
 
   it("records scoped and sanitized plugin logs", () => {

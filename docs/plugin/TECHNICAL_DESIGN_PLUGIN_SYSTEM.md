@@ -1,6 +1,6 @@
 # Hexo CMS 插件系统技术方案
 
-> **版本**: 1.2.2
+> **版本**: 1.2.3
 > **最后更新**: 2026-05-12
 > **状态**: v0.2 可信插件扩展与稳定性补强继续落地，继续设计中
 > **关联 PRD**: [PRD_PLUGIN_SYSTEM.md](./PRD_PLUGIN_SYSTEM.md)
@@ -78,7 +78,7 @@ packages/ui
 
 1. `PluginHost` 独立运行时和消息协议。
 2. Zod manifest schema。
-3. Secret Store、受控网络代理和第三方插件沙箱。
+3. Secret Store 平台持久化、受控网络代理平台适配和第三方插件沙箱。
 
 ---
 
@@ -412,6 +412,14 @@ interface PluginSecretAPI {
 }
 ```
 
+当前实现:
+
+1. `PluginManager.createSecretAPI(pluginId)` 返回插件级 `PluginSecretAPI`。
+2. `PluginSecretAPI` 只提供 `has/set/delete`，不提供读取明文 secret 的 API。
+3. `pluginSecret.read` 控制 `has`，`pluginSecret.write` 控制 `set/delete`。
+4. `MemoryPluginSecretStore` 用于当前 core 能力和测试，Web/Desktop 平台加密持久化待补齐。
+5. secret key 按 `pluginId` namespace 隔离。
+
 约束:
 
 1. 插件 UI 只能读取 secret 是否已配置，不返回明文。
@@ -435,6 +443,15 @@ interface HttpAPI {
 3. 禁止自动带上宿主 cookie。
 4. 请求和响应体大小需要限制。
 5. 超时默认 10 秒。
+
+当前实现:
+
+1. `PluginManager.createHttpAPI(pluginId)` 返回受控 `PluginHttpAPI`。
+2. `network.fetch` 权限必需，且 manifest 必须声明 `network.allowedHosts`。
+3. URL 必须是 HTTPS，host 支持精确匹配和 `*.example.com` 通配。
+4. 请求默认 `credentials: "omit"`，并移除 `Cookie` / `Set-Cookie` 请求头。
+5. 默认超时 10 秒，响应按 `content-type` 解析 JSON 或文本。
+6. 平台级服务端代理、响应大小限制和审计日志待补齐。
 
 ### 5.5 Logger
 
@@ -469,6 +486,8 @@ type PluginPermission =
   | "config.read"
   | "pluginStorage.read"
   | "pluginStorage.write"
+  | "pluginSecret.read"
+  | "pluginSecret.write"
   | "pluginConfig.write"
   | "ui.contribute"
   | "command.register"
@@ -703,12 +722,18 @@ Desktop 侧负责:
 
 1. 插件状态和配置迁移到 Web SQLite/API route。
 2. 插件状态和配置迁移到 Desktop userData。
-3. Secret Store: API Key、token、webhook secret 只保存引用和是否已配置。
+3. Secret Store 平台持久化: API Key、token、webhook secret 只保存引用和是否已配置。
 4. 导入/导出配置时跳过 secret 明文。
 
 ### 10.4 P3: 外部集成与沙箱
 
-1. 受控 `network.fetch` 代理，限制 host、协议、超时、大小和 cookie。
+已完成:
+
+1. 受控 `network.fetch` core，限制 host、协议、超时和 cookie。
+
+待补齐:
+
+1. Web/Desktop 平台网络代理，补齐响应大小限制、审计日志和服务端执行。
 2. local-dev 插件加载，仅开发模式开启。
 3. iframe/Worker/独立进程沙箱原型。
 4. 插件签名和私有源。
@@ -813,7 +838,7 @@ Desktop 使用:
 
 ### Phase 2: 可信插件完善
 
-状态: 部分落地，ErrorBoundary、Sidebar、CommandRegistry、错误阈值熔断、Storage API core、Storage 平台持久化、Event API core、日志面板和核心页面事件派发已完成，下一步推进 Secret Store 与受控网络代理。
+状态: 部分落地，ErrorBoundary、Sidebar、CommandRegistry、错误阈值熔断、Storage API core、Storage 平台持久化、Event API core、日志面板、核心页面事件派发、Secret API core 和 network.fetch core 已完成，下一步推进平台级 Secret/网络适配。
 
 已完成:
 
@@ -832,11 +857,13 @@ Desktop 使用:
 13. 插件日志面板: Memory/Browser log store、logger API、错误/命令日志记录、Settings 最近日志展示与脱敏。
 14. 核心页面事件派发接入: DataProvider wrapper 覆盖文章、页面、媒体和部署事件。
 15. Storage 平台持久化: Web SQLite/API route 与 Desktop userData IPC 适配。
+16. Secret Store core: `has/set/delete`、`pluginId` 隔离和 `pluginSecret.read/write` 权限。
+17. `network.fetch` core: HTTPS、allowedHosts、超时、禁 cookie 与权限校验。
 
 下一轮 P0:
 
-1. Secret Store 基础 API 与平台存储引用。
-2. 受控 `network.fetch` 代理设计和最小实现。
+1. Secret Store Web/Desktop 平台持久化适配。
+2. 受控 `network.fetch` 平台代理、响应大小限制和审计日志。
 
 后续 P1:
 
@@ -855,6 +882,8 @@ Desktop 使用:
 7. Settings 中可看到插件最近日志，且日志不泄漏 token、cookie、API Key 和本地路径。
 8. 文章、页面、媒体和部署操作会向 Event API 派发对应宿主事件。
 9. 插件 Storage API 在 Web 刷新和 Desktop 重启后仍能保留同一 `pluginId` namespace 下的数据。
+10. Secret API 不返回明文，并按权限和 `pluginId` 隔离。
+11. network.fetch 拒绝未授权权限、非 HTTPS 和未声明 host，并不发送 cookie。
 
 ### Phase 3: 沙箱预研
 
@@ -933,3 +962,4 @@ Desktop 使用:
 17. 插件日志面板已落地。
 18. 核心页面事件派发接入已落地。
 19. 插件 Storage API 平台持久化适配已落地；下一轮优先补 Secret Store 与受控网络代理。
+20. Secret Store core 与 network.fetch core 已落地；下一轮优先补平台级 Secret 持久化和网络代理。

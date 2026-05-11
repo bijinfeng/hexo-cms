@@ -15,6 +15,8 @@ export type PluginPermission =
   | "config.read"
   | "pluginStorage.read"
   | "pluginStorage.write"
+  | "pluginSecret.read"
+  | "pluginSecret.write"
   | "pluginConfig.write"
   | "ui.contribute"
   | "command.register"
@@ -142,6 +144,27 @@ export interface PluginStorageAPI {
   set<T extends PluginStorageJsonValue>(key: string, value: T): Promise<void>;
   delete(key: string): Promise<void>;
   keys(): Promise<string[]>;
+}
+
+export type PluginSecretNamespaceValue = Record<string, string>;
+
+export type PluginSecretStoreValue = Record<string, PluginSecretNamespaceValue>;
+
+export interface PluginSecretAPI {
+  has(key: string): Promise<boolean>;
+  set(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
+export interface PluginHttpRequestOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  timeoutMs?: number;
+}
+
+export interface PluginHttpAPI {
+  fetch<T = unknown>(url: string, options?: PluginHttpRequestOptions): Promise<T>;
 }
 
 export type BuiltinPluginEventName =
@@ -294,7 +317,9 @@ export interface PluginContext {
   readonly plugin: PluginManifest;
   readonly content: ContentReadAPI;
   readonly storage: PluginStorageAPI;
+  readonly secrets: PluginSecretAPI;
   readonly events: PluginEventAPI;
+  readonly http: PluginHttpAPI;
   readonly logger: PluginLogger;
 }
 

@@ -18,6 +18,8 @@ const permissionLabels: Record<string, string> = {
   "config.read": "读取配置",
   "pluginStorage.read": "读取插件存储",
   "pluginStorage.write": "写入插件存储",
+  "pluginSecret.read": "读取密钥状态",
+  "pluginSecret.write": "写入插件密钥",
   "pluginConfig.write": "写入插件配置",
   "ui.contribute": "贡献 UI",
   "command.register": "注册命令",

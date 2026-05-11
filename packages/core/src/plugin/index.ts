@@ -7,5 +7,7 @@ export * from "./manifest";
 export * from "./permissions";
 export * from "./plugin-logger";
 export * from "./plugin-manager";
+export * from "./plugin-http";
+export * from "./plugin-secret";
 export * from "./plugin-storage";
 export * from "./types";

@@ -8,6 +8,8 @@ const VALID_PERMISSIONS = new Set<PluginPermission>([
   "config.read",
   "pluginStorage.read",
   "pluginStorage.write",
+  "pluginSecret.read",
+  "pluginSecret.write",
   "pluginConfig.write",
   "ui.contribute",
   "command.register",
