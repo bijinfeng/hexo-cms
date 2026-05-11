@@ -1,8 +1,11 @@
 import { PluginNotFoundError } from "./errors";
+import { CommandRegistry } from "./command-registry";
 import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
 import type {
+  PluginCommandExecutionResult,
+  PluginCommandHandler,
   PluginConfigStoreValue,
   PluginConfigValue,
   PluginManifest,
@@ -88,6 +91,8 @@ export interface PluginManagerOptions {
   store?: PluginStateStore;
   configStore?: PluginConfigStore;
   defaultEnabledPluginIds?: string[];
+  commandHandlers?: Record<string, PluginCommandHandler>;
+  errorThreshold?: number;
 }
 
 export class PluginManager {
@@ -95,8 +100,10 @@ export class PluginManager {
   private readonly manifests: PluginManifest[];
   private readonly manifestsById = new Map<string, PluginManifest>();
   private readonly extensionRegistry = new ExtensionRegistry();
+  private readonly commandRegistry: CommandRegistry;
   private readonly store: PluginStateStore;
   private readonly configStore: PluginConfigStore;
+  private readonly errorThreshold: number;
   private records: PluginStateStoreValue;
   private configs: PluginConfigStoreValue;
 
@@ -105,12 +112,16 @@ export class PluginManager {
     store = new MemoryPluginStateStore(),
     configStore = new MemoryPluginConfigStore(),
     defaultEnabledPluginIds = [],
+    commandHandlers = {},
+    errorThreshold = 3,
   }: PluginManagerOptions) {
     this.manifests = validatePluginManifests(manifests);
     this.manifests.forEach((manifest) => this.manifestsById.set(manifest.id, manifest));
     this.permissionBroker = new PermissionBroker(this.manifests);
+    this.commandRegistry = new CommandRegistry(this.permissionBroker, commandHandlers);
     this.store = store;
     this.configStore = configStore;
+    this.errorThreshold = errorThreshold;
     this.records = this.hydrateRecords(defaultEnabledPluginIds);
     this.configs = this.hydrateConfigs();
     this.rebuildExtensions();
@@ -173,9 +184,21 @@ export class PluginManager {
     return this.snapshot();
   }
 
+  registerCommandHandler(pluginId: string, commandId: string, handler: PluginCommandHandler): void {
+    this.getManifest(pluginId);
+    this.commandRegistry.registerHandler(pluginId, commandId, handler);
+  }
+
+  executeCommand(pluginId: string, commandId: string, args: unknown[] = []): Promise<PluginCommandExecutionResult> {
+    this.getManifest(pluginId);
+    return this.commandRegistry.execute(pluginId, commandId, args);
+  }
+
   recordPluginError(pluginId: string, error: PluginRuntimeErrorInput): PluginManagerSnapshot {
     const manifest = this.getManifest(pluginId);
     const existing = this.records[pluginId];
+    const errorCount = (existing?.lastError?.count ?? 0) + 1;
+    const state = errorCount >= this.errorThreshold ? "error" : existing?.state ?? "installed";
     this.records = {
       ...this.records,
       [pluginId]: {
@@ -183,7 +206,7 @@ export class PluginManager {
         id: pluginId,
         version: manifest.version,
         source: manifest.source,
-        state: existing?.state ?? "installed",
+        state,
         lastError: {
           message: redactPluginErrorText(error.message),
           code: error.code,
@@ -191,10 +214,11 @@ export class PluginManager {
           contributionId: error.contributionId,
           contributionType: error.contributionType,
           stack: error.stack ? redactPluginErrorText(error.stack) : undefined,
+          count: errorCount,
         },
       },
     };
-    this.store.save(this.records);
+    this.persistAndRebuild();
     return this.snapshot();
   }
 
@@ -242,9 +266,11 @@ export class PluginManager {
 
   private rebuildExtensions(): void {
     this.manifests.forEach((manifest) => this.extensionRegistry.unregisterPlugin(manifest.id));
+    this.manifests.forEach((manifest) => this.commandRegistry.unregisterPlugin(manifest.id));
     this.manifests.forEach((manifest) => {
       if (this.records[manifest.id]?.state === "enabled") {
         this.extensionRegistry.registerPlugin(manifest);
+        this.commandRegistry.registerPlugin(manifest);
       }
     });
   }

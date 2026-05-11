@@ -61,6 +61,7 @@ export function CMSLayout({ children, isElectron }: { children: ReactNode; isEle
         <Sidebar
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed((v) => !v)}
+          pluginItems={snapshot.extensions.sidebarItems}
         />
         </div>
 

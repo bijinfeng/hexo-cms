@@ -1,7 +1,8 @@
 import type { ComponentType } from "react";
-import type { PluginConfigValue } from "@hexo-cms/core";
+import { COMMENTS_OVERVIEW_PLUGIN_ID, type PluginConfigValue } from "@hexo-cms/core";
 import { AlertTriangle, CheckCircle2, MessageSquare, ShieldAlert } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import { usePluginSystem } from "../plugin-provider";
 
 const summary = {
   total: 6,
@@ -11,8 +12,13 @@ const summary = {
 };
 
 export function CommentsOverviewWidget({ config = {} }: { config?: PluginConfigValue }) {
+  const { executePluginCommand } = usePluginSystem();
   const showPendingAlert = config.showPendingAlert !== false;
   const moderationUrl = typeof config.moderationUrl === "string" && config.moderationUrl ? config.moderationUrl : "/comments";
+
+  async function openModeration() {
+    await executePluginCommand(COMMENTS_OVERVIEW_PLUGIN_ID, "comments.openModeration", [moderationUrl]);
+  }
 
   return (
     <div className="space-y-4">
@@ -26,11 +32,14 @@ export function CommentsOverviewWidget({ config = {} }: { config?: PluginConfigV
           <div className="text-sm font-medium text-[var(--text-primary)]">评论管理</div>
           <div className="text-xs text-[var(--text-secondary)]">共 {summary.total} 条示例评论</div>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <a href={moderationUrl}>
-            <MessageSquare size={14} />
-            打开评论管理
-          </a>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={openModeration}
+          data-plugin-href={moderationUrl}
+        >
+          <MessageSquare size={14} />
+          打开评论管理
         </Button>
       </div>
     </div>

@@ -132,6 +132,89 @@ describe("plugin system", () => {
     );
   });
 
+  it("executes registered plugin commands and returns command errors", async () => {
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      commandHandlers: {
+        [`${COMMENTS_OVERVIEW_PLUGIN_ID}:comments.openModeration`]: ({ args }) => `opened:${String(args[0])}`,
+      },
+    });
+
+    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    await expect(
+      manager.executeCommand(COMMENTS_OVERVIEW_PLUGIN_ID, "comments.openModeration", [
+        "https://comments.example.com",
+      ]),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        ok: true,
+        value: "opened:https://comments.example.com",
+      }),
+    );
+
+    const missingHandler = await manager.executeCommand(
+      COMMENTS_OVERVIEW_PLUGIN_ID,
+      "comments.unknown",
+    );
+
+    expect(missingHandler).toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: expect.objectContaining({ code: "PLUGIN_COMMAND_NOT_FOUND" }),
+      }),
+    );
+
+    const managerWithoutHandlers = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+    });
+    managerWithoutHandlers.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    await expect(
+      managerWithoutHandlers.executeCommand(COMMENTS_OVERVIEW_PLUGIN_ID, "comments.openModeration"),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: expect.objectContaining({ code: "PLUGIN_COMMAND_HANDLER_MISSING" }),
+      }),
+    );
+  });
+
+  it("returns permission errors for commands declared without command.register", async () => {
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-command-without-permission",
+          name: "Command Without Permission",
+          version: "0.1.0",
+          description: "Command permission test plugin",
+          source: "builtin",
+          permissions: ["ui.contribute"],
+          contributes: {
+            commands: [{ id: "unsafe.run", title: "Unsafe Run" }],
+          },
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+      commandHandlers: {
+        "hexo-cms-command-without-permission:unsafe.run": () => "should not run",
+      },
+    });
+
+    manager.enable("hexo-cms-command-without-permission");
+
+    await expect(
+      manager.executeCommand("hexo-cms-command-without-permission", "unsafe.run"),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: expect.objectContaining({ code: "PLUGIN_PERMISSION_DENIED" }),
+      }),
+    );
+  });
+
   it("records sanitized plugin runtime errors without disabling the plugin", () => {
     const manager = new PluginManager({
       manifests: builtinPluginManifests,
@@ -164,5 +247,48 @@ describe("plugin system", () => {
     expect(plugin?.record.lastError?.message).not.toContain("secret-token");
     expect(plugin?.record.lastError?.message).not.toContain("C:\\Users");
     expect(plugin?.record.lastError?.stack).not.toContain("C:\\Users");
+  });
+
+  it("trips an error fuse after repeated plugin runtime failures", () => {
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      errorThreshold: 3,
+    });
+
+    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+    manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+      contributionId: "comments.overview",
+      contributionType: "dashboard.widget",
+      message: "Renderer failed once",
+    });
+    const secondSnapshot = manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+      contributionId: "comments.overview",
+      contributionType: "dashboard.widget",
+      message: "Renderer failed twice",
+    });
+
+    expect(
+      secondSnapshot.plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID)?.record.state,
+    ).toBe("enabled");
+    expect(secondSnapshot.extensions.dashboardWidgets).toHaveLength(1);
+
+    const trippedSnapshot = manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+      contributionId: "comments.overview",
+      contributionType: "dashboard.widget",
+      message: "Renderer failed three times",
+    });
+    const plugin = trippedSnapshot.plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    expect(plugin?.record.state).toBe("error");
+    expect(plugin?.record.lastError?.count).toBe(3);
+    expect(trippedSnapshot.extensions.dashboardWidgets).toHaveLength(0);
+
+    const retriedSnapshot = manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+    const retriedPlugin = retriedSnapshot.plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    expect(retriedPlugin?.record.state).toBe("enabled");
+    expect(retriedPlugin?.record.lastError).toBeUndefined();
+    expect(retriedSnapshot.extensions.dashboardWidgets).toHaveLength(1);
   });
 });

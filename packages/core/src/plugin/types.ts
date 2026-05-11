@@ -105,6 +105,25 @@ export interface CommandContribution {
 
 export type PluginContributionType = "dashboard.widget" | "settings.panel" | "sidebar.item" | "command";
 
+export interface PluginCommandHandlerContext {
+  pluginId: string;
+  commandId: string;
+  command: RegisteredCommand;
+  args: unknown[];
+}
+
+export type PluginCommandHandler = (context: PluginCommandHandlerContext) => unknown | Promise<unknown>;
+
+export interface PluginCommandExecutionResult {
+  ok: boolean;
+  command?: RegisteredCommand;
+  value?: unknown;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
 export interface PluginRuntimeErrorInput {
   contributionId: string;
   contributionType: PluginContributionType;
@@ -121,6 +140,7 @@ export interface PluginErrorSummary {
   contributionId?: string;
   contributionType?: PluginContributionType;
   stack?: string;
+  count?: number;
 }
 
 export interface PluginRecord {

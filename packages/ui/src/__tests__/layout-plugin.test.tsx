@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DataProviderProvider } from "../context/data-provider-context";
 import { CMSLayout } from "../components/layout/CMSLayout";
@@ -9,8 +9,17 @@ import type { DataProvider } from "@hexo-cms/core";
 
 vi.mock("@tanstack/react-router", () => ({
   useRouterState: () => ({ location: { pathname: "/media" } }),
-  Link: ({ children, to, ...props }: { children: React.ReactNode; to: string }) => (
-    <a href={to} {...props}>
+  Link: ({
+    children,
+    to,
+    search,
+    ...props
+  }: {
+    children: React.ReactNode;
+    to: string;
+    search?: Record<string, string>;
+  }) => (
+    <a href={`${to}${search ? `?${new URLSearchParams(search).toString()}` : ""}`} {...props}>
       {children}
     </a>
   ),
@@ -47,6 +56,10 @@ function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider
 }
 
 describe("CMSLayout plugin policy", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it("hides media topbar search when Attachments Helper is disabled", async () => {
     const user = userEvent.setup();
 
@@ -66,5 +79,35 @@ describe("CMSLayout plugin policy", () => {
     await user.click(screen.getByRole("button", { name: "停用" }));
 
     expect(screen.queryByText("搜索...")).not.toBeInTheDocument();
+  });
+
+  it("mounts enabled plugin sidebar entries and removes them when disabled", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <DataProviderProvider provider={createDataProvider()}>
+        <PluginProvider>
+          <PluginSettingsPanel />
+          <CMSLayout>
+            <div>媒体内容</div>
+          </CMSLayout>
+        </PluginProvider>
+      </DataProviderProvider>,
+    );
+
+    expect(screen.getByRole("link", { name: "附件助手" })).toHaveAttribute(
+      "href",
+      "/settings?section=plugins&plugin=hexo-cms-attachments-helper",
+    );
+    expect(screen.queryByRole("link", { name: "评论概览" })).not.toBeInTheDocument();
+
+    const commentsCard = screen.getByText("Comments Overview").closest(".rounded-xl");
+    expect(commentsCard).not.toBeNull();
+    await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
+
+    expect(screen.getByRole("link", { name: "评论概览" })).toHaveAttribute(
+      "href",
+      "/settings?section=plugins&plugin=hexo-cms-comments-overview",
+    );
   });
 });

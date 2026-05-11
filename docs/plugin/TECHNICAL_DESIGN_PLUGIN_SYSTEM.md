@@ -1,8 +1,8 @@
 # Hexo CMS 插件系统技术方案
 
 > **版本**: 1.2.0
-> **最后更新**: 2026-05-10  
-> **状态**: v0.2 可信插件扩展部分实现，继续设计中
+> **最后更新**: 2026-05-11
+> **状态**: v0.2 可信插件扩展与稳定性补强继续落地，继续设计中
 > **关联 PRD**: [PRD_PLUGIN_SYSTEM.md](./PRD_PLUGIN_SYSTEM.md)
 
 ---
@@ -64,18 +64,19 @@ packages/ui
 7. `plugin-provider.tsx`: UI 侧创建 PluginManager，并默认启用 Attachments Helper。
 8. `plugin-settings.tsx`: 插件管理页与声明式 settings schema renderer。
 9. `extension-outlet.tsx`: Dashboard widget renderer 映射，并向 renderer 注入插件配置。
-10. Web/Desktop root route: 统一包裹 `PluginProvider`。
+10. Sidebar item 已挂载到 `CMSLayout`，插件入口可跳转 Settings 插件区。
+11. `CommandRegistry`: 注册、执行、权限校验和错误返回。
+12. `recordPluginError`: 连续错误计数与默认 3 次阈值熔断。
+13. Web/Desktop root route: 统一包裹 `PluginProvider`。
 
 仍待实现:
 
 1. `PluginHost` 独立运行时和消息协议。
 2. Zod manifest schema。
-3. Sidebar item 实际挂载。
-4. Command/Event 执行通道。
-5. 插件日志面板。
-6. 错误阈值熔断。
-7. 插件 Storage API 与跨平台持久化适配。
-8. Secret Store、受控网络代理和第三方插件沙箱。
+3. Event 执行通道。
+4. 插件日志面板。
+5. 插件 Storage API 与跨平台持久化适配。
+6. Secret Store、受控网络代理和第三方插件沙箱。
 
 ---
 
@@ -665,18 +666,23 @@ Desktop 侧负责:
 1. 插件级 ErrorBoundary。
 2. `recordPluginError` 与 `lastError` 更新。
 3. Dashboard/Settings 插件贡献区域失败隔离。
+4. 错误阈值熔断，默认连续 3 次失败后将插件置为 `error` 并移除贡献入口。
 
 待补齐:
 
 1. 插件日志面板，按 `pluginId` 过滤。
-2. 错误阈值熔断，避免同一插件反复破坏用户体验。
 
 ### 10.2 P1: 扩展点完整性
 
+已完成:
+
 1. Sidebar item 实际挂载到 `CMSLayout`。
 2. CommandRegistry: 注册、执行、权限校验、错误返回。
-3. EventBus: 文章保存、媒体上传、部署状态变化等只读事件通知。
-4. Diagnostics 扩展点: SEO、草稿健康度、发布前检查等插件返回结构化问题列表。
+
+待补齐:
+
+1. EventBus: 文章保存、媒体上传、部署状态变化等只读事件通知。
+2. Diagnostics 扩展点: SEO、草稿健康度、发布前检查等插件返回结构化问题列表。
 
 ### 10.3 P2: 平台持久化与 Secret
 
@@ -783,7 +789,7 @@ Desktop 使用:
 
 ### Phase 2: 可信插件完善
 
-状态: 部分落地，ErrorBoundary 稳定性补强已完成，下一步推进扩展点完整性。
+状态: 部分落地，ErrorBoundary、Sidebar、CommandRegistry 与错误阈值熔断已完成，下一步推进 Storage API、Event API 和日志面板。
 
 已完成:
 
@@ -794,21 +800,21 @@ Desktop 使用:
 5. 插件级 ErrorBoundary。
 6. `recordPluginError` 与最近错误展示。
 7. Dashboard/Settings 插件贡献区域失败隔离。
+8. Sidebar item 实际挂载到 `CMSLayout`。
+9. CommandRegistry 注册、执行、权限校验和错误返回。
+10. `recordPluginError` 错误计数与阈值熔断。
 
 下一轮 P0:
 
-1. Sidebar item 实际挂载到 `CMSLayout`。
-2. CommandRegistry 注册、执行、权限校验和错误返回。
-3. `recordPluginError` 错误计数与阈值熔断。
+1. 插件 Storage API 的 Memory/Browser store、权限隔离和 namespace 管理。
+2. 插件日志面板，先记录命令执行与运行时错误。
+3. Event API 的只读通知通道。
 
 后续 P1:
 
-1. Sidebar item。
-2. Command API。
-3. Event API。
-4. 插件日志面板。
-5. 插件 Storage API。
-6. 平台级配置持久化。
+1. Diagnostics 扩展点。
+2. 平台级配置持久化。
+3. Web SQLite / Desktop userData 持久化迁移。
 
 验收:
 
@@ -871,8 +877,7 @@ Desktop 使用:
 
 1. Web 网络代理是否需要按用户限流。
 2. 插件状态 v0.2 是否按登录用户隔离，还是继续按应用实例全局。
-3. 插件错误阈值熔断的默认阈值: 连续 3 次还是按时间窗口统计。
-4. `diagnostics` 扩展点是否先服务 SEO Inspector / Draft Coach，还是等编辑器扩展点一起设计。
+3. `diagnostics` 扩展点是否先服务 SEO Inspector / Draft Coach，还是等编辑器扩展点一起设计。
 
 ---
 
@@ -890,4 +895,5 @@ Desktop 使用:
 10. 内置插件 renderer 放在 `packages/ui/src/plugin/renderers`。
 11. 第二个内置插件选择 Comments Overview，Analytics Dashboard 等 Secret Store 与 network permission 稳定后再做。
 12. Comments Overview 先复用静态示例数据和配置入口验证架构，后续再抽象 `CommentProvider`。
-13. 插件级 ErrorBoundary 已覆盖 Dashboard widget 和 Settings schema renderer；下一轮优先补 Sidebar item、CommandRegistry 和错误阈值熔断。
+13. 插件级 ErrorBoundary 已覆盖 Dashboard widget 和 Settings schema renderer。
+14. Sidebar item、CommandRegistry 和错误阈值熔断已落地；下一轮优先补插件 Storage API、Event API 和日志面板。

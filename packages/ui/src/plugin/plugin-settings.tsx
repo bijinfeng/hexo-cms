@@ -37,6 +37,7 @@ export function PluginSettingsPanel() {
           {snapshot.plugins.map(({ manifest, record, config }) => {
             const enabled = record.state === "enabled";
             const settingsPanels = snapshot.extensions.settingsPanels.filter((panel) => panel.pluginId === manifest.id);
+            const stateLabel = record.state === "error" ? "错误" : enabled ? "已启用" : "未启用";
             return (
               <div
                 key={manifest.id}
@@ -52,8 +53,8 @@ export function PluginSettingsPanel() {
                         <h3 className="text-sm font-semibold text-[var(--text-primary)]">{manifest.name}</h3>
                         <p className="text-xs text-[var(--text-tertiary)]">{manifest.id} · v{manifest.version}</p>
                       </div>
-                      <Badge variant={enabled ? "success" : "default"}>
-                        {enabled ? "已启用" : "未启用"}
+                      <Badge variant={enabled ? "success" : record.state === "error" ? "error" : "default"}>
+                        {stateLabel}
                       </Badge>
                     </div>
                     <p className="mt-3 text-sm text-[var(--text-secondary)]">{manifest.description}</p>
@@ -63,7 +64,7 @@ export function PluginSettingsPanel() {
                     onClick={() => (enabled ? disablePlugin(manifest.id) : enablePlugin(manifest.id))}
                   >
                     <Power size={16} />
-                    {enabled ? "停用" : "启用"}
+                    {enabled ? "停用" : record.state === "error" ? "重试" : "启用"}
                   </Button>
                 </div>
 
@@ -87,7 +88,10 @@ export function PluginSettingsPanel() {
                 {record.lastError && (
                   <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--status-error)] bg-[var(--status-error-bg)] p-3 text-sm text-[var(--status-error)]">
                     <AlertCircle size={15} />
-                    {record.lastError.message}
+                    <span className="min-w-0">
+                      {record.lastError.message}
+                      {record.lastError.count && record.lastError.count > 1 ? `（连续 ${record.lastError.count} 次）` : ""}
+                    </span>
                   </div>
                 )}
 

@@ -30,14 +30,34 @@ const settingsSections = [
   { id: "security", label: "安全设置", icon: Shield },
 ];
 
+const settingSectionIds = new Set(settingsSections.map((section) => section.id));
+
+function getInitialSettingsSection(): string {
+  if (typeof window === "undefined") return "site";
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get("section") ?? window.location.hash.replace(/^#/, "");
+  return normalizeSettingsSection(requested);
+}
+
+function normalizeSettingsSection(value?: string | null): string {
+  return value && settingSectionIds.has(value) ? value : "site";
+}
+
 export interface SettingsPageProps {
   authClient?: AuthClient;
+  initialSection?: string;
   onSignedOut?: () => void;
 }
 
-export function SettingsPage({ authClient, onSignedOut }: SettingsPageProps) {
-  const [activeSection, setActiveSection] = useState("site");
+export function SettingsPage({ authClient, initialSection, onSignedOut }: SettingsPageProps) {
+  const [activeSection, setActiveSection] = useState(() =>
+    initialSection ? normalizeSettingsSection(initialSection) : getInitialSettingsSection(),
+  );
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setActiveSection(initialSection ? normalizeSettingsSection(initialSection) : getInitialSettingsSection());
+  }, [initialSection]);
 
   function handleSave() {
     setSaved(true);

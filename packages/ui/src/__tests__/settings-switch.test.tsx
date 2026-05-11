@@ -1,9 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SettingsPage } from "../pages/settings";
+import { PluginProvider } from "../plugin";
 
 describe("SettingsPage switches", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("can open directly on the plugin settings section", () => {
+    render(
+      <PluginProvider>
+        <SettingsPage initialSection="plugins" />
+      </PluginProvider>,
+    );
+
+    expect(screen.getByRole("heading", { name: "插件管理" })).toBeInTheDocument();
+    expect(screen.getByText("管理可信内置插件和声明式扩展能力")).toBeInTheDocument();
+    expect(screen.queryByText("配置博客的基本信息")).not.toBeInTheDocument();
+  });
+
   it("anchors switch thumbs inside the track", async () => {
     const user = userEvent.setup();
 

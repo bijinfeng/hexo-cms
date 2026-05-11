@@ -168,8 +168,8 @@ describe("plugin UI", () => {
     await user.click(screen.getByRole("switch", { name: "展示待审核提醒" }));
 
     expect(screen.queryByText("待审核")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "打开评论管理" })).toHaveAttribute(
-      "href",
+    expect(screen.getByRole("button", { name: "打开评论管理" })).toHaveAttribute(
+      "data-plugin-href",
       "https://comments.example.com",
     );
   });

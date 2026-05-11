@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { ATTACHMENTS_HELPER_PLUGIN_ID } from "@hexo-cms/core";
 import { Copy, FileArchive, FileText, Loader2, Paperclip } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { usePluginDataProvider } from "../plugin-provider";
+import { usePluginDataProvider, usePluginSystem } from "../plugin-provider";
 
 const ATTACHMENT_EXTS = new Set([
   "pdf",
@@ -35,6 +36,7 @@ function formatSize(bytes: number): string {
 
 export function AttachmentsSummaryWidget() {
   const dataProvider = usePluginDataProvider();
+  const { executePluginCommand } = usePluginSystem();
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,7 +72,7 @@ export function AttachmentsSummaryWidget() {
   );
 
   async function copyLink(item: MediaItem) {
-    await navigator.clipboard.writeText(`[${item.name}](/${item.path})`);
+    await executePluginCommand(ATTACHMENTS_HELPER_PLUGIN_ID, "attachments.copyLink", [`[${item.name}](/${item.path})`]);
     setCopiedPath(item.path);
     window.setTimeout(() => setCopiedPath(""), 1800);
   }
