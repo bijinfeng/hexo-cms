@@ -41,7 +41,8 @@ export { cn } from "./utils";
 export { sanitizeHtml } from "./sanitize";
 export { withCache } from "./with-cache";
 export { getElectronAPI, requireElectronAPI } from "./lib/electron-api";
-export { getAuthRedirect, isPublicAuthRoute } from "./lib/auth-route-guard";
+export { getAuthRedirect, isOnboardingRoute, isPublicAuthRoute } from "./lib/auth-route-guard";
+export { toGitHubConfig } from "./lib/repository-config";
 export type { ElectronAPI } from "./types/electron-api";
 export type {
   AuthClient,
@@ -50,6 +51,18 @@ export type {
   AuthUser,
   DeviceFlowInfo,
 } from "./types/auth";
+export type {
+  OnboardingClient,
+  OnboardingUser,
+  RepositoryConfigInput,
+  RepositoryListInput,
+  RepositoryOption,
+  RepositorySelection,
+  RepositoryValidation,
+  RepositoryValidationCheck,
+  RepositoryValidationCheckId,
+  RepositoryValidationError,
+} from "./types/onboarding";
 
 // Context
 export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";
