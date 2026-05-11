@@ -26,6 +26,7 @@ import { Route as PagesNewRouteImport } from './routes/pages.new'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as ApiDeployRouteImport } from './routes/api/deploy'
 import { Route as ApiPluginStorageRouteImport } from './routes/api/plugin/storage'
+import { Route as ApiPluginSecretsRouteImport } from './routes/api/plugin/secrets'
 import { Route as ApiOnboardingValidateRouteImport } from './routes/api/onboarding/validate'
 import { Route as ApiOnboardingRepositoriesRouteImport } from './routes/api/onboarding/repositories'
 import { Route as ApiGithubThemesRouteImport } from './routes/api/github/themes'
@@ -123,6 +124,11 @@ const ApiPluginStorageRoute = ApiPluginStorageRouteImport.update({
   path: '/api/plugin/storage',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPluginSecretsRoute = ApiPluginSecretsRouteImport.update({
+  id: '/api/plugin/secrets',
+  path: '/api/plugin/secrets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOnboardingValidateRoute = ApiOnboardingValidateRouteImport.update({
   id: '/api/onboarding/validate',
   path: '/api/onboarding/validate',
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
+  '/api/plugin/secrets': typeof ApiPluginSecretsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
+  '/api/plugin/secrets': typeof ApiPluginSecretsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -270,6 +278,7 @@ export interface FileRoutesById {
   '/api/onboarding/repositories': typeof ApiOnboardingRepositoriesRoute
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
+  '/api/plugin/secrets': typeof ApiPluginSecretsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -389,6 +398,7 @@ export interface RootRouteChildren {
   ApiOnboardingRepositoriesRoute: typeof ApiOnboardingRepositoriesRoute
   ApiOnboardingValidateRoute: typeof ApiOnboardingValidateRoute
   ApiPluginStorageRoute: typeof ApiPluginStorageRoute
+  ApiPluginSecretsRoute: typeof ApiPluginSecretsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -641,6 +651,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOnboardingRepositoriesRoute: ApiOnboardingRepositoriesRoute,
   ApiOnboardingValidateRoute: ApiOnboardingValidateRoute,
   ApiPluginStorageRoute: ApiPluginStorageRoute,
+  ApiPluginSecretsRoute: ApiPluginSecretsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -11,9 +11,11 @@ import {
   type PluginConfigValue,
   type PluginManagerSnapshot,
   type PluginRuntimeErrorInput,
+  type PluginSecretStore,
   type PluginStorageStore,
 } from "@hexo-cms/core";
 import { DataProviderProvider, useDataProvider } from "../context/data-provider-context";
+import { createPlatformPluginSecretStore } from "./platform-plugin-secret";
 import { createPlatformPluginStorageStore } from "./platform-plugin-storage";
 import { withPluginEvents } from "./plugin-event-data-provider";
 
@@ -29,12 +31,13 @@ interface PluginContextValue {
 
 const PluginContext = createContext<PluginContextValue | null>(null);
 
-function createDefaultPluginManager(storageStore: PluginStorageStore): PluginManager {
+function createDefaultPluginManager(storageStore: PluginStorageStore, secretStore: PluginSecretStore): PluginManager {
   return new PluginManager({
     manifests: builtinPluginManifests,
     store: new BrowserPluginStateStore(),
     configStore: new BrowserPluginConfigStore(),
     storageStore,
+    secretStore,
     logStore: new BrowserPluginLogStore(),
     defaultEnabledPluginIds: [ATTACHMENTS_HELPER_PLUGIN_ID],
     commandHandlers: {
@@ -56,7 +59,8 @@ function createDefaultPluginManager(storageStore: PluginStorageStore): PluginMan
 export function PluginProvider({ children }: { children: React.ReactNode }) {
   const dataProvider = useDataProvider();
   const storageStore = useMemo(() => createPlatformPluginStorageStore(), []);
-  const manager = useMemo(() => createDefaultPluginManager(storageStore), [storageStore]);
+  const secretStore = useMemo(() => createPlatformPluginSecretStore(), []);
+  const manager = useMemo(() => createDefaultPluginManager(storageStore, secretStore), [secretStore, storageStore]);
   const [snapshot, setSnapshot] = useState<PluginManagerSnapshot>(() => manager.snapshot());
   const eventDataProvider = useMemo(
     () =>

@@ -3,7 +3,7 @@ import { dirname, join } from "path";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { GitHubService } from "@hexo-cms/core";
-import type { GitHubConfig, PluginStorageStoreValue } from "@hexo-cms/core";
+import type { GitHubConfig, PluginSecretStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
 import type { DeviceFlowInfo } from "@hexo-cms/ui";
 import {
   createAnonymousSession,
@@ -387,6 +387,22 @@ ipcMain.handle("plugin-storage:load", () => {
 
 ipcMain.handle("plugin-storage:save", (_event, value: PluginStorageStoreValue) => {
   savePluginStorage(value);
+});
+
+ipcMain.handle("plugin-secret:load", async () => {
+  const keytar = await import("keytar");
+  const value = await keytar.default.getPassword(KEYTAR_SERVICE, "plugin-secrets");
+  if (!value) return {};
+  try {
+    return JSON.parse(value) as PluginSecretStoreValue;
+  } catch {
+    return {};
+  }
+});
+
+ipcMain.handle("plugin-secret:save", async (_event, value: PluginSecretStoreValue) => {
+  const keytar = await import("keytar");
+  await keytar.default.setPassword(KEYTAR_SERVICE, "plugin-secrets", JSON.stringify(value));
 });
 
 // Onboarding repository import

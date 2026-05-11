@@ -32,6 +32,8 @@ const ALLOWED_CHANNELS = [
   "github:trigger-deploy",
   "plugin-storage:load",
   "plugin-storage:save",
+  "plugin-secret:load",
+  "plugin-secret:save",
   "window:minimize",
   "window:maximize",
   "window:unmaximize",

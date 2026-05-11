@@ -1,5 +1,10 @@
 export { DashboardExtensionOutlet } from "./extension-outlet";
 export {
+  DesktopPluginSecretStore,
+  WebPluginSecretStore,
+  createPlatformPluginSecretStore,
+} from "./platform-plugin-secret";
+export {
   DesktopPluginStorageStore,
   WebPluginStorageStore,
   createPlatformPluginStorageStore,

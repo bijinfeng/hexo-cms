@@ -68,3 +68,9 @@ export const pluginStorage = sqliteTable("plugin_storage", {
   value: text("value").notNull(),
   updatedAt: text("updated_at"),
 });
+
+export const pluginSecrets = sqliteTable("plugin_secrets", {
+  userId: text("user_id").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at"),
+});

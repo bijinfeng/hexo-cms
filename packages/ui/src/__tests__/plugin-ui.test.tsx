@@ -4,7 +4,14 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ATTACHMENTS_HELPER_PLUGIN_ID, COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
 import { DataProviderProvider } from "../context/data-provider-context";
-import { DashboardExtensionOutlet, PluginErrorBoundary, PluginProvider, WebPluginStorageStore, usePluginSystem } from "../plugin";
+import {
+  DashboardExtensionOutlet,
+  PluginErrorBoundary,
+  PluginProvider,
+  WebPluginSecretStore,
+  WebPluginStorageStore,
+  usePluginSystem,
+} from "../plugin";
 import { usePluginDataProvider } from "../plugin/plugin-provider";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import { AttachmentsSummaryWidget } from "../plugin/renderers/attachments-summary-widget";
@@ -408,6 +415,34 @@ describe("plugin UI", () => {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ storage: { "hexo-cms-attachments-helper": { copyCount: 3 } } }),
+    });
+  });
+
+  it("persists plugin secrets through the web platform secret endpoint", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ secrets: { "hexo-cms-analytics": { apiKey: "secret-ref" } } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const store = new WebPluginSecretStore();
+
+    await expect(store.load()).resolves.toEqual({
+      "hexo-cms-analytics": { apiKey: "secret-ref" },
+    });
+    await store.save({
+      "hexo-cms-analytics": { apiKey: "updated-ref" },
+    });
+
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/plugin/secrets", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secrets: { "hexo-cms-analytics": { apiKey: "updated-ref" } } }),
     });
   });
 });
