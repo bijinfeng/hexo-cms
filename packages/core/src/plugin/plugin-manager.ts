@@ -3,6 +3,7 @@ import { CommandRegistry } from "./command-registry";
 import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
+import { createPluginStorageAPI, MemoryPluginStorageStore, type PluginStorageStore } from "./plugin-storage";
 import type {
   PluginCommandExecutionResult,
   PluginCommandHandler,
@@ -11,6 +12,7 @@ import type {
   PluginManifest,
   PluginManagerSnapshot,
   PluginRuntimeErrorInput,
+  PluginStorageAPI,
   PluginStateStoreValue,
 } from "./types";
 
@@ -90,6 +92,7 @@ export interface PluginManagerOptions {
   manifests: unknown[];
   store?: PluginStateStore;
   configStore?: PluginConfigStore;
+  storageStore?: PluginStorageStore;
   defaultEnabledPluginIds?: string[];
   commandHandlers?: Record<string, PluginCommandHandler>;
   errorThreshold?: number;
@@ -103,6 +106,7 @@ export class PluginManager {
   private readonly commandRegistry: CommandRegistry;
   private readonly store: PluginStateStore;
   private readonly configStore: PluginConfigStore;
+  private readonly storageStore: PluginStorageStore;
   private readonly errorThreshold: number;
   private records: PluginStateStoreValue;
   private configs: PluginConfigStoreValue;
@@ -111,6 +115,7 @@ export class PluginManager {
     manifests,
     store = new MemoryPluginStateStore(),
     configStore = new MemoryPluginConfigStore(),
+    storageStore = new MemoryPluginStorageStore(),
     defaultEnabledPluginIds = [],
     commandHandlers = {},
     errorThreshold = 3,
@@ -121,6 +126,7 @@ export class PluginManager {
     this.commandRegistry = new CommandRegistry(this.permissionBroker, commandHandlers);
     this.store = store;
     this.configStore = configStore;
+    this.storageStore = storageStore;
     this.errorThreshold = errorThreshold;
     this.records = this.hydrateRecords(defaultEnabledPluginIds);
     this.configs = this.hydrateConfigs();
@@ -192,6 +198,11 @@ export class PluginManager {
   executeCommand(pluginId: string, commandId: string, args: unknown[] = []): Promise<PluginCommandExecutionResult> {
     this.getManifest(pluginId);
     return this.commandRegistry.execute(pluginId, commandId, args);
+  }
+
+  createStorageAPI(pluginId: string): PluginStorageAPI {
+    this.getManifest(pluginId);
+    return createPluginStorageAPI(pluginId, this.storageStore, this.permissionBroker);
   }
 
   recordPluginError(pluginId: string, error: PluginRuntimeErrorInput): PluginManagerSnapshot {

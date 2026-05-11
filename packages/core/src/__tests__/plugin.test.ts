@@ -4,6 +4,7 @@ import {
   COMMENTS_OVERVIEW_PLUGIN_ID,
   MemoryPluginStateStore,
   MemoryPluginConfigStore,
+  MemoryPluginStorageStore,
   PermissionBroker,
   PluginManager,
   PluginManifestError,
@@ -213,6 +214,71 @@ describe("plugin system", () => {
         error: expect.objectContaining({ code: "PLUGIN_PERMISSION_DENIED" }),
       }),
     );
+  });
+
+  it("isolates plugin storage by plugin id and persists through the storage store", async () => {
+    const storageStore = new MemoryPluginStorageStore();
+    const firstManager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      storageStore,
+    });
+    const attachmentsStorage = firstManager.createStorageAPI(ATTACHMENTS_HELPER_PLUGIN_ID);
+
+    await attachmentsStorage.set("recentAttachment", {
+      name: "guide.pdf",
+      path: "source/images/guide.pdf",
+    });
+    await attachmentsStorage.set("copyCount", 2);
+
+    await expect(attachmentsStorage.keys()).resolves.toEqual(["copyCount", "recentAttachment"]);
+    await expect(attachmentsStorage.get("recentAttachment")).resolves.toEqual({
+      name: "guide.pdf",
+      path: "source/images/guide.pdf",
+    });
+
+    const secondManager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      storageStore,
+    });
+    const secondAttachmentsStorage = secondManager.createStorageAPI(ATTACHMENTS_HELPER_PLUGIN_ID);
+    const commentsStorage = secondManager.createStorageAPI(COMMENTS_OVERVIEW_PLUGIN_ID);
+
+    await expect(secondAttachmentsStorage.get("copyCount")).resolves.toBe(2);
+    await expect(commentsStorage.keys()).rejects.toThrow(PluginPermissionError);
+
+    await secondAttachmentsStorage.delete("copyCount");
+    await expect(secondAttachmentsStorage.keys()).resolves.toEqual(["recentAttachment"]);
+  });
+
+  it("requires pluginStorage permissions for storage access", async () => {
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-storage-readonly",
+          name: "Storage Readonly",
+          version: "0.1.0",
+          description: "Storage permission test plugin",
+          source: "builtin",
+          permissions: ["pluginStorage.read"],
+        },
+        {
+          id: "hexo-cms-storage-writeonly",
+          name: "Storage Writeonly",
+          version: "0.1.0",
+          description: "Storage permission test plugin",
+          source: "builtin",
+          permissions: ["pluginStorage.write"],
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+    });
+    const readonlyStorage = manager.createStorageAPI("hexo-cms-storage-readonly");
+    const writeonlyStorage = manager.createStorageAPI("hexo-cms-storage-writeonly");
+
+    await expect(readonlyStorage.set("draft", true)).rejects.toThrow(PluginPermissionError);
+    await expect(writeonlyStorage.keys()).rejects.toThrow(PluginPermissionError);
   });
 
   it("records sanitized plugin runtime errors without disabling the plugin", () => {

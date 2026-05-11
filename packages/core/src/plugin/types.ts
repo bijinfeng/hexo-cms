@@ -124,6 +124,25 @@ export interface PluginCommandExecutionResult {
   };
 }
 
+export type PluginStorageJsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | PluginStorageJsonValue[]
+  | { [key: string]: PluginStorageJsonValue };
+
+export type PluginStorageNamespaceValue = Record<string, PluginStorageJsonValue>;
+
+export type PluginStorageStoreValue = Record<string, PluginStorageNamespaceValue>;
+
+export interface PluginStorageAPI {
+  get<T extends PluginStorageJsonValue>(key: string): Promise<T | undefined>;
+  set<T extends PluginStorageJsonValue>(key: string, value: T): Promise<void>;
+  delete(key: string): Promise<void>;
+  keys(): Promise<string[]>;
+}
+
 export interface PluginRuntimeErrorInput {
   contributionId: string;
   contributionType: PluginContributionType;
@@ -218,6 +237,7 @@ export interface PluginLogger {
 export interface PluginContext {
   readonly plugin: PluginManifest;
   readonly content: ContentReadAPI;
+  readonly storage: PluginStorageAPI;
   readonly logger: PluginLogger;
 }
 

@@ -67,7 +67,8 @@ packages/ui
 10. Sidebar item 已挂载到 `CMSLayout`，插件入口可跳转 Settings 插件区。
 11. `CommandRegistry`: 注册、执行、权限校验和错误返回。
 12. `recordPluginError`: 连续错误计数与默认 3 次阈值熔断。
-13. Web/Desktop root route: 统一包裹 `PluginProvider`。
+13. `plugin-storage.ts`: `PluginStorageAPI`、Memory/Browser store、`pluginId` namespace 隔离和 `pluginStorage.read/write` 权限校验。
+14. Web/Desktop root route: 统一包裹 `PluginProvider`。
 
 仍待实现:
 
@@ -75,7 +76,7 @@ packages/ui
 2. Zod manifest schema。
 3. Event 执行通道。
 4. 插件日志面板。
-5. 插件 Storage API 与跨平台持久化适配。
+5. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
 6. Secret Store、受控网络代理和第三方插件沙箱。
 
 ---
@@ -803,12 +804,13 @@ Desktop 使用:
 8. Sidebar item 实际挂载到 `CMSLayout`。
 9. CommandRegistry 注册、执行、权限校验和错误返回。
 10. `recordPluginError` 错误计数与阈值熔断。
+11. 插件 Storage API core: Memory/Browser store、权限隔离和 namespace 管理。
 
 下一轮 P0:
 
-1. 插件 Storage API 的 Memory/Browser store、权限隔离和 namespace 管理。
-2. 插件日志面板，先记录命令执行与运行时错误。
-3. Event API 的只读通知通道。
+1. 插件日志面板，先记录命令执行与运行时错误。
+2. Event API 的只读通知通道。
+3. 插件 Storage API 的 Web SQLite/Desktop userData 持久化适配。
 
 后续 P1:
 
@@ -896,4 +898,5 @@ Desktop 使用:
 11. 第二个内置插件选择 Comments Overview，Analytics Dashboard 等 Secret Store 与 network permission 稳定后再做。
 12. Comments Overview 先复用静态示例数据和配置入口验证架构，后续再抽象 `CommentProvider`。
 13. 插件级 ErrorBoundary 已覆盖 Dashboard widget 和 Settings schema renderer。
-14. Sidebar item、CommandRegistry 和错误阈值熔断已落地；下一轮优先补插件 Storage API、Event API 和日志面板。
+14. Sidebar item、CommandRegistry 和错误阈值熔断已落地。
+15. 插件 Storage API core 已落地；下一轮优先补 Event API、插件日志面板和平台持久化适配。

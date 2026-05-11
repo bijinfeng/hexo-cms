@@ -3,6 +3,7 @@ import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
   COMMENTS_OVERVIEW_PLUGIN_ID,
   BrowserPluginConfigStore,
+  BrowserPluginStorageStore,
   BrowserPluginStateStore,
   PluginManager,
   builtinPluginManifests,
@@ -30,6 +31,7 @@ function createDefaultPluginManager(): PluginManager {
     manifests: builtinPluginManifests,
     store: new BrowserPluginStateStore(),
     configStore: new BrowserPluginConfigStore(),
+    storageStore: new BrowserPluginStorageStore(),
     defaultEnabledPluginIds: [ATTACHMENTS_HELPER_PLUGIN_ID],
     commandHandlers: {
       [`${COMMENTS_OVERVIEW_PLUGIN_ID}:comments.openModeration`]: ({ args }) => {
