@@ -19,6 +19,11 @@ export class GitHubService {
     this.config = {
       ...config,
       branch: config.branch || "main",
+      postsDir: config.postsDir ?? config.posts_dir ?? "source/_posts",
+      mediaDir: config.mediaDir ?? config.media_dir ?? "source/images",
+      workflowFile: config.workflowFile ?? config.workflow_file,
+      autoDeploy: config.autoDeploy ?? (typeof config.auto_deploy === "number" ? config.auto_deploy === 1 : config.auto_deploy),
+      deployNotifications: config.deployNotifications ?? (typeof config.deploy_notifications === "number" ? config.deploy_notifications === 1 : config.deploy_notifications),
     };
     this.log = new Logger("GitHubService");
   }
@@ -48,7 +53,7 @@ export class GitHubService {
   /**
    * 获取仓库中的所有 Markdown 文章
    */
-  async getPosts(directory: string = "source/_posts"): Promise<HexoPost[]> {
+  async getPosts(directory: string = this.config.postsDir ?? "source/_posts"): Promise<HexoPost[]> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,
@@ -316,7 +321,7 @@ export class GitHubService {
     }
   }
 
-  async getMediaFiles(directory: string = "source/images"): Promise<Array<{ name: string; type: string; path: string; sha: string; size: number }>> {
+  async getMediaFiles(directory: string = this.config.mediaDir ?? "source/images"): Promise<Array<{ name: string; type: string; path: string; sha: string; size: number }>> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,

@@ -1,4 +1,6 @@
 import type { Octokit as OctokitType } from "octokit";
+import { GitHubService } from "@hexo-cms/core";
+import type { GitHubConfig } from "@hexo-cms/core";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "./db";
 import { account, githubConfig } from "./schema";
@@ -86,5 +88,22 @@ export async function getGitHubCtx(request: Request) {
   if (!accessToken) return { ok: false as const, error: "reauthorization_required" as const };
 
   const { Octokit } = await import("octokit");
-  return { ok: true as const, session, config, octokit: new Octokit({ auth: accessToken }) as OctokitType };
+  const normalizedConfig: GitHubConfig = {
+    owner: config.owner,
+    repo: config.repo,
+    branch: config.branch ?? "main",
+    postsDir: config.postsDir ?? "source/_posts",
+    mediaDir: config.mediaDir ?? "source/images",
+    workflowFile: config.workflowFile ?? ".github/workflows/deploy.yml",
+    autoDeploy: config.autoDeploy ?? true,
+    deployNotifications: config.deployNotifications ?? true,
+  };
+
+  return {
+    ok: true as const,
+    session,
+    config: normalizedConfig,
+    octokit: new Octokit({ auth: accessToken }) as OctokitType,
+    github: new GitHubService(accessToken, normalizedConfig),
+  };
 }

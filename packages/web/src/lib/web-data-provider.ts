@@ -23,7 +23,7 @@ async function checkResponse(res: Response, operation: string): Promise<void> {
   throw new WebDataProviderError(`Request failed: ${operation} (${status})`, DataProviderErrorCode.NETWORK, status);
 }
 
-async function apiFetch(url: string, options?: Parameters<typeof fetch>[1] & { method?: string; headers?: Record<string, string>; body?: unknown }): Promise<Response> {
+async function apiFetch(url: string, options?: Parameters<typeof fetch>[1] & { method?: string; headers?: Record<string, string> }): Promise<Response> {
   try {
     const res = await fetch(url, options);
     await checkResponse(res, url);
@@ -210,7 +210,8 @@ export class WebDataProvider implements DataProvider {
   }> {
     const res = await optionalApiFetch("/api/github/stats");
     if (!res) return { totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 };
-    return res.json();
+    const data = await res.json();
+    return data.stats ?? data;
   }
 
   // ==================== 主题管理 ====================

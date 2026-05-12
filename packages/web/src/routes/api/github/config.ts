@@ -4,6 +4,24 @@ import { db } from "../../../lib/db";
 import { githubConfig } from "../../../lib/schema";
 import { json, getAuth } from "../../../lib/server-utils";
 
+function toBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  return fallback;
+}
+
+function withLegacyConfigAliases(config: typeof githubConfig.$inferSelect | null | undefined) {
+  if (!config) return null;
+  return {
+    ...config,
+    posts_dir: config.postsDir,
+    media_dir: config.mediaDir,
+    workflow_file: config.workflowFile,
+    auto_deploy: config.autoDeploy,
+    deploy_notifications: config.deployNotifications,
+  };
+}
+
 export const Route = createFileRoute("/api/github/config")({
   server: {
     handlers: {
@@ -17,7 +35,7 @@ export const Route = createFileRoute("/api/github/config")({
           .where(eq(githubConfig.userId, session.user.id))
           .get();
 
-        return json({ config });
+        return json({ config: withLegacyConfigAliases(config) });
       },
       POST: async ({ request }) => {
         const session = await getAuth(request);
@@ -39,8 +57,8 @@ export const Route = createFileRoute("/api/github/config")({
           postsDir: body.postsDir || body.posts_dir || "source/_posts",
           mediaDir: body.mediaDir || body.media_dir || "source/images",
           workflowFile: body.workflowFile || body.workflow_file || ".github/workflows/deploy.yml",
-          autoDeploy: body.autoDeploy ?? (body.auto_deploy !== false),
-          deployNotifications: body.deployNotifications ?? (body.deploy_notifications !== false),
+          autoDeploy: toBoolean(body.autoDeploy ?? body.auto_deploy, true),
+          deployNotifications: toBoolean(body.deployNotifications ?? body.deploy_notifications, true),
           updatedAt: new Date().toISOString(),
         };
 

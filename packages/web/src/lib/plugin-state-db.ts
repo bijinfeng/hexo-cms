@@ -25,6 +25,9 @@ export function loadPluginState(userId: string): PluginStateStoreValue {
   const value: PluginStateStoreValue = {};
   for (const row of rows) {
     value[row.pluginId] = {
+      id: row.pluginId,
+      version: "0.0.0",
+      source: "builtin",
       state: row.state as "enabled" | "disabled" | "error",
       enabledAt: row.enabledAt ?? undefined,
       lastError: row.lastError ? JSON.parse(row.lastError) : undefined,

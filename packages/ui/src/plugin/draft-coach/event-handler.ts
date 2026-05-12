@@ -1,4 +1,4 @@
-import type { PluginEventHandler, PluginStorageAPI, PluginConfigValue } from "@hexo-cms/core";
+import type { HexoPost, PluginConfigValue, PluginEventHandler, PluginStorageAPI, PluginStorageJsonValue } from "@hexo-cms/core";
 import { checkDraft, type DraftIssue } from "./draft-checker";
 
 export interface DraftAlert {
@@ -12,20 +12,20 @@ export function createDraftCoachEventHandler(
   getConfig: () => PluginConfigValue,
   storage: PluginStorageAPI,
 ): PluginEventHandler {
-  return async ({ eventName, payload }) => {
-    if (eventName !== "post.afterSave") return;
+  return async ({ name, payload }) => {
+    if (name !== "post.afterSave") return;
 
     const config = getConfig();
     if (config.enableNotifications === false) return;
 
-    const post = payload?.post;
+    const post = (payload as { post?: HexoPost } | undefined)?.post;
     if (!post || !post.frontmatter?.draft) {
       // 如果不是草稿，清除该文章的提醒
       if (post?.path) {
-        const alerts = (await storage.get("alerts")) as DraftAlert[] | null;
+        const alerts = (await storage.get("alerts")) as unknown as DraftAlert[] | null;
         if (alerts) {
           const filtered = alerts.filter((a) => a.postPath !== post.path);
-          await storage.set("alerts", filtered);
+          await storage.set("alerts", filtered as unknown as PluginStorageJsonValue);
         }
       }
       return;
@@ -35,7 +35,7 @@ export function createDraftCoachEventHandler(
     const issues = checkDraft(post, config);
 
     // 更新或添加提醒
-    const alerts = ((await storage.get("alerts")) as DraftAlert[] | null) || [];
+    const alerts = ((await storage.get("alerts")) as unknown as DraftAlert[] | null) || [];
     const existingIndex = alerts.findIndex((a) => a.postPath === post.path);
 
     const alert: DraftAlert = {
@@ -51,6 +51,6 @@ export function createDraftCoachEventHandler(
       alerts.push(alert);
     }
 
-    await storage.set("alerts", alerts);
+    await storage.set("alerts", alerts as unknown as PluginStorageJsonValue);
   };
 }

@@ -65,7 +65,7 @@ export function AuditLogPanel({ pluginId, limit = 20 }: AuditLogPanelProps) {
           <span className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             HTTP 审计日志
-            <Badge variant="secondary">{entries.length}</Badge>
+            <Badge variant="default">{entries.length}</Badge>
           </span>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={loadEntries}>
@@ -117,7 +117,7 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" className="font-mono text-xs">
+                <Badge variant="default" className="font-mono text-xs">
                   {entry.method}
                 </Badge>
                 <span className="text-sm font-medium text-[var(--text-primary)] truncate">
@@ -128,7 +128,7 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
                     variant={
                       entry.responseStatus >= 200 && entry.responseStatus < 300
                         ? "success"
-                        : "destructive"
+                        : "error"
                     }
                   >
                     {entry.responseStatus}

@@ -53,6 +53,7 @@ export interface PluginContributions {
   sidebarItems?: SidebarItemContribution[];
   commands?: CommandContribution[];
   diagnostics?: DiagnosticsContribution[];
+  events?: EventContribution[];
 }
 
 export interface DashboardWidgetContribution {
@@ -105,6 +106,11 @@ export interface SidebarItemContribution {
 export interface CommandContribution {
   id: string;
   title: string;
+}
+
+export interface EventContribution {
+  name: PluginEventName;
+  description?: string;
 }
 
 export type DiagnosticsScope = "post" | "page" | "site";

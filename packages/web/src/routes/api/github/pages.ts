@@ -1,5 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { HexoPost } from "@hexo-cms/core";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
+function resolvePagePath(page: Partial<HexoPost>): string | null {
+  if (typeof page.path === "string" && page.path.trim()) return page.path;
+  const slug = typeof page.frontmatter?.slug === "string" ? page.frontmatter.slug.trim() : "";
+  return slug ? `source/${slug}/index.md` : null;
+}
 
 export const Route = createFileRoute("/api/github/pages")({
   server: {
@@ -7,28 +18,72 @@ export const Route = createFileRoute("/api/github/pages")({
       GET: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
+
+        const url = new URL(request.url);
+        const path = url.searchParams.get("path");
+
         try {
-          const { data: contents } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: "source" });
-          const files = Array.isArray(contents) ? contents.filter((f: any) => f.name.endsWith(".md") && f.name !== "index.md") : [];
-          return json({ pages: files.map((f: any) => ({ path: f.path, slug: f.name.replace(/\.md$/, ""), title: f.name.replace(/\.md$/, "") })) });
-        } catch { return json({ pages: [] }); }
+          if (path) {
+            const page = await ctx.github.getPost(path);
+            if (!page) return json({ error: "NOT_FOUND" }, 404);
+            return json({ page });
+          }
+
+          const entries = await ctx.github.listDirectory("source");
+          const pages = await Promise.all(
+            entries
+              .filter((entry) => entry.type === "dir" || (entry.type === "file" && entry.name.endsWith(".md") && entry.name !== "index.md"))
+              .map(async (entry) => {
+                const pagePath = entry.type === "dir" ? `${entry.path}/index.md` : entry.path;
+                return ctx.github.getPost(pagePath);
+              }),
+          );
+
+          return json({ pages: pages.filter((page): page is HexoPost => page !== null) });
+        } catch (error) {
+          return json({ error: getErrorMessage(error), pages: [] }, 500);
+        }
       },
+
       POST: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
-        const page = await request.json();
+
+        const body = (await request.json()) as Partial<HexoPost>;
+        const path = resolvePagePath(body);
+        if (!path || typeof body.content !== "string") {
+          return json({ error: "INVALID_PAGE" }, 400);
+        }
+
+        const page: HexoPost = {
+          path,
+          title: typeof body.title === "string" ? body.title : String(body.frontmatter?.title ?? ""),
+          date: typeof body.date === "string" ? body.date : String(body.frontmatter?.date ?? ""),
+          content: body.content,
+          frontmatter: body.frontmatter ?? {},
+        };
+
         try {
-          let sha: string | undefined;
-          try { const { data: existing } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: `source/${page.slug}.md` }); sha = (existing as any).sha; } catch { void 0; }
-          await ctx.octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: `source/${page.slug}.md`, message: sha ? `Update page: ${page.slug}` : `New page: ${page.slug}`, content: Buffer.from(page.content || "").toString("base64"), sha });
+          await ctx.github.savePost(page);
           return json({ success: true });
-        } catch (e: any) { return json({ error: e.message }, 500); }
+        } catch (error) {
+          return json({ error: getErrorMessage(error) }, 500);
+        }
       },
+
       DELETE: async ({ request }) => {
         const ctx = await getGitHubCtx(request);
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
-        const { path: pagePath } = await request.json();
-        try { const { data: existing } = await ctx.octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: pagePath }); await ctx.octokit.request("DELETE /repos/{owner}/{repo}/contents/{path}", { owner: ctx.config.owner, repo: ctx.config.repo, path: pagePath, message: `Delete page: ${pagePath}`, sha: (existing as any).sha }); return json({ success: true }); } catch (e: any) { return json({ error: e.message }, 500); }
+
+        const { path } = (await request.json()) as { path?: string };
+        if (!path) return json({ error: "INVALID_PATH" }, 400);
+
+        try {
+          await ctx.github.deletePost(path);
+          return json({ success: true });
+        } catch (error) {
+          return json({ error: getErrorMessage(error) }, 500);
+        }
       },
     },
   },
