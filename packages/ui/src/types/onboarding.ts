@@ -1,3 +1,5 @@
+import type { AuthSession } from "./auth";
+
 export interface OnboardingUser {
   login: string;
   name?: string | null;
@@ -64,7 +66,8 @@ export interface RepositoryValidation {
 
 export interface OnboardingClient {
   getCurrentUser: () => Promise<OnboardingUser>;
-  reauthorize: () => Promise<void>;
+  getAuthSession?: () => Promise<AuthSession>;
+  reauthorize: () => Promise<AuthSession | void>;
   listRepositories: (input: RepositoryListInput) => Promise<RepositoryOption[]>;
   validateRepository: (input: RepositorySelection) => Promise<RepositoryValidation>;
   saveRepositoryConfig: (input: RepositoryConfigInput) => Promise<void>;

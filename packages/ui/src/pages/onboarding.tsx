@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Search, Settings2 } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Loader2, RefreshCw, Search, Settings2 } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { GithubIcon } from "../components/ui/github-icon";
+import type { AuthSession } from "../types/auth";
 import type {
   OnboardingClient,
   OnboardingUser,
@@ -37,6 +38,23 @@ function getValidationErrorMessage(validation: RepositoryValidation | null) {
   if (!validation || validation.ok) return "";
   if (validation.error) return VALIDATION_ERROR_MESSAGES[validation.error];
   return validation.checks.find((check) => check.status === "error")?.message ?? "验证失败，请重试";
+}
+
+function getAuthErrorMessage(error?: string) {
+  switch (error) {
+    case "AUTH_TIMEOUT":
+      return "授权已过期，请重新授权";
+    case "AUTH_REJECTED":
+      return "GitHub 授权已取消，请重试";
+    case "AUTH_DEVICE_FLOW_DISABLED":
+      return "GitHub 设备授权未启用，请检查 OAuth App 配置";
+    case "AUTH_NOT_CONFIGURED":
+      return "GitHub 授权暂不可用，请检查配置";
+    case "AUTH_SCOPE_INSUFFICIENT":
+      return "当前授权缺少仓库权限，请重新授权";
+    default:
+      return "重新授权失败，请重试";
+  }
 }
 
 function getUpdatedText(pushedAt?: string | null) {
@@ -81,13 +99,15 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [reauthorizing, setReauthorizing] = useState(false);
+  const [reauthorizationSession, setReauthorizationSession] = useState<AuthSession | null>(null);
   const [reauthorizeError, setReauthorizeError] = useState("");
   const [showManual, setShowManual] = useState(false);
   const [manualOwner, setManualOwner] = useState("");
   const [manualRepo, setManualRepo] = useState("");
   const [manualBranch, setManualBranch] = useState("main");
+  const reauthorizationDeviceFlow = reauthorizationSession?.deviceFlow;
 
-  async function loadRepositories(nextQuery = query) {
+  const loadRepositories = useCallback(async (nextQuery: string) => {
     setLoadingRepos(true);
     setRepoError("");
     try {
@@ -103,11 +123,45 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
     } finally {
       setLoadingRepos(false);
     }
-  }
+  }, [onboardingClient]);
 
   useEffect(() => {
     void loadRepositories("");
-  }, []);
+  }, [loadRepositories]);
+
+  useEffect(() => {
+    if (!reauthorizationDeviceFlow || !onboardingClient.getAuthSession) return;
+
+    let active = true;
+    const timer = window.setInterval(async () => {
+      try {
+        const nextSession = await onboardingClient.getAuthSession?.();
+        if (!active || !nextSession) return;
+
+        setReauthorizationSession(nextSession);
+        if (nextSession.state === "authenticated") {
+          window.clearInterval(timer);
+          setReauthorizing(false);
+          await loadRepositories("");
+        } else if (nextSession.state === "error") {
+          window.clearInterval(timer);
+          setReauthorizing(false);
+          setReauthorizeError(getAuthErrorMessage(nextSession.error));
+        }
+      } catch {
+        if (active) {
+          window.clearInterval(timer);
+          setReauthorizing(false);
+          setReauthorizeError("GitHub 授权状态检查失败，请重试");
+        }
+      }
+    }, Math.max(reauthorizationDeviceFlow.interval, 1) * 1000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [loadRepositories, onboardingClient, reauthorizationDeviceFlow]);
 
   const filteredRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -174,14 +228,26 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
 
   async function handleReauthorize() {
     setReauthorizing(true);
+    setReauthorizationSession(null);
     setReauthorizeError("");
+    let waitingForDeviceFlow = false;
     try {
-      await onboardingClient.reauthorize();
+      const nextSession = await onboardingClient.reauthorize();
+      setReauthorizationSession(nextSession ?? null);
+
+      if (nextSession?.state === "error") {
+        setReauthorizeError(getAuthErrorMessage(nextSession.error));
+        return;
+      }
+
+      waitingForDeviceFlow = Boolean(nextSession?.deviceFlow);
+      if (waitingForDeviceFlow) return;
+
       await loadRepositories("");
     } catch {
       setReauthorizeError("重新授权失败，请重试");
     } finally {
-      setReauthorizing(false);
+      if (!waitingForDeviceFlow) setReauthorizing(false);
     }
   }
 
@@ -242,10 +308,27 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 disabled={reauthorizing}
               >
                 <RefreshCw className={`h-4 w-4 ${reauthorizing ? "animate-spin" : ""}`} />
-                重新授权
+                {reauthorizationDeviceFlow ? "等待授权" : "重新授权"}
               </Button>
               {reauthorizeError && (
                 <p className="text-xs text-[var(--status-error)]">{reauthorizeError}</p>
+              )}
+              {reauthorizationDeviceFlow && (
+                <div className="w-56 rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3 text-center">
+                  <p className="text-xs text-[var(--text-secondary)]">在 GitHub 页面输入授权码</p>
+                  <div className="mt-2 rounded-md bg-[var(--bg-card)] px-3 py-2 font-mono text-xl font-bold tracking-widest text-[var(--text-primary)]">
+                    {reauthorizationDeviceFlow.userCode}
+                  </div>
+                  <a
+                    href={reauthorizationDeviceFlow.verificationUri}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center justify-center gap-2 text-xs font-medium text-[var(--brand-primary)] hover:underline"
+                  >
+                    打开 GitHub 授权页面
+                    <ArrowRight size={12} />
+                  </a>
+                </div>
               )}
             </div>
           </div>

@@ -13,7 +13,11 @@ export const desktopOnboardingClient: OnboardingClient = {
   },
 
   async reauthorize() {
-    await desktopAuthClient.reauthorize();
+    return desktopAuthClient.reauthorize();
+  },
+
+  getAuthSession() {
+    return desktopAuthClient.getSession();
   },
 
   listRepositories(input) {

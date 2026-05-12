@@ -243,6 +243,84 @@ describe("OAuth UI", () => {
     expect(screen.queryByText(/Personal Access Token/i)).not.toBeInTheDocument();
   });
 
+  it("shows desktop reauthorization device flow in onboarding", async () => {
+    const onboardingClient = createOnboardingClient({
+      reauthorize: vi.fn().mockResolvedValue({
+        state: "authenticating",
+        deviceFlow: {
+          userCode: "WXYZ-9876",
+          verificationUri: "https://github.com/login/device",
+          expiresAt: "2026-05-09T08:15:00.000Z",
+          interval: 1,
+        },
+      }) as OnboardingClient["reauthorize"],
+    });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    await screen.findByText("kebai/blog");
+    fireEvent.click(screen.getByRole("button", { name: /重新授权/ }));
+
+    expect(await screen.findByText("WXYZ-9876")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /打开 GitHub 授权页面/ })).toHaveAttribute(
+      "href",
+      "https://github.com/login/device",
+    );
+  });
+
+  it("refreshes onboarding repositories after desktop reauthorization completes", async () => {
+    const repository: RepositoryOption = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      pushedAt: "2026-05-11T08:00:00.000Z",
+      permissions: { push: true },
+    };
+    const listRepositories = vi.fn().mockResolvedValue([repository]);
+    const onboardingClient = createOnboardingClient({
+      getAuthSession: vi.fn().mockResolvedValue({
+        state: "authenticated",
+        user: { login: "kebai" },
+      }),
+      listRepositories,
+      reauthorize: vi.fn().mockResolvedValue({
+        state: "authenticating",
+        deviceFlow: {
+          userCode: "WXYZ-9876",
+          verificationUri: "https://github.com/login/device",
+          expiresAt: "2026-05-09T08:15:00.000Z",
+          interval: 1,
+        },
+      }),
+    });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    await screen.findByText("kebai/blog");
+    expect(listRepositories).toHaveBeenCalledTimes(1);
+
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /重新授权/ }));
+        await Promise.resolve();
+      });
+      expect(screen.getByText("WXYZ-9876")).toBeInTheDocument();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(listRepositories).toHaveBeenCalledTimes(2);
+      expect(screen.queryByText("WXYZ-9876")).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("validates a selected repository before saving onboarding config", async () => {
     const user = userEvent.setup();
     const onboardingClient = createOnboardingClient();
