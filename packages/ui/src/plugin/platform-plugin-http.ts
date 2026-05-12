@@ -1,4 +1,5 @@
-import type { PluginFetch } from "@hexo-cms/core";
+import type { PluginFetch, PluginHttpAuditEntry } from "@hexo-cms/core";
+import { BrowserPluginAuditLogStore } from "@hexo-cms/core";
 import { getElectronAPI } from "../lib/electron-api";
 
 interface PluginFetchRequest {
@@ -18,10 +19,49 @@ interface PluginFetchResponse {
   body: string;
 }
 
+// 全局审计日志存储
+const auditLogStore = new BrowserPluginAuditLogStore();
+
+function recordAuditLog(
+  pluginId: string | undefined,
+  url: string,
+  method: string | undefined,
+  requestHeaders: Record<string, string> | undefined,
+  requestBody: string | undefined,
+  result: { ok: boolean; status: number; statusText: string; headers: Record<string, string>; body: string } | null,
+  error: string | null,
+  startTime: number,
+): void {
+  if (!pluginId) return;
+
+  const entry: PluginHttpAuditEntry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    pluginId,
+    timestamp: new Date().toISOString(),
+    method: method ?? "GET",
+    url,
+    requestHeaders,
+    requestBody,
+    responseStatus: result?.status,
+    responseStatusText: result?.statusText,
+    responseHeaders: result?.headers,
+    responseBody: result?.body,
+    error: error ?? undefined,
+    durationMs: Date.now() - startTime,
+  };
+
+  auditLogStore.append(entry);
+}
+
+export function getAuditLogStore() {
+  return auditLogStore;
+}
+
 /**
  * Web 端通过 API route 代理执行网络请求
  */
 export const webPluginFetch: PluginFetch = async (url, options) => {
+  const startTime = Date.now();
   const request: PluginFetchRequest = {
     pluginId: options.pluginId,
     url,
@@ -31,35 +71,45 @@ export const webPluginFetch: PluginFetch = async (url, options) => {
     timeoutMs: 10_000,
   };
 
-  const response = await fetch("/api/plugin/fetch", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
+  try {
+    const response = await fetch("/api/plugin/fetch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
 
-  if (!response.ok) {
-    const error = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
-    throw new Error(error.error ?? "Plugin fetch failed");
+    if (!response.ok) {
+      const error = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+      const errorMsg = error.error ?? "Plugin fetch failed";
+      recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, null, errorMsg, startTime);
+      throw new Error(errorMsg);
+    }
+
+    const result = (await response.json()) as PluginFetchResponse;
+    recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, result, null, startTime);
+
+    return {
+      ok: result.ok,
+      status: result.status,
+      statusText: result.statusText,
+      headers: {
+        get: (name: string) => result.headers[name.toLowerCase()] ?? null,
+      },
+      json: async () => JSON.parse(result.body),
+      text: async () => result.body,
+    };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, null, errorMsg, startTime);
+    throw error;
   }
-
-  const result = (await response.json()) as PluginFetchResponse;
-
-  return {
-    ok: result.ok,
-    status: result.status,
-    statusText: result.statusText,
-    headers: {
-      get: (name: string) => result.headers[name.toLowerCase()] ?? null,
-    },
-    json: async () => JSON.parse(result.body),
-    text: async () => result.body,
-  };
 };
 
 /**
  * Desktop 端通过 IPC 代理执行网络请求
  */
 export const desktopPluginFetch: PluginFetch = async (url, options) => {
+  const startTime = Date.now();
   const request: PluginFetchRequest = {
     pluginId: options.pluginId,
     url,
@@ -69,22 +119,32 @@ export const desktopPluginFetch: PluginFetch = async (url, options) => {
     timeoutMs: 10_000,
   };
 
-  const result = await getElectronAPI()?.invoke<PluginFetchResponse>("plugin-http:fetch", request);
+  try {
+    const result = await getElectronAPI()?.invoke<PluginFetchResponse>("plugin-http:fetch", request);
 
-  if (!result) {
-    throw new Error("Electron API not available");
+    if (!result) {
+      const errorMsg = "Electron API not available";
+      recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, null, errorMsg, startTime);
+      throw new Error(errorMsg);
+    }
+
+    recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, result, null, startTime);
+
+    return {
+      ok: result.ok,
+      status: result.status,
+      statusText: result.statusText,
+      headers: {
+        get: (name: string) => result.headers[name.toLowerCase()] ?? null,
+      },
+      json: async () => JSON.parse(result.body),
+      text: async () => result.body,
+    };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, null, errorMsg, startTime);
+    throw error;
   }
-
-  return {
-    ok: result.ok,
-    status: result.status,
-    statusText: result.statusText,
-    headers: {
-      get: (name: string) => result.headers[name.toLowerCase()] ?? null,
-    },
-    json: async () => JSON.parse(result.body),
-    text: async () => result.body,
-  };
 };
 
 /**

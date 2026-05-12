@@ -1,3 +1,4 @@
+export * from "./audit-log";
 export * from "./builtin";
 export * from "./command-registry";
 export * from "./diagnostics-registry";

@@ -1,3 +1,4 @@
+export { AuditLogPanel } from "./audit-log-panel";
 export { DashboardExtensionOutlet } from "./extension-outlet";
 export { DiagnosticsPanel } from "./diagnostics-panel";
 export { DraftCoachWidget } from "./draft-coach/widget";
@@ -19,6 +20,7 @@ export {
   createPlatformPluginFetch,
   desktopPluginFetch,
   webPluginFetch,
+  getAuditLogStore,
 } from "./platform-plugin-http";
 export {
   DesktopPluginSecretStore,
