@@ -1,8 +1,8 @@
 # Hexo CMS 插件系统 PRD
 
-> **版本**: 1.2.3
+> **版本**: 1.3.0
 > **最后更新**: 2026-05-12
-> **状态**: v0.2 可信插件扩展与稳定性能力已继续补强，继续迭代中
+> **状态**: v0.2 可信插件扩展已全部落地；进入 Phase 3 沙箱预研阶段
 > **关联技术方案**: [TECHNICAL_DESIGN_PLUGIN_SYSTEM.md](./TECHNICAL_DESIGN_PLUGIN_SYSTEM.md)
 
 ---
@@ -406,7 +406,7 @@ v0.2 不再包含的已落地项:
 
 ### 10.2 v0.2 可信插件扩展
 
-状态: 部分落地，继续迭代；日志面板、页面事件派发、Storage 平台持久化、Secret Store core 和 network.fetch core 已完成，下一步推进平台级 Secret/网络适配。
+状态: 已落地；Secret Store 平台持久化、受控网络代理和平台级状态/配置持久化全部完成。
 
 已落地:
 
@@ -422,17 +422,18 @@ v0.2 不再包含的已落地项:
 10. 插件 Storage API 已从 renderer localStorage 迁移到 Web SQLite/API route 与 Desktop userData IPC。
 11. Secret Store core 只允许 `has/set/delete`，不向插件返回明文。
 12. network.fetch core 限制 HTTPS、allowedHosts、超时和 cookie。
+13. Secret Store Web SQLite/API route 持久化和 Desktop keytar 持久化。
+14. 受控 network.fetch Web API route 代理 (`/api/plugin/fetch`)，服务端执行，响应大小限制 10MB。
+15. 受控 network.fetch Desktop main process 代理 (`plugin-http:fetch`)，响应大小限制 10MB。
+16. 网络请求审计日志: Web 存入 `plugin_network_audit` 表，Desktop 存入 `plugins/network-audit.json`。
+17. 插件状态 Web SQLite/API route 持久化，Desktop userData (`plugins/state.json`) 持久化。
+18. 插件配置 Web SQLite/API route 持久化，Desktop userData (`plugins/config.json`) 持久化。
 
 待补齐:
 
-1. Secret Store Web/Desktop 平台持久化。
-2. 受控 network.fetch Web/Desktop 平台代理、响应大小限制和审计日志。
-3. Web SQLite / Desktop userData 的平台级状态、配置和日志存储。
-
-下一轮迭代建议:
-
-1. 将 Secret Store 接到 Web 服务端加密存储和 Desktop keytar。
-2. 将 network.fetch 接到 Web/API route 与 Desktop main process 代理，并补响应大小限制。
+1. 审计日志 UI 展示面板，方便用户审查插件网络活动。
+2. 插件日志的平台级持久化（当前仍用 Browser localStorage）。
+3. 导入/导出配置时跳过 secret 明文。
 
 ### 10.3 v0.3 沙箱验证
 

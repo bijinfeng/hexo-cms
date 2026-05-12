@@ -74,3 +74,31 @@ export const pluginSecrets = sqliteTable("plugin_secrets", {
   value: text("value").notNull(),
   updatedAt: text("updated_at"),
 });
+
+export const pluginNetworkAudit = sqliteTable("plugin_network_audit", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: text("user_id").notNull(),
+  pluginId: text("plugin_id").notNull(),
+  url: text("url").notNull(),
+  method: text("method").notNull(),
+  status: integer("status").notNull(),
+  error: text("error"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const pluginState = sqliteTable("plugin_state", {
+  userId: text("user_id").notNull(),
+  pluginId: text("plugin_id").notNull(),
+  state: text("state").notNull(),
+  enabledAt: text("enabled_at"),
+  lastError: text("last_error"),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const pluginConfig = sqliteTable("plugin_config", {
+  userId: text("user_id").notNull(),
+  pluginId: text("plugin_id").notNull(),
+  key: text("key").notNull(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});

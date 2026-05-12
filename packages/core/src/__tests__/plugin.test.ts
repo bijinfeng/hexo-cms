@@ -433,6 +433,37 @@ describe("plugin system", () => {
     ).rejects.toThrow(PluginPermissionError);
   });
 
+  it("passes pluginId to fetchImpl for platform proxy auditing", async () => {
+    const fetchImpl = vi.fn<PluginFetch>().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      headers: { get: () => null },
+      json: async () => ({ ok: true }),
+      text: async () => "ok",
+    });
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-audit-plugin",
+          name: "Audit Plugin",
+          version: "0.1.0",
+          description: "Audit plugin",
+          source: "builtin",
+          permissions: ["network.fetch"],
+          network: { allowedHosts: ["api.example.com"] },
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+      fetchImpl,
+    });
+
+    const http = manager.createHttpAPI("hexo-cms-audit-plugin");
+    await http.fetch("https://api.example.com/ping");
+
+    expect(fetchImpl.mock.calls[0][1].pluginId).toBe("hexo-cms-audit-plugin");
+  });
+
   it("records scoped and sanitized plugin logs", () => {
     const logStore = new MemoryPluginLogStore();
     const manager = new PluginManager({

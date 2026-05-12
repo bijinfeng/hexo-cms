@@ -19,6 +19,7 @@ export type PluginFetch = (
     body?: string;
     signal?: unknown;
     credentials?: "omit";
+    pluginId?: string;
   },
 ) => Promise<PluginFetchResponse>;
 
@@ -48,6 +49,7 @@ export function createPluginHttpAPI(
           body: options.body,
           signal: controller?.signal,
           credentials: "omit",
+          pluginId,
         });
 
         if (!response.ok) {

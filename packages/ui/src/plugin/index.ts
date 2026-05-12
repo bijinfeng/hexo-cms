@@ -1,9 +1,24 @@
 export { DashboardExtensionOutlet } from "./extension-outlet";
 export {
+  DesktopPluginConfigStore,
+  WebPluginConfigStore,
+  createPlatformPluginConfigStore,
+} from "./platform-plugin-config";
+export {
+  createPlatformPluginFetch,
+  desktopPluginFetch,
+  webPluginFetch,
+} from "./platform-plugin-http";
+export {
   DesktopPluginSecretStore,
   WebPluginSecretStore,
   createPlatformPluginSecretStore,
 } from "./platform-plugin-secret";
+export {
+  DesktopPluginStateStore,
+  WebPluginStateStore,
+  createPlatformPluginStateStore,
+} from "./platform-plugin-state";
 export {
   DesktopPluginStorageStore,
   WebPluginStorageStore,

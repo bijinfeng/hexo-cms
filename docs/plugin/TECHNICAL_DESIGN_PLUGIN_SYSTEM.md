@@ -1,8 +1,8 @@
 # Hexo CMS 插件系统技术方案
 
-> **版本**: 1.2.3
+> **版本**: 1.3.0
 > **最后更新**: 2026-05-12
-> **状态**: v0.2 可信插件扩展与稳定性补强继续落地，继续设计中
+> **状态**: v0.2 平台持久化与受控网络代理已全部落地，继续设计沙箱方向
 > **关联 PRD**: [PRD_PLUGIN_SYSTEM.md](./PRD_PLUGIN_SYSTEM.md)
 
 ---
@@ -717,26 +717,35 @@ Desktop 侧负责:
 
 1. 插件 Storage API Web SQLite/API route 持久化。
 2. 插件 Storage API Desktop userData 持久化。
+3. 插件状态 Web SQLite/API route 持久化 (`/api/plugin/state`、`plugin_state` 表)。
+4. 插件状态 Desktop userData 持久化 (`plugins/state.json` + `plugin-state:*` IPC)。
+5. 插件配置 Web SQLite/API route 持久化 (`/api/plugin/config`、`plugin_config` 表)。
+6. 插件配置 Desktop userData 持久化 (`plugins/config.json` + `plugin-config:*` IPC)。
+7. Secret Store Web SQLite/API route 持久化 (`/api/plugin/secrets`、`plugin_secrets` 表)。
+8. Secret Store Desktop keytar 持久化 (`plugin-secret:*` IPC)。
 
 待补齐:
 
-1. 插件状态和配置迁移到 Web SQLite/API route。
-2. 插件状态和配置迁移到 Desktop userData。
-3. Secret Store 平台持久化: API Key、token、webhook secret 只保存引用和是否已配置。
-4. 导入/导出配置时跳过 secret 明文。
+1. 导入/导出配置时跳过 secret 明文。
+2. 插件日志的平台级持久化。
 
 ### 10.4 P3: 外部集成与沙箱
 
 已完成:
 
 1. 受控 `network.fetch` core，限制 host、协议、超时和 cookie。
+2. 受控 `network.fetch` Web 平台代理 (`/api/plugin/fetch`)，在服务端执行并过滤 cookie。
+3. 受控 `network.fetch` Desktop 平台代理 (`plugin-http:fetch` IPC)，在 main process 执行并过滤 cookie。
+4. 插件网络请求审计日志 (`plugin_network_audit` 表、`plugins/network-audit.json`)，记录 pluginId、URL、method、status 和错误。
+5. 响应大小限制 10MB (Web 和 Desktop 均生效)。
+6. `PluginFetch` 类型扩展 `pluginId` 字段，供平台代理记录审计上下文。
 
 待补齐:
 
-1. Web/Desktop 平台网络代理，补齐响应大小限制、审计日志和服务端执行。
-2. local-dev 插件加载，仅开发模式开启。
-3. iframe/Worker/独立进程沙箱原型。
-4. 插件签名和私有源。
+1. local-dev 插件加载，仅开发模式开启。
+2. iframe/Worker/独立进程沙箱原型。
+3. 插件签名和私有源。
+4. 审计日志 UI 展示面板。
 
 ### 10.5 插件化能力映射
 
@@ -838,7 +847,7 @@ Desktop 使用:
 
 ### Phase 2: 可信插件完善
 
-状态: 部分落地，ErrorBoundary、Sidebar、CommandRegistry、错误阈值熔断、Storage API core、Storage 平台持久化、Event API core、日志面板、核心页面事件派发、Secret API core 和 network.fetch core 已完成，下一步推进平台级 Secret/网络适配。
+状态: 已落地，平台持久化与受控网络代理全部完成；下一步进入 Phase 3 沙箱预研。
 
 已完成:
 
@@ -859,21 +868,23 @@ Desktop 使用:
 15. Storage 平台持久化: Web SQLite/API route 与 Desktop userData IPC 适配。
 16. Secret Store core: `has/set/delete`、`pluginId` 隔离和 `pluginSecret.read/write` 权限。
 17. `network.fetch` core: HTTPS、allowedHosts、超时、禁 cookie 与权限校验。
+18. Secret Store Web/Desktop 平台持久化 (SQLite + keytar)。
+19. 受控 `network.fetch` Web/Desktop 平台代理 (API route + main process IPC)，响应大小限制 10MB。
+20. 插件网络请求审计日志 (`plugin_network_audit` 表 + `plugins/network-audit.json`)。
+21. 插件状态和配置 Web/Desktop 平台持久化，从 localStorage 迁移到 SQLite/userData。
 
 下一轮 P0:
 
-1. Secret Store Web/Desktop 平台持久化适配。
-2. 受控 `network.fetch` 平台代理、响应大小限制和审计日志。
+1. 审计日志 UI 展示面板。
+2. 插件日志的平台级持久化。
 
 后续 P1:
 
 1. Diagnostics 扩展点。
-2. 插件状态和配置的平台级持久化。
-3. Web SQLite / Desktop userData 配置迁移。
 
 验收:
 
-1. 插件配置可保存。
+1. 插件配置可保存并跨 Web/Desktop 平台持久化。
 2. 插件 renderer 抛错不会导致 Dashboard 或 Settings 白屏。
 3. Settings 中可看到插件最近错误并停用故障插件。
 4. 命令可执行并被权限控制。
@@ -884,6 +895,8 @@ Desktop 使用:
 9. 插件 Storage API 在 Web 刷新和 Desktop 重启后仍能保留同一 `pluginId` namespace 下的数据。
 10. Secret API 不返回明文，并按权限和 `pluginId` 隔离。
 11. network.fetch 拒绝未授权权限、非 HTTPS 和未声明 host，并不发送 cookie。
+12. 插件状态和配置在 Web 刷新和 Desktop 重启后持久化。
+13. 网络请求审计日志正确记录 pluginId、URL、method、status 和错误。
 
 ### Phase 3: 沙箱预研
 
@@ -963,3 +976,6 @@ Desktop 使用:
 18. 核心页面事件派发接入已落地。
 19. 插件 Storage API 平台持久化适配已落地；下一轮优先补 Secret Store 与受控网络代理。
 20. Secret Store core 与 network.fetch core 已落地；下一轮优先补平台级 Secret 持久化和网络代理。
+21. Secret Store Web/Desktop 平台持久化已落地；下一步进入受控 network.fetch 平台代理。
+22. 受控 network.fetch Web/Desktop 平台代理已落地，支持响应大小限制和审计日志。
+23. 插件状态和配置已从 localStorage 迁移到 Web SQLite / Desktop userData；平台级持久化链路打通。

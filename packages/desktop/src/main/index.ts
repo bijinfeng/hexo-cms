@@ -3,7 +3,7 @@ import { dirname, join } from "path";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { GitHubService } from "@hexo-cms/core";
-import type { GitHubConfig, PluginSecretStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
+import type { GitHubConfig, PluginConfigStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
 import type { DeviceFlowInfo } from "@hexo-cms/ui";
 import {
   createAnonymousSession,
@@ -103,6 +103,206 @@ function savePluginStorage(value: PluginStorageStoreValue): void {
   const storagePath = getPluginStoragePath();
   mkdirSync(dirname(storagePath), { recursive: true });
   writeFileSync(storagePath, JSON.stringify(value, null, 2));
+}
+
+// ==================== 插件状态持久化 ====================
+
+function getPluginStatePath(): string {
+  return join(app.getPath("userData"), "plugins", "state.json");
+}
+
+function loadPluginStateFromFile(): PluginStateStoreValue {
+  const statePath = getPluginStatePath();
+  if (!existsSync(statePath)) return {};
+  try {
+    return JSON.parse(readFileSync(statePath, "utf-8")) as PluginStateStoreValue;
+  } catch {
+    return {};
+  }
+}
+
+function savePluginStateToFile(value: PluginStateStoreValue): void {
+  const statePath = getPluginStatePath();
+  mkdirSync(dirname(statePath), { recursive: true });
+  writeFileSync(statePath, JSON.stringify(value, null, 2));
+}
+
+// ==================== 插件配置持久化 ====================
+
+function getPluginConfigPath(): string {
+  return join(app.getPath("userData"), "plugins", "config.json");
+}
+
+function loadPluginConfigFromFile(): PluginConfigStoreValue {
+  const configPath = getPluginConfigPath();
+  if (!existsSync(configPath)) return {};
+  try {
+    return JSON.parse(readFileSync(configPath, "utf-8")) as PluginConfigStoreValue;
+  } catch {
+    return {};
+  }
+}
+
+function savePluginConfigToFile(value: PluginConfigStoreValue): void {
+  const configPath = getPluginConfigPath();
+  mkdirSync(dirname(configPath), { recursive: true });
+  writeFileSync(configPath, JSON.stringify(value, null, 2));
+}
+
+// ==================== 插件网络审计日志 ====================
+
+interface PluginNetworkAuditEntry {
+  pluginId: string;
+  url: string;
+  method: string;
+  status: number;
+  error?: string;
+  createdAt: string;
+}
+
+const MAX_AUDIT_ENTRIES = 200;
+
+function getPluginNetworkAuditPath(): string {
+  return join(app.getPath("userData"), "plugins", "network-audit.json");
+}
+
+function loadPluginNetworkAudit(): PluginNetworkAuditEntry[] {
+  const auditPath = getPluginNetworkAuditPath();
+  if (!existsSync(auditPath)) return [];
+  try {
+    return JSON.parse(readFileSync(auditPath, "utf-8")) as PluginNetworkAuditEntry[];
+  } catch {
+    return [];
+  }
+}
+
+function appendPluginNetworkAudit(entry: Omit<PluginNetworkAuditEntry, "createdAt">): void {
+  const entries = loadPluginNetworkAudit();
+  entries.unshift({ ...entry, createdAt: new Date().toISOString() });
+  const trimmed = entries.slice(0, MAX_AUDIT_ENTRIES);
+  const auditPath = getPluginNetworkAuditPath();
+  mkdirSync(dirname(auditPath), { recursive: true });
+  writeFileSync(auditPath, JSON.stringify(trimmed, null, 2));
+}
+
+// ==================== 插件网络请求代理 ====================
+
+interface PluginFetchRequest {
+  pluginId?: string;
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  timeoutMs?: number;
+}
+
+interface PluginFetchResponseBody {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  body: string;
+}
+
+const MAX_PLUGIN_FETCH_RESPONSE_SIZE = 10 * 1024 * 1024;
+const DEFAULT_PLUGIN_FETCH_TIMEOUT_MS = 10_000;
+
+function sanitizePluginFetchHeaders(headers: Record<string, string> | undefined): Record<string, string> {
+  if (!headers) return {};
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    const normalized = key.toLowerCase();
+    if (normalized !== "cookie" && normalized !== "set-cookie") {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+async function executePluginFetch(req: PluginFetchRequest): Promise<PluginFetchResponseBody> {
+  if (!req.url || typeof req.url !== "string") {
+    throw new Error("Invalid URL");
+  }
+
+  const parsedUrl = new URL(req.url);
+  if (parsedUrl.protocol !== "https:") {
+    throw new Error("Only HTTPS is allowed");
+  }
+
+  const timeoutMs = req.timeoutMs ?? DEFAULT_PLUGIN_FETCH_TIMEOUT_MS;
+  const controller = new globalThis.AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  const auditPluginId = typeof req.pluginId === "string" ? req.pluginId : "unknown";
+  const auditMethod = req.method ?? "GET";
+
+  try {
+    const response = await fetch(parsedUrl.toString(), {
+      method: auditMethod,
+      headers: sanitizePluginFetchHeaders(req.headers),
+      body: req.body,
+      signal: controller.signal,
+      credentials: "omit",
+    });
+
+    const contentLength = response.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > MAX_PLUGIN_FETCH_RESPONSE_SIZE) {
+      appendPluginNetworkAudit({
+        pluginId: auditPluginId,
+        url: parsedUrl.toString(),
+        method: auditMethod,
+        status: 413,
+        error: "response_too_large",
+      });
+      throw new Error("Response too large");
+    }
+
+    const body = await response.text();
+    if (body.length > MAX_PLUGIN_FETCH_RESPONSE_SIZE) {
+      appendPluginNetworkAudit({
+        pluginId: auditPluginId,
+        url: parsedUrl.toString(),
+        method: auditMethod,
+        status: 413,
+        error: "response_too_large",
+      });
+      throw new Error("Response too large");
+    }
+
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key.toLowerCase()] = value;
+    });
+
+    appendPluginNetworkAudit({
+      pluginId: auditPluginId,
+      url: parsedUrl.toString(),
+      method: auditMethod,
+      status: response.status,
+    });
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders,
+      body,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    if (message !== "Response too large") {
+      appendPluginNetworkAudit({
+        pluginId: auditPluginId,
+        url: parsedUrl.toString(),
+        method: auditMethod,
+        status: 0,
+        error: message,
+      });
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // ==================== GitHubService 工厂（带缓存）====================
@@ -403,6 +603,31 @@ ipcMain.handle("plugin-secret:load", async () => {
 ipcMain.handle("plugin-secret:save", async (_event, value: PluginSecretStoreValue) => {
   const keytar = await import("keytar");
   await keytar.default.setPassword(KEYTAR_SERVICE, "plugin-secrets", JSON.stringify(value));
+});
+
+ipcMain.handle("plugin-http:fetch", async (_event, req: PluginFetchRequest) => {
+  return executePluginFetch(req);
+});
+
+ipcMain.handle("plugin-network-audit:list", async (_event, limit?: number) => {
+  const entries = loadPluginNetworkAudit();
+  return entries.slice(0, typeof limit === "number" && limit > 0 ? limit : 50);
+});
+
+ipcMain.handle("plugin-state:load", () => {
+  return loadPluginStateFromFile();
+});
+
+ipcMain.handle("plugin-state:save", (_event, value: PluginStateStoreValue) => {
+  savePluginStateToFile(value);
+});
+
+ipcMain.handle("plugin-config:load", () => {
+  return loadPluginConfigFromFile();
+});
+
+ipcMain.handle("plugin-config:save", (_event, value: PluginConfigStoreValue) => {
+  savePluginConfigToFile(value);
 });
 
 // Onboarding repository import

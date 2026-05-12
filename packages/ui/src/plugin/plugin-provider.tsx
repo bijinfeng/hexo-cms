@@ -2,20 +2,24 @@ import { createContext, useContext, useMemo, useState } from "react";
 import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
   COMMENTS_OVERVIEW_PLUGIN_ID,
-  BrowserPluginConfigStore,
   BrowserPluginLogStore,
-  BrowserPluginStateStore,
   PluginManager,
   builtinPluginManifests,
   type PluginCommandExecutionResult,
+  type PluginConfigStore,
   type PluginConfigValue,
+  type PluginFetch,
   type PluginManagerSnapshot,
   type PluginRuntimeErrorInput,
   type PluginSecretStore,
+  type PluginStateStore,
   type PluginStorageStore,
 } from "@hexo-cms/core";
 import { DataProviderProvider, useDataProvider } from "../context/data-provider-context";
+import { createPlatformPluginConfigStore } from "./platform-plugin-config";
+import { createPlatformPluginFetch } from "./platform-plugin-http";
 import { createPlatformPluginSecretStore } from "./platform-plugin-secret";
+import { createPlatformPluginStateStore } from "./platform-plugin-state";
 import { createPlatformPluginStorageStore } from "./platform-plugin-storage";
 import { withPluginEvents } from "./plugin-event-data-provider";
 
@@ -31,14 +35,21 @@ interface PluginContextValue {
 
 const PluginContext = createContext<PluginContextValue | null>(null);
 
-function createDefaultPluginManager(storageStore: PluginStorageStore, secretStore: PluginSecretStore): PluginManager {
+function createDefaultPluginManager(options: {
+  stateStore: PluginStateStore;
+  configStore: PluginConfigStore;
+  storageStore: PluginStorageStore;
+  secretStore: PluginSecretStore;
+  fetchImpl: PluginFetch;
+}): PluginManager {
   return new PluginManager({
     manifests: builtinPluginManifests,
-    store: new BrowserPluginStateStore(),
-    configStore: new BrowserPluginConfigStore(),
-    storageStore,
-    secretStore,
+    store: options.stateStore,
+    configStore: options.configStore,
+    storageStore: options.storageStore,
+    secretStore: options.secretStore,
     logStore: new BrowserPluginLogStore(),
+    fetchImpl: options.fetchImpl,
     defaultEnabledPluginIds: [ATTACHMENTS_HELPER_PLUGIN_ID],
     commandHandlers: {
       [`${COMMENTS_OVERVIEW_PLUGIN_ID}:comments.openModeration`]: ({ args }) => {
@@ -58,9 +69,15 @@ function createDefaultPluginManager(storageStore: PluginStorageStore, secretStor
 
 export function PluginProvider({ children }: { children: React.ReactNode }) {
   const dataProvider = useDataProvider();
+  const stateStore = useMemo(() => createPlatformPluginStateStore(), []);
+  const configStore = useMemo(() => createPlatformPluginConfigStore(), []);
   const storageStore = useMemo(() => createPlatformPluginStorageStore(), []);
   const secretStore = useMemo(() => createPlatformPluginSecretStore(), []);
-  const manager = useMemo(() => createDefaultPluginManager(storageStore, secretStore), [secretStore, storageStore]);
+  const fetchImpl = useMemo(() => createPlatformPluginFetch(), []);
+  const manager = useMemo(
+    () => createDefaultPluginManager({ stateStore, configStore, storageStore, secretStore, fetchImpl }),
+    [configStore, fetchImpl, secretStore, stateStore, storageStore],
+  );
   const [snapshot, setSnapshot] = useState<PluginManagerSnapshot>(() => manager.snapshot());
   const eventDataProvider = useMemo(
     () =>
