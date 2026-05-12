@@ -398,6 +398,9 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                   />
                 ) : null}
               </div>
+              {repoError && !loadingRepos && repositories.length > 0 ? (
+                <p className="mt-3 text-xs text-[var(--status-error)]">{repoError}</p>
+              ) : null}
             </div>
 
             <div className="min-h-72 divide-y divide-[var(--border-default)]">

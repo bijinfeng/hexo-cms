@@ -397,6 +397,51 @@ describe("OAuth UI", () => {
     }
   });
 
+  it("shows a recoverable search error while keeping the previous repository list visible", async () => {
+    const blogRepository = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const notesSearch = createControllablePromise<Array<typeof blogRepository>>();
+    const listRepositories = vi.fn().mockImplementation(({ query }: { query?: string }) => {
+      if (query === "") return Promise.resolve([blogRepository]);
+      if (query === "notes") return notesSearch.promise;
+      return Promise.resolve([]);
+    });
+    const onboardingClient = createOnboardingClient({ listRepositories });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
+    listRepositories.mockClear();
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.change(screen.getByPlaceholderText("搜索仓库"), { target: { value: "notes" } });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        notesSearch.reject(new Error("search failed"));
+        await Promise.resolve();
+      });
+
+      expect(screen.getByText("kebai/blog")).toBeInTheDocument();
+      expect(screen.getByText("仓库加载失败，请重试")).toBeInTheDocument();
+      expect(screen.queryByText("正在读取仓库")).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("clears a selected repository when search results no longer include it", async () => {
     const user = userEvent.setup();
     const blogRepository = {
