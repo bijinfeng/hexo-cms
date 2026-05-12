@@ -34,6 +34,8 @@ const ALLOWED_CHANNELS = [
   "plugin-storage:save",
   "plugin-secret:load",
   "plugin-secret:save",
+  "plugin-secret:has",
+  "plugin-secret:mutate",
   "plugin-http:fetch",
   "plugin-network-audit:list",
   "plugin-state:load",

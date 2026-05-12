@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PermissionBroker, assertPluginHttpRequestAllowed, builtinPluginManifests } from "@hexo-cms/core";
 import { getAuth, json } from "../../../lib/server-utils";
 import { appendPluginNetworkAudit } from "../../../lib/plugin-network-audit-db";
 
@@ -21,6 +22,7 @@ interface PluginFetchResponseBody {
 
 const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
 const DEFAULT_TIMEOUT_MS = 10_000;
+const permissionBroker = new PermissionBroker(builtinPluginManifests);
 
 function sanitizeRequestHeaders(headers: Record<string, string> | undefined): Record<string, string> {
   if (!headers) return {};
@@ -46,16 +48,17 @@ export const Route = createFileRoute("/api/plugin/fetch")({
         if (!req.url || typeof req.url !== "string") {
           return json({ error: "Invalid URL" }, 400);
         }
+        if (!req.pluginId || typeof req.pluginId !== "string") {
+          return json({ error: "Plugin id is required" }, 400);
+        }
 
         let parsedUrl: URL;
         try {
-          parsedUrl = new URL(req.url);
-        } catch {
-          return json({ error: "Invalid URL" }, 400);
-        }
-
-        if (parsedUrl.protocol !== "https:") {
-          return json({ error: "Only HTTPS is allowed" }, 400);
+          const manifest = builtinPluginManifests.find((plugin) => plugin.id === req.pluginId);
+          if (!manifest) return json({ error: "Unknown plugin" }, 403);
+          parsedUrl = assertPluginHttpRequestAllowed(req.pluginId, manifest, permissionBroker, req.url);
+        } catch (error) {
+          return json({ error: error instanceof Error ? error.message : "Invalid URL" }, 403);
         }
 
         const timeoutMs = req.timeoutMs ?? DEFAULT_TIMEOUT_MS;

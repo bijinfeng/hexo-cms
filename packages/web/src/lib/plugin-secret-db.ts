@@ -38,3 +38,28 @@ export function savePluginSecrets(userId: string, value: PluginSecretStoreValue)
     })
     .run();
 }
+
+export function hasPluginSecret(userId: string, pluginId: string, key: string): boolean {
+  return typeof loadPluginSecrets(userId)[pluginId]?.[key] === "string";
+}
+
+export function setPluginSecret(userId: string, pluginId: string, key: string, value: string): void {
+  const secrets = loadPluginSecrets(userId);
+  savePluginSecrets(userId, {
+    ...secrets,
+    [pluginId]: {
+      ...(secrets[pluginId] ?? {}),
+      [key]: value,
+    },
+  });
+}
+
+export function deletePluginSecret(userId: string, pluginId: string, key: string): void {
+  const secrets = loadPluginSecrets(userId);
+  const pluginValues = { ...(secrets[pluginId] ?? {}) };
+  delete pluginValues[key];
+  savePluginSecrets(userId, {
+    ...secrets,
+    [pluginId]: pluginValues,
+  });
+}

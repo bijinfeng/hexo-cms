@@ -12,8 +12,10 @@ import {
   PluginManager,
   PluginManifestError,
   PluginPermissionError,
+  assertPluginHttpRequestAllowed,
   type DiagnosticsHandler,
   type PluginFetch,
+  type PluginSecretStoreValue,
   type PluginStorageStoreValue,
   builtinPluginManifests,
   validatePluginManifest,
@@ -349,6 +351,43 @@ describe("plugin system", () => {
     await expect(writerSecrets.has("apiKey")).resolves.toBe(false);
   });
 
+  it("uses scoped plugin secret store operations when available", async () => {
+    const scopedSecretStore = {
+      load: vi.fn<() => PluginSecretStoreValue>(() => {
+        throw new Error("Secret values should not be loaded");
+      }),
+      save: vi.fn<(value: PluginSecretStoreValue) => void>(),
+      has: vi.fn<(pluginId: string, key: string) => boolean>().mockReturnValue(true),
+      set: vi.fn<(pluginId: string, key: string, value: string) => void>(),
+      delete: vi.fn<(pluginId: string, key: string) => void>(),
+    };
+    const manager = new PluginManager({
+      manifests: [
+        {
+          id: "hexo-cms-scoped-secret",
+          name: "Scoped Secret",
+          version: "0.1.0",
+          description: "Scoped secret test plugin",
+          source: "builtin",
+          permissions: ["pluginSecret.read", "pluginSecret.write"],
+        },
+      ],
+      store: new MemoryPluginStateStore(),
+      secretStore: scopedSecretStore,
+    });
+    const secrets = manager.createSecretAPI("hexo-cms-scoped-secret");
+
+    await expect(secrets.has("apiKey")).resolves.toBe(true);
+    await secrets.set("apiKey", "secret-token");
+    await secrets.delete("apiKey");
+
+    expect(scopedSecretStore.has).toHaveBeenCalledWith("hexo-cms-scoped-secret", "apiKey");
+    expect(scopedSecretStore.set).toHaveBeenCalledWith("hexo-cms-scoped-secret", "apiKey", "secret-token");
+    expect(scopedSecretStore.delete).toHaveBeenCalledWith("hexo-cms-scoped-secret", "apiKey");
+    expect(scopedSecretStore.load).not.toHaveBeenCalled();
+    expect(scopedSecretStore.save).not.toHaveBeenCalled();
+  });
+
   it("requires plugin secret permissions", async () => {
     const manager = new PluginManager({
       manifests: [
@@ -434,6 +473,28 @@ describe("plugin system", () => {
     await expect(
       manager.createHttpAPI("hexo-cms-network-without-permission").fetch("https://api.example.com/status"),
     ).rejects.toThrow(PluginPermissionError);
+  });
+
+  it("exposes shared HTTP proxy validation for platform adapters", () => {
+    const manifest = {
+      id: "hexo-cms-network-plugin",
+      name: "Network Plugin",
+      version: "0.1.0",
+      description: "Network permission test plugin",
+      source: "builtin" as const,
+      permissions: ["network.fetch" as const],
+      network: { allowedHosts: ["api.example.com"] },
+    };
+    const broker = new PermissionBroker([manifest]);
+
+    expect(assertPluginHttpRequestAllowed(
+      manifest.id,
+      manifest,
+      broker,
+      "https://api.example.com/status",
+    ).hostname).toBe("api.example.com");
+    expect(() => assertPluginHttpRequestAllowed(manifest.id, manifest, broker, "https://evil.example.com/status"))
+      .toThrow(/not allowed/);
   });
 
   it("passes pluginId to fetchImpl for platform proxy auditing", async () => {

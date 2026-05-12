@@ -399,6 +399,7 @@ describe("plugin UI", () => {
           headers: { "Content-Type": "application/json" },
         }),
       )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -418,11 +419,11 @@ describe("plugin UI", () => {
     });
   });
 
-  it("persists plugin secrets through the web platform secret endpoint", async () => {
+  it("checks and mutates plugin secrets through scoped web secret operations", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ secrets: { "hexo-cms-analytics": { apiKey: "secret-ref" } } }), {
+        new Response(JSON.stringify({ configured: true }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         }),
@@ -432,9 +433,8 @@ describe("plugin UI", () => {
 
     const store = new WebPluginSecretStore();
 
-    await expect(store.load()).resolves.toEqual({
-      "hexo-cms-analytics": { apiKey: "secret-ref" },
-    });
+    await expect(store.load()).resolves.toEqual({});
+    await expect(store.has("hexo-cms-analytics", "apiKey")).resolves.toBe(true);
     await store.save({
       "hexo-cms-analytics": { apiKey: "updated-ref" },
     });
@@ -442,7 +442,24 @@ describe("plugin UI", () => {
     expect(fetchMock).toHaveBeenLastCalledWith("/api/plugin/secrets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secrets: { "hexo-cms-analytics": { apiKey: "updated-ref" } } }),
+      body: JSON.stringify({
+        op: "set",
+        pluginId: "hexo-cms-analytics",
+        key: "apiKey",
+        value: "updated-ref",
+      }),
+    });
+
+    await store.delete("hexo-cms-analytics", "apiKey");
+
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/plugin/secrets", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        op: "delete",
+        pluginId: "hexo-cms-analytics",
+        key: "apiKey",
+      }),
     });
   });
 });

@@ -87,6 +87,7 @@ function createConfigFromSelection(
 export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const navigate = useNavigate();
   const hasLoadedRepositoriesRef = useRef(false);
+  const loadedRepositoryQueryRef = useRef("");
   const repositoryRequestIdRef = useRef(0);
   const validationRequestIdRef = useRef(0);
   const [currentUser, setCurrentUser] = useState<OnboardingUser | null>(null);
@@ -112,10 +113,24 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const [manualBranch, setManualBranch] = useState("main");
   const reauthorizationDeviceFlow = reauthorizationSession?.deviceFlow;
 
+  const clearSelectedRepository = useCallback(() => {
+    validationRequestIdRef.current += 1;
+    setSelectedRepoId("");
+    setSelectedRepository(null);
+    setSelectedSelection(null);
+    setValidation(null);
+    setValidating(false);
+    setSaveError("");
+  }, []);
+
   const loadRepositories = useCallback(async (nextQuery: string) => {
     const requestId = repositoryRequestIdRef.current + 1;
     repositoryRequestIdRef.current = requestId;
     const isInitialLoad = !hasLoadedRepositoriesRef.current;
+    const queryChanged = !isInitialLoad && nextQuery !== loadedRepositoryQueryRef.current;
+    if (queryChanged) {
+      clearSelectedRepository();
+    }
     if (isInitialLoad) {
       setLoadingRepos(true);
     } else {
@@ -129,6 +144,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
       ]);
       if (repositoryRequestIdRef.current !== requestId) return;
       hasLoadedRepositoriesRef.current = true;
+      loadedRepositoryQueryRef.current = nextQuery;
       setCurrentUser(user);
       setRepositories(repoList);
     } catch {
@@ -146,7 +162,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
         }
       }
     }
-  }, [onboardingClient]);
+  }, [clearSelectedRepository, onboardingClient]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -173,14 +189,8 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
     const stillVisible = repositories.some((repository) => repository.id === selectedRepository.id);
     if (stillVisible) return;
 
-    validationRequestIdRef.current += 1;
-    setSelectedRepoId("");
-    setSelectedRepository(null);
-    setSelectedSelection(null);
-    setValidation(null);
-    setValidating(false);
-    setSaveError("");
-  }, [repositories, selectedRepository]);
+    clearSelectedRepository();
+  }, [clearSelectedRepository, repositories, selectedRepository]);
 
   useEffect(() => {
     if (!reauthorizationDeviceFlow || !onboardingClient.getAuthSession) return;

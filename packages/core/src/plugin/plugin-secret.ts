@@ -3,6 +3,9 @@ import type { PluginPermission, PluginSecretAPI, PluginSecretStoreValue } from "
 export interface PluginSecretStore {
   load(): PluginSecretStoreValue | Promise<PluginSecretStoreValue>;
   save(value: PluginSecretStoreValue): void | Promise<void>;
+  has?(pluginId: string, key: string): boolean | Promise<boolean>;
+  set?(pluginId: string, key: string, value: string): void | Promise<void>;
+  delete?(pluginId: string, key: string): void | Promise<void>;
 }
 
 export class MemoryPluginSecretStore implements PluginSecretStore {
@@ -26,6 +29,7 @@ export function createPluginSecretAPI(
     async has(key: string): Promise<boolean> {
       assertSecretKey(key);
       permissionBroker.assert(pluginId, "pluginSecret.read", "plugin.secret.has");
+      if (store.has) return store.has(pluginId, key);
       const current = await store.load();
       return typeof current[pluginId]?.[key] === "string";
     },
@@ -34,6 +38,10 @@ export function createPluginSecretAPI(
       assertSecretKey(key);
       assertSecretValue(value);
       permissionBroker.assert(pluginId, "pluginSecret.write", "plugin.secret.set");
+      if (store.set) {
+        await store.set(pluginId, key, value);
+        return;
+      }
       const current = await store.load();
       await store.save({
         ...current,
@@ -47,6 +55,10 @@ export function createPluginSecretAPI(
     async delete(key: string): Promise<void> {
       assertSecretKey(key);
       permissionBroker.assert(pluginId, "pluginSecret.write", "plugin.secret.delete");
+      if (store.delete) {
+        await store.delete(pluginId, key);
+        return;
+      }
       const current = await store.load();
       const pluginSecrets = { ...(current[pluginId] ?? {}) };
       delete pluginSecrets[key];

@@ -1,5 +1,9 @@
 import type { PluginHttpAPI, PluginHttpRequestOptions, PluginManifest, PluginPermission } from "./types";
 
+export type PluginHttpPermissionBroker = {
+  assert(pluginId: string, permission: PluginPermission, operation: string): void;
+};
+
 export interface PluginFetchResponse {
   ok: boolean;
   status: number;
@@ -26,13 +30,12 @@ export type PluginFetch = (
 export function createPluginHttpAPI(
   pluginId: string,
   manifest: PluginManifest,
-  permissionBroker: { assert(pluginId: string, permission: PluginPermission, operation: string): void },
+  permissionBroker: PluginHttpPermissionBroker,
   fetchImpl: PluginFetch = defaultFetch,
 ): PluginHttpAPI {
   return {
     async fetch<T = unknown>(url: string, options: PluginHttpRequestOptions = {}): Promise<T> {
-      permissionBroker.assert(pluginId, "network.fetch", "plugin.http.fetch");
-      const target = assertAllowedUrl(url, manifest.network?.allowedHosts ?? []);
+      const target = assertPluginHttpRequestAllowed(pluginId, manifest, permissionBroker, url);
       const timeoutMs = options.timeoutMs ?? 10_000;
       if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
         throw new Error("Plugin HTTP timeout must be a positive number");
@@ -69,7 +72,17 @@ export function createPluginHttpAPI(
   };
 }
 
-function assertAllowedUrl(value: string, allowedHosts: string[]): URL {
+export function assertPluginHttpRequestAllowed(
+  pluginId: string,
+  manifest: PluginManifest,
+  permissionBroker: PluginHttpPermissionBroker,
+  value: string,
+): URL {
+  permissionBroker.assert(pluginId, "network.fetch", "plugin.http.fetch");
+  return assertAllowedUrl(value, manifest.network?.allowedHosts ?? []);
+}
+
+export function assertAllowedUrl(value: string, allowedHosts: string[]): URL {
   const url = new URL(value);
   if (url.protocol !== "https:") {
     throw new Error("Plugin HTTP requests must use HTTPS");

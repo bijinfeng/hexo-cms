@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } from "ele
 import { dirname, join } from "path";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
-import { GitHubService } from "@hexo-cms/core";
+import { GitHubService, PermissionBroker, assertPluginHttpRequestAllowed, builtinPluginManifests } from "@hexo-cms/core";
 import type { GitHubConfig, PluginConfigStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
 import type { DeviceFlowInfo } from "@hexo-cms/ui";
 import {
@@ -105,6 +105,22 @@ function savePluginStorage(value: PluginStorageStoreValue): void {
   writeFileSync(storagePath, JSON.stringify(value, null, 2));
 }
 
+async function loadPluginSecretsFromKeychain(): Promise<PluginSecretStoreValue> {
+  const keytar = await import("keytar");
+  const value = await keytar.default.getPassword(KEYTAR_SERVICE, "plugin-secrets");
+  if (!value) return {};
+  try {
+    return JSON.parse(value) as PluginSecretStoreValue;
+  } catch {
+    return {};
+  }
+}
+
+async function savePluginSecretsToKeychain(value: PluginSecretStoreValue): Promise<void> {
+  const keytar = await import("keytar");
+  await keytar.default.setPassword(KEYTAR_SERVICE, "plugin-secrets", JSON.stringify(value));
+}
+
 // ==================== 插件状态持久化 ====================
 
 function getPluginStatePath(): string {
@@ -204,8 +220,13 @@ interface PluginFetchResponseBody {
   body: string;
 }
 
+type PluginSecretMutation =
+  | { op: "set"; pluginId: string; key: string; value: string }
+  | { op: "delete"; pluginId: string; key: string };
+
 const MAX_PLUGIN_FETCH_RESPONSE_SIZE = 10 * 1024 * 1024;
 const DEFAULT_PLUGIN_FETCH_TIMEOUT_MS = 10_000;
+const pluginPermissionBroker = new PermissionBroker(builtinPluginManifests);
 
 function sanitizePluginFetchHeaders(headers: Record<string, string> | undefined): Record<string, string> {
   if (!headers) return {};
@@ -223,11 +244,13 @@ async function executePluginFetch(req: PluginFetchRequest): Promise<PluginFetchR
   if (!req.url || typeof req.url !== "string") {
     throw new Error("Invalid URL");
   }
-
-  const parsedUrl = new URL(req.url);
-  if (parsedUrl.protocol !== "https:") {
-    throw new Error("Only HTTPS is allowed");
+  if (!req.pluginId || typeof req.pluginId !== "string") {
+    throw new Error("Plugin id is required");
   }
+
+  const manifest = builtinPluginManifests.find((plugin) => plugin.id === req.pluginId);
+  if (!manifest) throw new Error("Unknown plugin");
+  const parsedUrl = assertPluginHttpRequestAllowed(req.pluginId, manifest, pluginPermissionBroker, req.url);
 
   const timeoutMs = req.timeoutMs ?? DEFAULT_PLUGIN_FETCH_TIMEOUT_MS;
   const controller = new globalThis.AbortController();
@@ -590,19 +613,27 @@ ipcMain.handle("plugin-storage:save", (_event, value: PluginStorageStoreValue) =
 });
 
 ipcMain.handle("plugin-secret:load", async () => {
-  const keytar = await import("keytar");
-  const value = await keytar.default.getPassword(KEYTAR_SERVICE, "plugin-secrets");
-  if (!value) return {};
-  try {
-    return JSON.parse(value) as PluginSecretStoreValue;
-  } catch {
-    return {};
-  }
+  // Keep the legacy IPC channel available without exposing plaintext secrets.
+  return {};
 });
 
 ipcMain.handle("plugin-secret:save", async (_event, value: PluginSecretStoreValue) => {
-  const keytar = await import("keytar");
-  await keytar.default.setPassword(KEYTAR_SERVICE, "plugin-secrets", JSON.stringify(value));
+  await savePluginSecretsToKeychain(value);
+});
+
+ipcMain.handle("plugin-secret:has", async (_event, { pluginId, key }: { pluginId: string; key: string }) => {
+  if (!pluginId || !key) return false;
+  const secrets = await loadPluginSecretsFromKeychain();
+  return typeof secrets[pluginId]?.[key] === "string";
+});
+
+ipcMain.handle("plugin-secret:mutate", async (_event, mutation: PluginSecretMutation) => {
+  if (!mutation.pluginId || !mutation.key) throw new Error("Invalid secret target");
+  const secrets = await loadPluginSecretsFromKeychain();
+  const namespace = { ...(secrets[mutation.pluginId] ?? {}) };
+  if (mutation.op === "set") namespace[mutation.key] = mutation.value;
+  else delete namespace[mutation.key];
+  await savePluginSecretsToKeychain({ ...secrets, [mutation.pluginId]: namespace });
 });
 
 ipcMain.handle("plugin-http:fetch", async (_event, req: PluginFetchRequest) => {
