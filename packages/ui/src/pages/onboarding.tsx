@@ -86,6 +86,7 @@ function createConfigFromSelection(
 
 export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const navigate = useNavigate();
+  const hasLoadedRepositoriesRef = useRef(false);
   const repositoryRequestIdRef = useRef(0);
   const validationRequestIdRef = useRef(0);
   const [currentUser, setCurrentUser] = useState<OnboardingUser | null>(null);
@@ -93,6 +94,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [loadingRepos, setLoadingRepos] = useState(true);
+  const [searchingRepos, setSearchingRepos] = useState(false);
   const [repoError, setRepoError] = useState("");
   const [selectedRepoId, setSelectedRepoId] = useState("");
   const [selectedRepository, setSelectedRepository] = useState<RepositoryOption | null>(null);
@@ -113,7 +115,12 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const loadRepositories = useCallback(async (nextQuery: string) => {
     const requestId = repositoryRequestIdRef.current + 1;
     repositoryRequestIdRef.current = requestId;
-    setLoadingRepos(true);
+    const isInitialLoad = !hasLoadedRepositoriesRef.current;
+    if (isInitialLoad) {
+      setLoadingRepos(true);
+    } else {
+      setSearchingRepos(true);
+    }
     setRepoError("");
     try {
       const [user, repoList] = await Promise.all([
@@ -121,15 +128,22 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
         onboardingClient.listRepositories({ query: nextQuery }),
       ]);
       if (repositoryRequestIdRef.current !== requestId) return;
+      hasLoadedRepositoriesRef.current = true;
       setCurrentUser(user);
       setRepositories(repoList);
     } catch {
       if (repositoryRequestIdRef.current !== requestId) return;
       setRepoError("仓库加载失败，请重试");
-      setRepositories([]);
+      if (isInitialLoad) {
+        setRepositories([]);
+      }
     } finally {
       if (repositoryRequestIdRef.current === requestId) {
-        setLoadingRepos(false);
+        if (isInitialLoad) {
+          setLoadingRepos(false);
+        } else {
+          setSearchingRepos(false);
+        }
       }
     }
   }, [onboardingClient]);
@@ -377,6 +391,12 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                   placeholder="搜索仓库"
                   className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
                 />
+                {searchingRepos ? (
+                  <Loader2
+                    aria-label="正在搜索仓库"
+                    className="h-4 w-4 flex-shrink-0 animate-spin text-[var(--text-tertiary)]"
+                  />
+                ) : null}
               </div>
             </div>
 

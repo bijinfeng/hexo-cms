@@ -14,6 +14,8 @@ import type {
 } from "../types/onboarding";
 import type { DataProvider } from "@hexo-cms/core";
 
+const SEARCH_DEBOUNCE_MS = 250;
+
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
 }));
@@ -118,6 +120,17 @@ function createDeferred<T>() {
   });
 
   return { promise, resolve };
+}
+
+function createControllablePromise<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
 }
 
 describe("OAuth UI", () => {
@@ -331,6 +344,54 @@ describe("OAuth UI", () => {
       expect(listRepositories).toHaveBeenCalledTimes(1);
       expect(listRepositories).toHaveBeenLastCalledWith({ query: "notes" });
       expect(screen.getByText("kebai/notes")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps the current repository list visible while a search request is pending", async () => {
+    const blogRepository = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const notesSearch = createControllablePromise<Array<typeof blogRepository>>();
+    const listRepositories = vi.fn().mockImplementation(({ query }: { query?: string }) => {
+      if (query === "") return Promise.resolve([blogRepository]);
+      if (query === "notes") return notesSearch.promise;
+      return Promise.resolve([]);
+    });
+    const onboardingClient = createOnboardingClient({ listRepositories });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
+    listRepositories.mockClear();
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.change(screen.getByPlaceholderText("搜索仓库"), { target: { value: "notes" } });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+
+      expect(listRepositories).toHaveBeenCalledWith({ query: "notes" });
+      expect(screen.getByText("kebai/blog")).toBeInTheDocument();
+      expect(screen.queryByText("正在读取仓库")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("正在搜索仓库")).toBeInTheDocument();
+
+      await act(async () => {
+        notesSearch.resolve([]);
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByLabelText("正在搜索仓库")).not.toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
