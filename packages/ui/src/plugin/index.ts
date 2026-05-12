@@ -1,10 +1,15 @@
 export { DashboardExtensionOutlet } from "./extension-outlet";
 export { DiagnosticsPanel } from "./diagnostics-panel";
+export { DraftCoachWidget } from "./draft-coach/widget";
 export {
   checkPostSeo,
   createSeoPostDiagnosticsHandler,
   createSeoSiteDiagnosticsHandler,
 } from "./diagnostics/seo-inspector";
+export {
+  checkDraft,
+  calculateDraftStats,
+} from "./draft-coach/draft-checker";
 export {
   DesktopPluginConfigStore,
   WebPluginConfigStore,

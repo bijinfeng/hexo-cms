@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { PluginErrorBoundary } from "./plugin-error-boundary";
 import { AttachmentsSummaryWidget } from "./renderers/attachments-summary-widget";
 import { CommentsOverviewWidget } from "./renderers/comments-overview-widget";
+import { DraftCoachWidget } from "./draft-coach/widget";
 
 type DashboardWidgetRenderer = ComponentType<{ config?: PluginConfigValue }>;
 type DashboardWidgetRenderers = Record<string, DashboardWidgetRenderer>;
@@ -17,6 +18,7 @@ interface DashboardExtensionOutletProps {
 const defaultDashboardWidgetRenderers: DashboardWidgetRenderers = {
   "builtin.attachments.summary": AttachmentsSummaryWidget,
   "builtin.comments.overview": CommentsOverviewWidget,
+  "builtin.draft.overview": DraftCoachWidget,
 };
 
 export function DashboardExtensionOutlet({ widgets, configs, renderers }: DashboardExtensionOutletProps) {

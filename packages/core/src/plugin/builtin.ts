@@ -3,6 +3,7 @@ import type { PluginManifest } from "./types";
 export const ATTACHMENTS_HELPER_PLUGIN_ID = "hexo-cms-attachments-helper";
 export const COMMENTS_OVERVIEW_PLUGIN_ID = "hexo-cms-comments-overview";
 export const SEO_INSPECTOR_PLUGIN_ID = "hexo-cms-seo-inspector";
+export const DRAFT_COACH_PLUGIN_ID = "hexo-cms-draft-coach";
 
 export const builtinPluginManifests: PluginManifest[] = [
   {
@@ -218,6 +219,84 @@ export const builtinPluginManifests: PluginManifest[] = [
           title: "站点 SEO 概览",
           scope: "site",
           description: "汇总站点级别的 SEO 问题，识别缺失摘要的文章数量。",
+        },
+      ],
+    },
+  },
+  {
+    id: DRAFT_COACH_PLUGIN_ID,
+    name: "Draft Coach",
+    version: "0.1.0",
+    description: "草稿助手：跟踪草稿超期、字数目标、封面图完整性，并在仪表板提供提醒。",
+    source: "builtin",
+    engine: {
+      hexoCms: ">=0.1.0",
+    },
+    activation: ["onDashboard"],
+    permissions: ["content.read", "event.subscribe", "pluginStorage.read", "pluginStorage.write", "pluginConfig.write", "ui.contribute"],
+    contributes: {
+      dashboardWidgets: [
+        {
+          id: "draft.overview",
+          title: "草稿助手",
+          renderer: "builtin.draft.overview",
+          size: "medium",
+          order: 70,
+        },
+      ],
+      settingsPanels: [
+        {
+          id: "draft.settings",
+          title: "草稿助手",
+          schema: "draft.settings",
+        },
+      ],
+      settingsSchemas: {
+        "draft.settings": {
+          id: "draft.settings",
+          fields: [
+            {
+              key: "draftAgeThreshold",
+              label: "草稿超期天数",
+              type: "string",
+              defaultValue: "7",
+              description: "草稿创建超过该天数后会被标记为超期。",
+            },
+            {
+              key: "wordCountTarget",
+              label: "目标字数",
+              type: "string",
+              defaultValue: "800",
+              description: "文章建议达到的最低字数。",
+            },
+            {
+              key: "requireCover",
+              label: "要求封面图",
+              type: "boolean",
+              defaultValue: true,
+              description: "检查草稿是否设置了封面图（cover 字段）。",
+            },
+            {
+              key: "enableNotifications",
+              label: "启用实时提醒",
+              type: "boolean",
+              defaultValue: true,
+              description: "保存草稿时自动检查并在仪表板显示提醒。",
+            },
+          ],
+        },
+      },
+      sidebarItems: [
+        {
+          id: "draft.entry",
+          title: "草稿助手",
+          target: "plugin.settings",
+        },
+      ],
+      events: [
+        {
+          name: "post.afterSave",
+          description: "文章保存后检查草稿状态并更新提醒",
         },
       ],
     },
