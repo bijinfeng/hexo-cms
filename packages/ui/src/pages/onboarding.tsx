@@ -33,6 +33,7 @@ const FALLBACK_CONFIG = {
   autoDeploy: true,
   deployNotifications: true,
 };
+const SEARCH_DEBOUNCE_MS = 250;
 
 function getValidationErrorMessage(validation: RepositoryValidation | null) {
   if (!validation || validation.ok) return "";
@@ -90,6 +91,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const [currentUser, setCurrentUser] = useState<OnboardingUser | null>(null);
   const [repositories, setRepositories] = useState<RepositoryOption[]>([]);
   const [query, setQuery] = useState("");
+  const [activeQuery, setActiveQuery] = useState("");
   const [loadingRepos, setLoadingRepos] = useState(true);
   const [repoError, setRepoError] = useState("");
   const [selectedRepoId, setSelectedRepoId] = useState("");
@@ -133,8 +135,38 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   }, [onboardingClient]);
 
   useEffect(() => {
-    void loadRepositories(query);
-  }, [loadRepositories, query]);
+    if (!query.trim()) {
+      setActiveQuery("");
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setActiveQuery(query);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [query]);
+
+  useEffect(() => {
+    void loadRepositories(activeQuery);
+  }, [activeQuery, loadRepositories]);
+
+  useEffect(() => {
+    if (!selectedRepository) return;
+
+    const stillVisible = repositories.some((repository) => repository.id === selectedRepository.id);
+    if (stillVisible) return;
+
+    validationRequestIdRef.current += 1;
+    setSelectedRepoId("");
+    setSelectedRepository(null);
+    setSelectedSelection(null);
+    setValidation(null);
+    setValidating(false);
+    setSaveError("");
+  }, [repositories, selectedRepository]);
 
   useEffect(() => {
     if (!reauthorizationDeviceFlow || !onboardingClient.getAuthSession) return;
@@ -149,7 +181,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
         if (nextSession.state === "authenticated") {
           window.clearInterval(timer);
           setReauthorizing(false);
-          await loadRepositories(query);
+          await loadRepositories(activeQuery);
         } else if (nextSession.state === "error") {
           window.clearInterval(timer);
           setReauthorizing(false);
@@ -168,7 +200,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
       active = false;
       window.clearInterval(timer);
     };
-  }, [loadRepositories, onboardingClient, query, reauthorizationDeviceFlow]);
+  }, [activeQuery, loadRepositories, onboardingClient, reauthorizationDeviceFlow]);
 
   const config = useMemo(() => {
     if (!validation?.ok || !selectedSelection) return null;
@@ -242,7 +274,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
       waitingForDeviceFlow = Boolean(nextSession?.deviceFlow);
       if (waitingForDeviceFlow) return;
 
-      await loadRepositories(query);
+      await loadRepositories(activeQuery);
     } catch {
       setReauthorizeError("重新授权失败，请重试");
     } finally {
@@ -396,7 +428,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                     {hasSearchQuery ? "未找到匹配的仓库" : "未找到可写仓库，请检查 GitHub 授权权限"}
                   </p>
                   {repoError && <p className="text-xs text-[var(--status-error)]">{repoError}</p>}
-                  <Button type="button" variant="outline" size="sm" onClick={() => void loadRepositories(query)}>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void loadRepositories(activeQuery)}>
                     <RefreshCw className="h-4 w-4" />
                     重试
                   </Button>

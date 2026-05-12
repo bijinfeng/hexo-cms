@@ -281,6 +281,104 @@ describe("OAuth UI", () => {
     expect(await screen.findByText("kebai/notes")).toBeInTheDocument();
   });
 
+  it("debounces repository search requests while the user is typing", async () => {
+    const blogRepository = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const notesRepository = {
+      id: "repo-2",
+      owner: "kebai",
+      name: "notes",
+      fullName: "kebai/notes",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const listRepositories = vi.fn().mockImplementation(async ({ query }: { query?: string }) => {
+      if (query === "") return [blogRepository];
+      if (query === "notes") return [notesRepository];
+      return [];
+    });
+    const onboardingClient = createOnboardingClient({ listRepositories });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
+    listRepositories.mockClear();
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.change(screen.getByPlaceholderText("搜索仓库"), { target: { value: "notes" } });
+
+      expect(listRepositories).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(249);
+      });
+      expect(listRepositories).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+        await Promise.resolve();
+      });
+
+      expect(listRepositories).toHaveBeenCalledTimes(1);
+      expect(listRepositories).toHaveBeenLastCalledWith({ query: "notes" });
+      expect(screen.getByText("kebai/notes")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("clears a selected repository when search results no longer include it", async () => {
+    const user = userEvent.setup();
+    const blogRepository = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const notesRepository = {
+      id: "repo-2",
+      owner: "kebai",
+      name: "notes",
+      fullName: "kebai/notes",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const listRepositories = vi.fn().mockImplementation(async ({ query }: { query?: string }) => {
+      if (query === "") return [blogRepository];
+      if (query === "notes") return [notesRepository];
+      return [];
+    });
+    const onboardingClient = createOnboardingClient({ listRepositories });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    await user.click(await screen.findByText("kebai/blog"));
+    expect(await screen.findByText("开始管理")).toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText("搜索仓库"), "notes");
+
+    await waitFor(() => {
+      expect(listRepositories).toHaveBeenLastCalledWith({ query: "notes" });
+    });
+    expect(screen.queryByRole("button", { name: "开始管理" })).not.toBeInTheDocument();
+    expect(
+      screen.getByText("选择一个有写权限的仓库后，HexoCMS 会自动检查它是否可以作为博客项目导入。"),
+    ).toBeInTheDocument();
+  });
+
   it("shows desktop reauthorization device flow in onboarding", async () => {
     const onboardingClient = createOnboardingClient({
       reauthorize: vi.fn().mockResolvedValue({
