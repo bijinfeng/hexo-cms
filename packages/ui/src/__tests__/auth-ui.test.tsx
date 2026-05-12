@@ -349,6 +349,58 @@ describe("OAuth UI", () => {
     }
   });
 
+  it("runs repository search immediately when pressing Enter", async () => {
+    const blogRepository = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const notesRepository = {
+      id: "repo-2",
+      owner: "kebai",
+      name: "notes",
+      fullName: "kebai/notes",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const listRepositories = vi.fn().mockImplementation(async ({ query }: { query?: string }) => {
+      if (query === "") return [blogRepository];
+      if (query === "notes") return [notesRepository];
+      return [];
+    });
+    const onboardingClient = createOnboardingClient({ listRepositories });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
+    listRepositories.mockClear();
+
+    vi.useFakeTimers();
+    try {
+      const searchInput = screen.getByPlaceholderText("搜索仓库");
+      fireEvent.change(searchInput, { target: { value: "notes" } });
+
+      expect(listRepositories).not.toHaveBeenCalled();
+
+      await act(async () => {
+        fireEvent.keyDown(searchInput, { key: "Enter", code: "Enter" });
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(listRepositories).toHaveBeenCalledTimes(1);
+      expect(listRepositories).toHaveBeenLastCalledWith({ query: "notes" });
+      expect(screen.getByText("kebai/notes")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("keeps the current repository list visible while a search request is pending", async () => {
     const blogRepository = {
       id: "repo-1",

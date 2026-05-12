@@ -310,6 +310,12 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
     }
   }
 
+  function handleSearchSubmit() {
+    const nextQuery = query.trim() ? query : "";
+    if (nextQuery === activeQuery) return;
+    setActiveQuery(nextQuery);
+  }
+
   return (
     <div className="min-h-screen bg-[var(--bg-base)] p-4 sm:p-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -388,6 +394,11 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+                    event.preventDefault();
+                    handleSearchSubmit();
+                  }}
                   placeholder="搜索仓库"
                   className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
                 />
