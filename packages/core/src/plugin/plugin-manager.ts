@@ -1,5 +1,6 @@
 import { PluginNotFoundError } from "./errors";
 import { CommandRegistry } from "./command-registry";
+import { DiagnosticsRegistry } from "./diagnostics-registry";
 import { createPluginEventAPI, EventBus } from "./event-bus";
 import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
@@ -16,6 +17,10 @@ import { createPluginSecretAPI, MemoryPluginSecretStore, type PluginSecretStore 
 import { createPluginStorageAPI, MemoryPluginStorageStore, type PluginStorageStore } from "./plugin-storage";
 import { redactPluginRuntimeText } from "./redaction";
 import type {
+  ContentReadAPI,
+  DiagnosticsHandler,
+  DiagnosticsReport,
+  DiagnosticsTarget,
   PluginCommandExecutionResult,
   PluginCommandHandler,
   PluginConfigStoreValue,
@@ -33,6 +38,8 @@ import type {
   PluginStorageAPI,
   PluginStateStoreValue,
 } from "./types";
+import { createContentReadAPI } from "./types";
+import type { DataProvider } from "../data-provider";
 
 export interface PluginStateStore {
   load(): PluginStateStoreValue;
@@ -116,6 +123,8 @@ export interface PluginManagerOptions {
   fetchImpl?: PluginFetch;
   defaultEnabledPluginIds?: string[];
   commandHandlers?: Record<string, PluginCommandHandler>;
+  diagnosticsHandlers?: Record<string, DiagnosticsHandler>;
+  dataProvider?: DataProvider;
   errorThreshold?: number;
   maxLogEntriesPerPlugin?: number;
 }
@@ -126,6 +135,7 @@ export class PluginManager {
   private readonly manifestsById = new Map<string, PluginManifest>();
   private readonly extensionRegistry = new ExtensionRegistry();
   private readonly commandRegistry: CommandRegistry;
+  private readonly diagnosticsRegistry: DiagnosticsRegistry;
   private readonly eventBus = new EventBus();
   private readonly store: PluginStateStore;
   private readonly configStore: PluginConfigStore;
@@ -133,6 +143,7 @@ export class PluginManager {
   private readonly secretStore: PluginSecretStore;
   private readonly logStore: PluginLogStore;
   private readonly fetchImpl?: PluginFetch;
+  private readonly dataProvider?: DataProvider;
   private readonly errorThreshold: number;
   private readonly maxLogEntriesPerPlugin: number;
   private records: PluginStateStoreValue;
@@ -148,6 +159,8 @@ export class PluginManager {
     fetchImpl,
     defaultEnabledPluginIds = [],
     commandHandlers = {},
+    diagnosticsHandlers = {},
+    dataProvider,
     errorThreshold = 3,
     maxLogEntriesPerPlugin = 50,
   }: PluginManagerOptions) {
@@ -155,17 +168,30 @@ export class PluginManager {
     this.manifests.forEach((manifest) => this.manifestsById.set(manifest.id, manifest));
     this.permissionBroker = new PermissionBroker(this.manifests);
     this.commandRegistry = new CommandRegistry(this.permissionBroker, commandHandlers);
+    this.diagnosticsRegistry = new DiagnosticsRegistry({
+      permissionBroker: this.permissionBroker,
+      contentFactory: (pluginId: string) => this.createContentAPI(pluginId),
+      handlers: diagnosticsHandlers,
+    });
     this.store = store;
     this.configStore = configStore;
     this.storageStore = storageStore;
     this.secretStore = secretStore;
     this.logStore = logStore;
     this.fetchImpl = fetchImpl;
+    this.dataProvider = dataProvider;
     this.errorThreshold = errorThreshold;
     this.maxLogEntriesPerPlugin = maxLogEntriesPerPlugin;
     this.records = this.hydrateRecords(defaultEnabledPluginIds);
     this.configs = this.hydrateConfigs();
     this.rebuildExtensions();
+  }
+
+  private createContentAPI(pluginId: string): ContentReadAPI {
+    if (!this.dataProvider) {
+      throw new Error("PluginManager requires a dataProvider to create content API");
+    }
+    return createContentReadAPI(pluginId, this.dataProvider, this.permissionBroker);
   }
 
   snapshot(): PluginManagerSnapshot {
@@ -250,6 +276,33 @@ export class PluginManager {
   createStorageAPI(pluginId: string): PluginStorageAPI {
     this.getManifest(pluginId);
     return createPluginStorageAPI(pluginId, this.storageStore, this.permissionBroker);
+  }
+
+  registerDiagnosticsHandler(pluginId: string, contributionId: string, handler: DiagnosticsHandler): void {
+    this.getManifest(pluginId);
+    this.diagnosticsRegistry.registerHandler(pluginId, contributionId, handler);
+  }
+
+  async runDiagnostics(target: DiagnosticsTarget): Promise<DiagnosticsReport[]> {
+    const registered = this.extensionRegistry.snapshot().diagnostics.filter((diagnostics) => {
+      const record = this.records[diagnostics.pluginId];
+      return record?.state === "enabled";
+    });
+
+    const reports = await this.diagnosticsRegistry.runDiagnostics(registered, this.manifestsById, target);
+
+    reports.forEach((report) => {
+      const errorIssue = report.issues.find((issue) => issue.id.endsWith(".handler-error"));
+      if (errorIssue) {
+        this.recordPluginError(report.pluginId, {
+          contributionId: report.contributionId,
+          contributionType: "diagnostics",
+          message: errorIssue.message,
+        });
+      }
+    });
+
+    return reports;
   }
 
   createSecretAPI(pluginId: string): PluginSecretAPI {

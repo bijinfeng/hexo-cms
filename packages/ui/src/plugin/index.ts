@@ -1,4 +1,10 @@
 export { DashboardExtensionOutlet } from "./extension-outlet";
+export { DiagnosticsPanel } from "./diagnostics-panel";
+export {
+  checkPostSeo,
+  createSeoPostDiagnosticsHandler,
+  createSeoSiteDiagnosticsHandler,
+} from "./diagnostics/seo-inspector";
 export {
   DesktopPluginConfigStore,
   WebPluginConfigStore,

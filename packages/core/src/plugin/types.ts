@@ -52,6 +52,7 @@ export interface PluginContributions {
   settingsSchemas?: Record<string, PluginSettingsSchema>;
   sidebarItems?: SidebarItemContribution[];
   commands?: CommandContribution[];
+  diagnostics?: DiagnosticsContribution[];
 }
 
 export interface DashboardWidgetContribution {
@@ -106,7 +107,57 @@ export interface CommandContribution {
   title: string;
 }
 
-export type PluginContributionType = "dashboard.widget" | "settings.panel" | "sidebar.item" | "command" | "event";
+export type DiagnosticsScope = "post" | "page" | "site";
+
+export type DiagnosticsSeverity = "info" | "warn" | "error";
+
+export interface DiagnosticsContribution {
+  id: string;
+  title: string;
+  scope: DiagnosticsScope;
+  description?: string;
+}
+
+export interface DiagnosticsTarget {
+  scope: DiagnosticsScope;
+  path?: string;
+  post?: HexoPost;
+}
+
+export interface DiagnosticsIssue {
+  id: string;
+  severity: DiagnosticsSeverity;
+  message: string;
+  field?: string;
+  hint?: string;
+}
+
+export interface DiagnosticsReport {
+  pluginId: string;
+  contributionId: string;
+  title: string;
+  scope: DiagnosticsScope;
+  issues: DiagnosticsIssue[];
+  generatedAt: string;
+}
+
+export type DiagnosticsHandlerContext = {
+  pluginId: string;
+  contributionId: string;
+  target: DiagnosticsTarget;
+  content: ContentReadAPI;
+};
+
+export type DiagnosticsHandler = (
+  context: DiagnosticsHandlerContext,
+) => DiagnosticsIssue[] | Promise<DiagnosticsIssue[]>;
+
+export interface RegisteredDiagnostics extends DiagnosticsContribution {
+  pluginId: string;
+  pluginName: string;
+}
+
+export type PluginContributionType = "dashboard.widget" | "settings.panel" | "sidebar.item" | "command" | "event" | "diagnostics";
 
 export interface PluginCommandHandlerContext {
   pluginId: string;
@@ -275,6 +326,7 @@ export interface PluginExtensionRegistrySnapshot {
   settingsPanels: RegisteredSettingsPanel[];
   sidebarItems: RegisteredSidebarItem[];
   commands: RegisteredCommand[];
+  diagnostics: RegisteredDiagnostics[];
 }
 
 export interface MediaFile {

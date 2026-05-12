@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
   COMMENTS_OVERVIEW_PLUGIN_ID,
+  SEO_INSPECTOR_PLUGIN_ID,
   MemoryPluginStateStore,
   MemoryPluginConfigStore,
   MemoryPluginLogStore,
@@ -11,11 +12,13 @@ import {
   PluginManager,
   PluginManifestError,
   PluginPermissionError,
+  type DiagnosticsHandler,
   type PluginFetch,
   type PluginStorageStoreValue,
   builtinPluginManifests,
   validatePluginManifest,
 } from "../plugin";
+import type { DataProvider } from "../data-provider";
 
 describe("plugin system", () => {
   it("validates builtin plugin manifests", () => {
@@ -712,5 +715,108 @@ describe("plugin system", () => {
     expect(retriedPlugin?.record.state).toBe("enabled");
     expect(retriedPlugin?.record.lastError).toBeUndefined();
     expect(retriedSnapshot.extensions.dashboardWidgets).toHaveLength(1);
+  });
+
+  it("registers the SEO Inspector manifest with diagnostics contributions", () => {
+    expect(builtinPluginManifests.map((m) => m.id)).toContain(SEO_INSPECTOR_PLUGIN_ID);
+
+    const manifest = builtinPluginManifests.find((m) => m.id === SEO_INSPECTOR_PLUGIN_ID);
+    expect(manifest?.contributes?.diagnostics).toHaveLength(2);
+    expect(manifest?.contributes?.diagnostics?.map((d) => d.scope)).toEqual(["post", "site"]);
+  });
+
+  it("runs diagnostics handlers and returns structured reports", async () => {
+    function createMockDataProvider(): DataProvider {
+      return {
+        getConfig: vi.fn().mockResolvedValue(null),
+        saveConfig: vi.fn(),
+        getToken: vi.fn().mockResolvedValue(null),
+        saveToken: vi.fn(),
+        deleteToken: vi.fn(),
+        getPosts: vi.fn().mockResolvedValue([]),
+        getPost: vi.fn().mockResolvedValue(null),
+        savePost: vi.fn(),
+        deletePost: vi.fn(),
+        getPages: vi.fn().mockResolvedValue([]),
+        getPage: vi.fn().mockResolvedValue(null),
+        savePage: vi.fn(),
+        deletePage: vi.fn(),
+        getTags: vi.fn().mockResolvedValue({ tags: [], categories: [], total: 0 }),
+        renameTag: vi.fn(),
+        deleteTag: vi.fn(),
+        getMediaFiles: vi.fn().mockResolvedValue([]),
+        uploadMedia: vi.fn(),
+        deleteMedia: vi.fn(),
+        getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+        getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
+        switchTheme: vi.fn(),
+        getDeployments: vi.fn().mockResolvedValue([]),
+        triggerDeploy: vi.fn(),
+      } as unknown as DataProvider;
+    }
+
+    const postHandler: DiagnosticsHandler = async ({ target }) => {
+      if (target.scope !== "post" || !target.post) return [];
+      const issues = [];
+      if (!target.post.title) {
+        issues.push({ id: "test.title.missing", severity: "error" as const, message: "Title missing" });
+      }
+      return issues;
+    };
+
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      dataProvider: createMockDataProvider(),
+      diagnosticsHandlers: {
+        [`${SEO_INSPECTOR_PLUGIN_ID}:seo.post-checks`]: postHandler,
+      },
+    });
+
+    manager.enable(SEO_INSPECTOR_PLUGIN_ID);
+
+    const reports = await manager.runDiagnostics({
+      scope: "post",
+      post: {
+        path: "test.md",
+        title: "",
+        date: "2026-05-12",
+        content: "",
+        frontmatter: {},
+      },
+    });
+
+    expect(reports).toHaveLength(1);
+    expect(reports[0].pluginId).toBe(SEO_INSPECTOR_PLUGIN_ID);
+    expect(reports[0].scope).toBe("post");
+    expect(reports[0].issues).toEqual([
+      { id: "test.title.missing", severity: "error", message: "Title missing" },
+    ]);
+  });
+
+  it("returns an error issue when diagnostics handler is missing", async () => {
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      dataProvider: {} as DataProvider,
+    });
+
+    manager.enable(SEO_INSPECTOR_PLUGIN_ID);
+
+    const reports = await manager.runDiagnostics({ scope: "post" });
+    expect(reports[0].issues[0].severity).toBe("error");
+    expect(reports[0].issues[0].message).toContain("not registered");
+  });
+
+  it("skips diagnostics contributions from disabled plugins", async () => {
+    const manager = new PluginManager({
+      manifests: builtinPluginManifests,
+      store: new MemoryPluginStateStore(),
+      dataProvider: {} as DataProvider,
+    });
+
+    // Don't enable SEO Inspector
+    const reports = await manager.runDiagnostics({ scope: "post" });
+    expect(reports).toHaveLength(0);
   });
 });

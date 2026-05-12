@@ -3,6 +3,7 @@ import type {
   PluginManifest,
   RegisteredCommand,
   RegisteredDashboardWidget,
+  RegisteredDiagnostics,
   RegisteredSettingsPanel,
   RegisteredSidebarItem,
 } from "./types";
@@ -16,6 +17,7 @@ export class ExtensionRegistry {
   private readonly settingsPanels = new Map<string, RegisteredSettingsPanel>();
   private readonly sidebarItems = new Map<string, RegisteredSidebarItem>();
   private readonly commands = new Map<string, RegisteredCommand>();
+  private readonly diagnostics = new Map<string, RegisteredDiagnostics>();
 
   registerPlugin(manifest: PluginManifest): void {
     this.unregisterPlugin(manifest.id);
@@ -53,6 +55,14 @@ export class ExtensionRegistry {
         pluginName: manifest.name,
       });
     });
+
+    contributes.diagnostics?.forEach((diagnostics) => {
+      this.diagnostics.set(`${manifest.id}:${diagnostics.id}`, {
+        ...diagnostics,
+        pluginId: manifest.id,
+        pluginName: manifest.name,
+      });
+    });
   }
 
   unregisterPlugin(pluginId: string): void {
@@ -68,6 +78,9 @@ export class ExtensionRegistry {
     for (const key of this.commands.keys()) {
       if (key.startsWith(`${pluginId}:`)) this.commands.delete(key);
     }
+    for (const key of this.diagnostics.keys()) {
+      if (key.startsWith(`${pluginId}:`)) this.diagnostics.delete(key);
+    }
   }
 
   snapshot(): PluginExtensionRegistrySnapshot {
@@ -76,6 +89,7 @@ export class ExtensionRegistry {
       settingsPanels: [...this.settingsPanels.values()].sort(byOrderThenTitle),
       sidebarItems: [...this.sidebarItems.values()].sort(byOrderThenTitle),
       commands: [...this.commands.values()].sort((a, b) => a.title.localeCompare(b.title)),
+      diagnostics: [...this.diagnostics.values()].sort((a, b) => a.title.localeCompare(b.title)),
     };
   }
 }

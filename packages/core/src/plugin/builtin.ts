@@ -2,6 +2,7 @@ import type { PluginManifest } from "./types";
 
 export const ATTACHMENTS_HELPER_PLUGIN_ID = "hexo-cms-attachments-helper";
 export const COMMENTS_OVERVIEW_PLUGIN_ID = "hexo-cms-comments-overview";
+export const SEO_INSPECTOR_PLUGIN_ID = "hexo-cms-seo-inspector";
 
 export const builtinPluginManifests: PluginManifest[] = [
   {
@@ -140,6 +141,83 @@ export const builtinPluginManifests: PluginManifest[] = [
         {
           id: "comments.openModeration",
           title: "打开评论管理",
+        },
+      ],
+    },
+  },
+  {
+    id: SEO_INSPECTOR_PLUGIN_ID,
+    name: "SEO Inspector",
+    version: "0.1.0",
+    description: "检查文章 SEO 要素：标题长度、摘要、slug、frontmatter 完整性。",
+    source: "builtin",
+    engine: {
+      hexoCms: ">=0.1.0",
+    },
+    activation: ["onDashboard"],
+    permissions: ["content.read", "ui.contribute", "pluginConfig.write"],
+    contributes: {
+      settingsPanels: [
+        {
+          id: "seo.settings",
+          title: "SEO Inspector",
+          schema: "seo.settings",
+        },
+      ],
+      settingsSchemas: {
+        "seo.settings": {
+          id: "seo.settings",
+          fields: [
+            {
+              key: "minTitleLength",
+              label: "标题最小长度",
+              type: "string",
+              defaultValue: "10",
+              description: "小于该字符数的标题会被标记为问题。",
+            },
+            {
+              key: "maxTitleLength",
+              label: "标题最大长度",
+              type: "string",
+              defaultValue: "60",
+              description: "大于该字符数的标题会被标记为问题。",
+            },
+            {
+              key: "requireExcerpt",
+              label: "要求提供摘要",
+              type: "boolean",
+              defaultValue: true,
+              description: "检查文章是否在 frontmatter 中提供 excerpt 或 description。",
+            },
+            {
+              key: "requireCategories",
+              label: "要求分类",
+              type: "boolean",
+              defaultValue: true,
+              description: "检查文章是否至少有一个分类。",
+            },
+          ],
+        },
+      },
+      sidebarItems: [
+        {
+          id: "seo.entry",
+          title: "SEO Inspector",
+          target: "plugin.settings",
+        },
+      ],
+      diagnostics: [
+        {
+          id: "seo.post-checks",
+          title: "文章 SEO 检查",
+          scope: "post",
+          description: "检查标题长度、摘要、slug 和 frontmatter 关键字段。",
+        },
+        {
+          id: "seo.site-checks",
+          title: "站点 SEO 概览",
+          scope: "site",
+          description: "汇总站点级别的 SEO 问题，识别缺失摘要的文章数量。",
         },
       ],
     },

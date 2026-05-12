@@ -1,8 +1,8 @@
 # Hexo CMS 插件系统 PRD
 
-> **版本**: 1.3.0
+> **版本**: 1.4.0
 > **最后更新**: 2026-05-12
-> **状态**: v0.2 可信插件扩展已全部落地；进入 Phase 3 沙箱预研阶段
+> **状态**: v0.2 全部落地 + Diagnostics 扩展点和 SEO Inspector 已上线
 > **关联技术方案**: [TECHNICAL_DESIGN_PLUGIN_SYSTEM.md](./TECHNICAL_DESIGN_PLUGIN_SYSTEM.md)
 
 ---
@@ -134,7 +134,7 @@ v0.2 不再包含的已落地项:
 |------|----------|------|------------|----------|
 | 评论入口与提醒 | Comments Overview | 汇总 Giscus/Waline 入口和待审核提醒 | Settings schema、Dashboard widget、可选 Command | v0.2 已启动 |
 | 附件辅助 | Attachments Helper | 媒体库文档筛选、附件摘要、复制链接 | content.read、Dashboard widget、Media 边界开关 | v0.1 已落地 |
-| SEO 检查 | SEO Inspector | 检查标题、摘要、slug、frontmatter、图片 alt | content.read、editor/sidebar panel、diagnostics | v0.2+ |
+| SEO 检查 | SEO Inspector | 检查标题、摘要、slug、frontmatter、图片 alt | content.read、diagnostics 扩展点 | v0.2 已落地 |
 | 草稿健康度 | Draft Coach | 草稿超期提醒、字数/封面/标签完整性检查 | content.read、Dashboard widget、Event API | v0.2+ |
 | 链接检查 | Link Checker | 扫描文章外链和站内链接失效 | content.read、network.fetch、Command API | v0.3 前置 |
 | 站点地图/Feed 预览 | Sitemap & Feed Preview | 预览生成结果和缺失页面 | content.read、settings panel、command | v0.2+ |

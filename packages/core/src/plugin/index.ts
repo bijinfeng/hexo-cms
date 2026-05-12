@@ -1,5 +1,6 @@
 export * from "./builtin";
 export * from "./command-registry";
+export * from "./diagnostics-registry";
 export * from "./errors";
 export * from "./event-bus";
 export * from "./extension-registry";

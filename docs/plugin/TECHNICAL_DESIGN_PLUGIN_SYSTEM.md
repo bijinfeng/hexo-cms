@@ -1,8 +1,8 @@
 # Hexo CMS 插件系统技术方案
 
-> **版本**: 1.3.0
+> **版本**: 1.4.0
 > **最后更新**: 2026-05-12
-> **状态**: v0.2 平台持久化与受控网络代理已全部落地，继续设计沙箱方向
+> **状态**: v0.2 完成 + Diagnostics 扩展点和 SEO Inspector 内置插件已落地
 > **关联 PRD**: [PRD_PLUGIN_SYSTEM.md](./PRD_PLUGIN_SYSTEM.md)
 
 ---
@@ -237,8 +237,53 @@ type ExtensionPoint =
   | "dashboard.widget"
   | "settings.panel"
   | "sidebar.item"
-  | "command";
+  | "command"
+  | "diagnostics";
 ```
+
+### 4.6 Diagnostics
+
+Diagnostics 贡献让插件对文章、页面或站点返回结构化的问题列表：
+
+```ts
+type DiagnosticsScope = "post" | "page" | "site";
+type DiagnosticsSeverity = "info" | "warn" | "error";
+
+interface DiagnosticsContribution {
+  id: string;
+  title: string;
+  scope: DiagnosticsScope;
+  description?: string;
+}
+
+interface DiagnosticsIssue {
+  id: string;
+  severity: DiagnosticsSeverity;
+  message: string;
+  field?: string;
+  hint?: string;
+}
+
+interface DiagnosticsReport {
+  pluginId: string;
+  contributionId: string;
+  title: string;
+  scope: DiagnosticsScope;
+  issues: DiagnosticsIssue[];
+  generatedAt: string;
+}
+```
+
+当前实现:
+
+1. 插件 manifest 声明 `contributes.diagnostics` 包含 id、title、scope。
+2. 宿主通过 `manager.runDiagnostics(target)` 运行所有启用插件中匹配 scope 的诊断。
+3. 每个 diagnostics handler 独立执行，失败被隔离为单条 `severity: "error"` 的 issue。
+4. handler 需要 `content.read` 权限才能访问 `ContentReadAPI`，否则抛 `PluginPermissionError`。
+5. UI 提供 `DiagnosticsPanel` 组件，展示按插件分组的问题列表，支持自动运行和重新检查。
+6. 内置 SEO Inspector 提供 `seo.post-checks` 和 `seo.site-checks` 两条诊断。
+
+
 
 ### 4.2 Dashboard Widget
 
@@ -706,10 +751,10 @@ Desktop 侧负责:
 2. CommandRegistry: 注册、执行、权限校验、错误返回。
 3. EventBus core: 只读订阅、宿主事件派发、权限校验、handler 失败隔离。
 4. 核心页面事件派发接入: `post.afterSave/delete`、`page.afterSave/delete`、`media.afterUpload/delete`、`deploy.afterTrigger/statusChange`。
-
-待补齐:
-
-1. Diagnostics 扩展点: SEO、草稿健康度、发布前检查等插件返回结构化问题列表。
+5. Diagnostics 扩展点: 插件可声明 `diagnostics` 贡献并返回结构化问题列表。
+6. `DiagnosticsRegistry`: 权限校验、handler 注册、错误隔离和结构化报告。
+7. SEO Inspector 内置插件: 提供 post 和 site scope 的诊断规则（标题长度、摘要、slug、分类）。
+8. `DiagnosticsPanel` UI 组件: 在宿主页面渲染诊断报告，支持自动运行和手动刷新。
 
 ### 10.3 P2: 平台持久化与 Secret
 

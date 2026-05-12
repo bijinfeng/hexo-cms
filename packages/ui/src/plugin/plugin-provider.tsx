@@ -2,9 +2,13 @@ import { createContext, useContext, useMemo, useState } from "react";
 import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
   COMMENTS_OVERVIEW_PLUGIN_ID,
+  SEO_INSPECTOR_PLUGIN_ID,
   BrowserPluginLogStore,
   PluginManager,
   builtinPluginManifests,
+  type DiagnosticsHandler,
+  type DiagnosticsReport,
+  type DiagnosticsTarget,
   type PluginCommandExecutionResult,
   type PluginConfigStore,
   type PluginConfigValue,
@@ -16,6 +20,7 @@ import {
   type PluginStorageStore,
 } from "@hexo-cms/core";
 import { DataProviderProvider, useDataProvider } from "../context/data-provider-context";
+import { createSeoPostDiagnosticsHandler, createSeoSiteDiagnosticsHandler } from "./diagnostics/seo-inspector";
 import { createPlatformPluginConfigStore } from "./platform-plugin-config";
 import { createPlatformPluginFetch } from "./platform-plugin-http";
 import { createPlatformPluginSecretStore } from "./platform-plugin-secret";
@@ -31,6 +36,7 @@ interface PluginContextValue {
   updatePluginConfig: (pluginId: string, config: PluginConfigValue) => void;
   recordPluginError: (pluginId: string, error: PluginRuntimeErrorInput) => void;
   executePluginCommand: (pluginId: string, commandId: string, args?: unknown[]) => Promise<PluginCommandExecutionResult>;
+  runDiagnostics: (target: DiagnosticsTarget) => Promise<DiagnosticsReport[]>;
 }
 
 const PluginContext = createContext<PluginContextValue | null>(null);
@@ -41,6 +47,8 @@ function createDefaultPluginManager(options: {
   storageStore: PluginStorageStore;
   secretStore: PluginSecretStore;
   fetchImpl: PluginFetch;
+  dataProvider: import("@hexo-cms/core").DataProvider;
+  diagnosticsHandlers: Record<string, DiagnosticsHandler>;
 }): PluginManager {
   return new PluginManager({
     manifests: builtinPluginManifests,
@@ -50,6 +58,8 @@ function createDefaultPluginManager(options: {
     secretStore: options.secretStore,
     logStore: new BrowserPluginLogStore(),
     fetchImpl: options.fetchImpl,
+    dataProvider: options.dataProvider,
+    diagnosticsHandlers: options.diagnosticsHandlers,
     defaultEnabledPluginIds: [ATTACHMENTS_HELPER_PLUGIN_ID],
     commandHandlers: {
       [`${COMMENTS_OVERVIEW_PLUGIN_ID}:comments.openModeration`]: ({ args }) => {
@@ -74,10 +84,41 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
   const storageStore = useMemo(() => createPlatformPluginStorageStore(), []);
   const secretStore = useMemo(() => createPlatformPluginSecretStore(), []);
   const fetchImpl = useMemo(() => createPlatformPluginFetch(), []);
-  const manager = useMemo(
-    () => createDefaultPluginManager({ stateStore, configStore, storageStore, secretStore, fetchImpl }),
-    [configStore, fetchImpl, secretStore, stateStore, storageStore],
-  );
+
+  const manager = useMemo(() => {
+    const configsRef = { current: {} as Record<string, PluginConfigValue> };
+    const getSeoConfig = () => configsRef.current[SEO_INSPECTOR_PLUGIN_ID] ?? {};
+
+    const mgr = createDefaultPluginManager({
+      stateStore,
+      configStore,
+      storageStore,
+      secretStore,
+      fetchImpl,
+      dataProvider,
+      diagnosticsHandlers: {
+        [`${SEO_INSPECTOR_PLUGIN_ID}:seo.post-checks`]: createSeoPostDiagnosticsHandler(getSeoConfig),
+        [`${SEO_INSPECTOR_PLUGIN_ID}:seo.site-checks`]: createSeoSiteDiagnosticsHandler(getSeoConfig),
+      },
+    });
+
+    // 监听 snapshot 更新以保持配置 ref 最新
+    const update = () => {
+      const snap = mgr.snapshot();
+      configsRef.current = Object.fromEntries(snap.plugins.map(({ manifest, config }) => [manifest.id, config]));
+    };
+    update();
+
+    // 包装 snapshot 以触发同步
+    const originalSnapshot = mgr.snapshot.bind(mgr);
+    mgr.snapshot = () => {
+      const snap = originalSnapshot();
+      configsRef.current = Object.fromEntries(snap.plugins.map(({ manifest, config }) => [manifest.id, config]));
+      return snap;
+    };
+
+    return mgr;
+  }, [configStore, dataProvider, fetchImpl, secretStore, stateStore, storageStore]);
   const [snapshot, setSnapshot] = useState<PluginManagerSnapshot>(() => manager.snapshot());
   const eventDataProvider = useMemo(
     () =>
@@ -119,6 +160,12 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
     return result;
   }
 
+  async function runDiagnostics(target: DiagnosticsTarget): Promise<DiagnosticsReport[]> {
+    const reports = await manager.runDiagnostics(target);
+    setSnapshot(manager.snapshot());
+    return reports;
+  }
+
   return (
     <PluginContext.Provider
       value={{
@@ -129,6 +176,7 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
         updatePluginConfig,
         recordPluginError,
         executePluginCommand,
+        runDiagnostics,
       }}
     >
       <DataProviderProvider provider={eventDataProvider}>{children}</DataProviderProvider>
