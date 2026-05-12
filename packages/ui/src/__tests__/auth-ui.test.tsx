@@ -243,6 +243,44 @@ describe("OAuth UI", () => {
     expect(screen.queryByText(/Personal Access Token/i)).not.toBeInTheDocument();
   });
 
+  it("reloads repositories from the onboarding client when search changes", async () => {
+    const user = userEvent.setup();
+    const blogRepository = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const notesRepository = {
+      id: "repo-2",
+      owner: "kebai",
+      name: "notes",
+      fullName: "kebai/notes",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const listRepositories = vi.fn().mockImplementation(async ({ query }: { query?: string }) => {
+      if (query === "") return [blogRepository];
+      if (query === "notes") return [notesRepository];
+      return [];
+    });
+    const onboardingClient = createOnboardingClient({ listRepositories });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    await screen.findByText("kebai/blog");
+    await user.type(screen.getByPlaceholderText("搜索仓库"), "notes");
+
+    await waitFor(() => {
+      expect(listRepositories).toHaveBeenLastCalledWith({ query: "notes" });
+    });
+    expect(await screen.findByText("kebai/notes")).toBeInTheDocument();
+  });
+
   it("shows desktop reauthorization device flow in onboarding", async () => {
     const onboardingClient = createOnboardingClient({
       reauthorize: vi.fn().mockResolvedValue({

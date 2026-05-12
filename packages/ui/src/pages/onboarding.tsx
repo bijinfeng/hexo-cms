@@ -85,6 +85,7 @@ function createConfigFromSelection(
 
 export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const navigate = useNavigate();
+  const repositoryRequestIdRef = useRef(0);
   const validationRequestIdRef = useRef(0);
   const [currentUser, setCurrentUser] = useState<OnboardingUser | null>(null);
   const [repositories, setRepositories] = useState<RepositoryOption[]>([]);
@@ -108,6 +109,8 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const reauthorizationDeviceFlow = reauthorizationSession?.deviceFlow;
 
   const loadRepositories = useCallback(async (nextQuery: string) => {
+    const requestId = repositoryRequestIdRef.current + 1;
+    repositoryRequestIdRef.current = requestId;
     setLoadingRepos(true);
     setRepoError("");
     try {
@@ -115,19 +118,23 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
         onboardingClient.getCurrentUser(),
         onboardingClient.listRepositories({ query: nextQuery }),
       ]);
+      if (repositoryRequestIdRef.current !== requestId) return;
       setCurrentUser(user);
       setRepositories(repoList);
     } catch {
+      if (repositoryRequestIdRef.current !== requestId) return;
       setRepoError("仓库加载失败，请重试");
       setRepositories([]);
     } finally {
-      setLoadingRepos(false);
+      if (repositoryRequestIdRef.current === requestId) {
+        setLoadingRepos(false);
+      }
     }
   }, [onboardingClient]);
 
   useEffect(() => {
-    void loadRepositories("");
-  }, [loadRepositories]);
+    void loadRepositories(query);
+  }, [loadRepositories, query]);
 
   useEffect(() => {
     if (!reauthorizationDeviceFlow || !onboardingClient.getAuthSession) return;
@@ -142,7 +149,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
         if (nextSession.state === "authenticated") {
           window.clearInterval(timer);
           setReauthorizing(false);
-          await loadRepositories("");
+          await loadRepositories(query);
         } else if (nextSession.state === "error") {
           window.clearInterval(timer);
           setReauthorizing(false);
@@ -161,16 +168,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
       active = false;
       window.clearInterval(timer);
     };
-  }, [loadRepositories, onboardingClient, reauthorizationDeviceFlow]);
-
-  const filteredRepositories = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return repositories;
-
-    return repositories.filter((repository) =>
-      repository.fullName.toLowerCase().includes(normalizedQuery),
-    );
-  }, [query, repositories]);
+  }, [loadRepositories, onboardingClient, query, reauthorizationDeviceFlow]);
 
   const config = useMemo(() => {
     if (!validation?.ok || !selectedSelection) return null;
@@ -178,6 +176,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   }, [selectedSelection, validation]);
 
   const validationError = getValidationErrorMessage(validation);
+  const hasSearchQuery = query.trim().length > 0;
 
   async function validateSelection(selection: RepositorySelection, repository?: RepositoryOption) {
     const requestId = validationRequestIdRef.current + 1;
@@ -243,7 +242,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
       waitingForDeviceFlow = Boolean(nextSession?.deviceFlow);
       if (waitingForDeviceFlow) return;
 
-      await loadRepositories("");
+      await loadRepositories(query);
     } catch {
       setReauthorizeError("重新授权失败，请重试");
     } finally {
@@ -355,8 +354,8 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   正在读取仓库
                 </div>
-              ) : filteredRepositories.length > 0 ? (
-                filteredRepositories.map((repository) => (
+              ) : repositories.length > 0 ? (
+                repositories.map((repository) => (
                   <button
                     key={repository.id}
                     type="button"
@@ -394,7 +393,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 <div className="flex min-h-72 flex-col items-center justify-center gap-3 p-6 text-center">
                   <AlertCircle className="h-8 w-8 text-[var(--text-tertiary)]" />
                   <p className="text-sm font-medium text-[var(--text-primary)]">
-                    未找到可写仓库，请检查 GitHub 授权权限
+                    {hasSearchQuery ? "未找到匹配的仓库" : "未找到可写仓库，请检查 GitHub 授权权限"}
                   </p>
                   {repoError && <p className="text-xs text-[var(--status-error)]">{repoError}</p>}
                   <Button type="button" variant="outline" size="sm" onClick={() => void loadRepositories(query)}>
