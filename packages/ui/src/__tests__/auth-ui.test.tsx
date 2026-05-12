@@ -442,6 +442,78 @@ describe("OAuth UI", () => {
     }
   });
 
+  it("retries a failed search while keeping the previous repository list visible", async () => {
+    const blogRepository = {
+      id: "repo-1",
+      owner: "kebai",
+      name: "blog",
+      fullName: "kebai/blog",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const notesRepository = {
+      id: "repo-2",
+      owner: "kebai",
+      name: "notes",
+      fullName: "kebai/notes",
+      private: false,
+      defaultBranch: "main",
+      permissions: { push: true },
+    };
+    const firstNotesSearch = createControllablePromise<Array<typeof blogRepository>>();
+    const secondNotesSearch = createControllablePromise<Array<typeof blogRepository>>();
+    let notesAttempts = 0;
+    const listRepositories = vi.fn().mockImplementation(({ query }: { query?: string }) => {
+      if (query === "") return Promise.resolve([blogRepository]);
+      if (query === "notes") {
+        notesAttempts += 1;
+        return notesAttempts === 1 ? firstNotesSearch.promise : secondNotesSearch.promise;
+      }
+      return Promise.resolve([]);
+    });
+    const onboardingClient = createOnboardingClient({ listRepositories });
+
+    render(<OnboardingPage onboardingClient={onboardingClient} />);
+
+    expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
+    listRepositories.mockClear();
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.change(screen.getByPlaceholderText("搜索仓库"), { target: { value: "notes" } });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        firstNotesSearch.reject(new Error("search failed"));
+        await Promise.resolve();
+      });
+
+      expect(screen.getByText("仓库加载失败，请重试")).toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "重试搜索" }));
+        await Promise.resolve();
+      });
+
+      expect(listRepositories).toHaveBeenLastCalledWith({ query: "notes" });
+
+      await act(async () => {
+        secondNotesSearch.resolve([notesRepository]);
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByText("仓库加载失败，请重试")).not.toBeInTheDocument();
+      expect(screen.getByText("kebai/notes")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("clears a selected repository when search results no longer include it", async () => {
     const user = userEvent.setup();
     const blogRepository = {

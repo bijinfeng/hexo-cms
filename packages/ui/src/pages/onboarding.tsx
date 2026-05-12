@@ -399,7 +399,20 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 ) : null}
               </div>
               {repoError && !loadingRepos && repositories.length > 0 ? (
-                <p className="mt-3 text-xs text-[var(--status-error)]">{repoError}</p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-[var(--status-error)]">{repoError}</p>
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto px-0 text-xs"
+                    onClick={() => void loadRepositories(activeQuery)}
+                    disabled={searchingRepos}
+                    aria-label="重试搜索"
+                  >
+                    重试
+                  </Button>
+                </div>
               ) : null}
             </div>
 
