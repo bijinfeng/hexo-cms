@@ -4,6 +4,8 @@ import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/skeleton";
+import { DiagnosticsPanel } from "../plugin/diagnostics-panel";
+import type { HexoPost } from "@hexo-cms/core";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
@@ -57,6 +59,26 @@ export function EditPostPage() {
   const [postPath, setPostPath] = useState("");
   const [uploading, setUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Build current post for diagnostics
+  const currentPost = useMemo<HexoPost>(() => {
+    const frontmatter: Record<string, any> = {
+      title,
+      date: date || new Date().toISOString().split("T")[0],
+    };
+
+    if (selectedTags.length > 0) frontmatter.tags = selectedTags;
+    if (category) frontmatter.category = category;
+    if (status === "draft") frontmatter.draft = true;
+
+    return {
+      path: postPath,
+      title,
+      date: frontmatter.date,
+      content,
+      frontmatter,
+    };
+  }, [title, content, date, selectedTags, category, status, postPath]);
 
   useEffect(() => {
     loadPost();
@@ -358,8 +380,22 @@ export function EditPostPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="w-64 flex-shrink-0 border-l border-[var(--border-default)] overflow-y-auto bg-[var(--bg-surface)]">
+        <div className="w-80 flex-shrink-0 border-l border-[var(--border-default)] overflow-y-auto bg-[var(--bg-surface)]">
           <div className="p-4 space-y-5">
+            {/* SEO Diagnostics */}
+            {!loading && title && (
+              <div className="mb-4">
+                <DiagnosticsPanel
+                  target={{
+                    scope: "post",
+                    post: currentPost,
+                    path: postPath,
+                  }}
+                  autoRun={true}
+                  emptyMessage="未发现 SEO 问题"
+                />
+              </div>
+            )}
             {/* Status */}
             <SidebarSection title="发布状态" icon={Globe}>
               <div className="flex gap-2">
