@@ -120,17 +120,21 @@ function RootComponent() {
 
   if (session?.state !== "authenticated" && !isPublicRoute) return null;
 
-  if (isPublicRoute || isSetupRoute) return <ErrorBoundary><Outlet /></ErrorBoundary>;
-
+  // Wrap all routes with providers to prevent "usePluginSystem must be used inside PluginProvider" errors
+  // Public routes don't use CMSLayout, but still need providers for consistency
   return (
     <DataProviderProvider provider={webDataProvider}>
       <PluginProvider>
         <ErrorBoundary>
-          <CMSLayout>
-            <ErrorBoundary>
-              <Outlet />
-            </ErrorBoundary>
-          </CMSLayout>
+          {isPublicRoute || isSetupRoute ? (
+            <Outlet />
+          ) : (
+            <CMSLayout>
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
+            </CMSLayout>
+          )}
         </ErrorBoundary>
       </PluginProvider>
     </DataProviderProvider>
