@@ -103,7 +103,12 @@ export async function getGitHubCtx(request: Request) {
     ok: true as const,
     session,
     config: normalizedConfig,
-    octokit: new Octokit({ auth: accessToken }) as OctokitType,
+    octokit: new Octokit({
+      auth: accessToken,
+      headers: {
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    }) as OctokitType,
     github: new GitHubService(accessToken, normalizedConfig),
   };
 }

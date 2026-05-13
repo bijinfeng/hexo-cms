@@ -667,7 +667,10 @@ ipcMain.handle("onboarding:listRepositories", async (_event, input: { query?: st
   if (!token) return [];
 
   const { Octokit } = await import("octokit");
-  return listWritableRepositories(new Octokit({ auth: token }) as OctokitLike, input);
+  return listWritableRepositories(new Octokit({
+    auth: token,
+    headers: { "X-GitHub-Api-Version": "2022-11-28" },
+  }) as OctokitLike, input);
 });
 
 ipcMain.handle("onboarding:validateRepository", async (_event, input: { owner: string; repo: string; branch?: string }) => {
@@ -681,7 +684,10 @@ ipcMain.handle("onboarding:validateRepository", async (_event, input: { owner: s
   }
 
   const { Octokit } = await import("octokit");
-  return validateHexoRepository(new Octokit({ auth: token }) as OctokitLike, input);
+  return validateHexoRepository(new Octokit({
+    auth: token,
+    headers: { "X-GitHub-Api-Version": "2022-11-28" },
+  }) as OctokitLike, input);
 });
 
 // 文章管理
@@ -981,7 +987,10 @@ ipcMain.handle("github:get-deployments", async () => {
 
   try {
     const { Octokit } = await import("octokit");
-    const octokit = new Octokit({ auth: token });
+    const octokit = new Octokit({
+      auth: token,
+      headers: { "X-GitHub-Api-Version": "2022-11-28" },
+    });
 
     const { data } = await octokit.rest.actions.listWorkflowRunsForRepo({
       owner: config.owner,
@@ -1008,7 +1017,10 @@ ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => 
     const token = await getGitHubAccessToken();
     if (!token) throw new Error("No token found");
     const { Octokit } = await import("octokit");
-    const octokit = new Octokit({ auth: token });
+    const octokit = new Octokit({
+      auth: token,
+      headers: { "X-GitHub-Api-Version": "2022-11-28" },
+    });
     await octokit.rest.actions.createWorkflowDispatch({
       owner: config.owner, repo: config.repo, workflow_id: workflowFile, ref: config.branch || "main",
     });

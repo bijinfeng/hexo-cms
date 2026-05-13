@@ -16,7 +16,10 @@ export const Route = createFileRoute("/api/onboarding/repositories")({
         const { Octokit } = await import("octokit");
         const url = new URL(request.url);
         try {
-          const repositories = await listWritableRepositories(new Octokit({ auth: accessToken }) as OctokitLike, {
+          const repositories = await listWritableRepositories(new Octokit({
+            auth: accessToken,
+            headers: { "X-GitHub-Api-Version": "2022-11-28" },
+          }) as OctokitLike, {
             query: url.searchParams.get("q") ?? undefined,
           });
 

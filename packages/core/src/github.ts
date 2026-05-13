@@ -15,7 +15,12 @@ export class GitHubService {
   private log: Logger;
 
   constructor(accessToken: string, config: GitHubConfig) {
-    this.octokit = new Octokit({ auth: accessToken });
+    this.octokit = new Octokit({
+      auth: accessToken,
+      headers: {
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
     this.config = {
       ...config,
       branch: config.branch || "main",

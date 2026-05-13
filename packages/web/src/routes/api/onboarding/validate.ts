@@ -28,7 +28,10 @@ export const Route = createFileRoute("/api/onboarding/validate")({
           return json({ error: "INVALID_REPOSITORY_SELECTION" }, 400);
         }
         const { Octokit } = await import("octokit");
-        const validation = await validateHexoRepository(new Octokit({ auth: accessToken }) as OctokitLike, {
+        const validation = await validateHexoRepository(new Octokit({
+          auth: accessToken,
+          headers: { "X-GitHub-Api-Version": "2022-11-28" },
+        }) as OctokitLike, {
           owner: selection.owner.trim(),
           repo: selection.repo.trim(),
           branch: selection.branch?.trim() || undefined,
