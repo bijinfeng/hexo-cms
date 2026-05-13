@@ -1,4 +1,4 @@
-import type { AuthSession, AuthUser } from "@hexo-cms/ui";
+import type { AuthSession, AuthUser } from "@hexo-cms/ui/types/auth";
 
 export interface StoredOAuthSession {
   accessToken: string;

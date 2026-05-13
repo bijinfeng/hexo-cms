@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { GitHubService, PermissionBroker, assertPluginHttpRequestAllowed, builtinPluginManifests } from "@hexo-cms/core";
 import type { GitHubConfig, PluginConfigStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
-import type { DeviceFlowInfo } from "@hexo-cms/ui";
+import type { DeviceFlowInfo } from "@hexo-cms/ui/types/auth";
 import {
   createAnonymousSession,
   createAuthenticatedSession,

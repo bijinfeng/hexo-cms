@@ -1,6 +1,6 @@
 import type { DataProvider } from "@hexo-cms/core";
 import type { HexoPost, GitHubConfig } from "@hexo-cms/core";
-import { requireElectronAPI } from "@hexo-cms/ui";
+import { requireElectronAPI } from "@hexo-cms/ui/lib/electron-api";
 
 /**
  * DesktopDataProvider

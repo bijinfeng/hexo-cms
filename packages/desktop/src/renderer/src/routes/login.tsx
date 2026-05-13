@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { LoginPage } from "@hexo-cms/ui";
+import { LoginPage } from "@hexo-cms/ui/pages/login";
 import { desktopAuthClient } from "../lib/desktop-auth-client";
 
 function DesktopLoginPage() {

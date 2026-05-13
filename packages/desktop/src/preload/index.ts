@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { ElectronAPI } from "@hexo-cms/ui";
+import type { ElectronAPI } from "@hexo-cms/ui/types/electron-api";
 
 // IPC 通道白名单（安全限制）
 const ALLOWED_CHANNELS = [

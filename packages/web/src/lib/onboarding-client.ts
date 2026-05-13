@@ -1,12 +1,12 @@
-import {
-  toGitHubConfig,
-  type OnboardingClient,
-  type OnboardingUser,
-  type RepositoryConfigInput,
-  type RepositoryOption,
-  type RepositoryValidation,
-  type RepositoryValidationError,
-} from "@hexo-cms/ui";
+import { toGitHubConfig } from "@hexo-cms/ui/lib/repository-config";
+import type {
+  OnboardingClient,
+  OnboardingUser,
+  RepositoryConfigInput,
+  RepositoryOption,
+  RepositoryValidation,
+  RepositoryValidationError,
+} from "@hexo-cms/ui/types/onboarding";
 import { authClient, webAuthClient } from "./auth-client";
 import { webDataProvider } from "./web-data-provider-instance";
 

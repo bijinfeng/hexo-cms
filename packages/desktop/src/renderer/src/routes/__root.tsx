@@ -9,7 +9,7 @@ import {
   isOnboardingRoute,
   isPublicAuthRoute,
   type AuthSession,
-} from "@hexo-cms/ui";
+} from "@hexo-cms/ui/app-shell";
 import { desktopAuthClient, subscribeToDesktopAuthChanges } from "../lib/desktop-auth-client";
 import { desktopDataProvider } from "../lib/desktop-data-provider-instance";
 

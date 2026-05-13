@@ -1,4 +1,6 @@
-import { requireElectronAPI, toGitHubConfig, type OnboardingClient } from "@hexo-cms/ui";
+import { requireElectronAPI } from "@hexo-cms/ui/lib/electron-api";
+import { toGitHubConfig } from "@hexo-cms/ui/lib/repository-config";
+import type { OnboardingClient } from "@hexo-cms/ui/types/onboarding";
 import { desktopAuthClient } from "./desktop-auth-client";
 import { desktopDataProvider } from "./desktop-data-provider-instance";
 

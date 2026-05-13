@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { SettingsPage } from "@hexo-cms/ui";
+import { SettingsPage } from "@hexo-cms/ui/pages/settings";
 import { desktopAuthClient } from "../lib/desktop-auth-client";
 
 function DesktopSettingsPage() {

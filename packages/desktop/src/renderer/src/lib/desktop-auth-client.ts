@@ -1,4 +1,5 @@
-import { requireElectronAPI, type AuthClient } from "@hexo-cms/ui";
+import { requireElectronAPI } from "@hexo-cms/ui/lib/electron-api";
+import type { AuthClient } from "@hexo-cms/ui/types/auth";
 
 const listeners = new Set<() => void>();
 

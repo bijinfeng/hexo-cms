@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, master, develop]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -37,5 +41,14 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Coverage smoke
+        run: pnpm test:coverage
+
       - name: Build Web
         run: pnpm build
+
+      - name: Build Desktop compile
+        run: pnpm build:desktop:compile
+
+      - name: Check generated routes
+        run: pnpm check:generated

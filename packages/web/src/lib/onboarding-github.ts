@@ -2,7 +2,7 @@ import type {
   RepositoryOption,
   RepositorySelection,
   RepositoryValidation,
-} from "@hexo-cms/ui";
+} from "@hexo-cms/ui/types/onboarding";
 
 type GitHubRepo = {
   id: string | number;

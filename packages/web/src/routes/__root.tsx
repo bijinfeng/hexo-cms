@@ -9,7 +9,7 @@ import {
   isOnboardingRoute,
   isPublicAuthRoute,
   type AuthSession,
-} from "@hexo-cms/ui";
+} from "@hexo-cms/ui/app-shell";
 import { webAuthClient } from "../lib/auth-client";
 import { webDataProvider } from "../lib/web-data-provider-instance";
 import appCss from "../styles.css?url";

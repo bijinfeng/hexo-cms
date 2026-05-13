@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { OnboardingPage } from "@hexo-cms/ui";
+import { OnboardingPage } from "@hexo-cms/ui/pages/onboarding";
 import { desktopOnboardingClient } from "../lib/desktop-onboarding-client";
 
 function DesktopOnboardingRoute() {
