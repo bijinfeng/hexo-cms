@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
+import { parseJsonColumn, stringifyJsonColumn } from "./json-db";
 import { pluginState } from "./schema";
 import type { PluginStateStoreValue } from "@hexo-cms/core";
 
@@ -30,7 +31,7 @@ export function loadPluginState(userId: string): PluginStateStoreValue {
       source: "builtin",
       state: row.state as "enabled" | "disabled" | "error",
       enabledAt: row.enabledAt ?? undefined,
-      lastError: row.lastError ? JSON.parse(row.lastError) : undefined,
+      lastError: parseJsonColumn(row.lastError, undefined),
     };
   }
   return value;
@@ -47,7 +48,7 @@ export function savePluginState(userId: string, value: PluginStateStoreValue): v
         pluginId,
         state: record.state,
         enabledAt: record.enabledAt ?? null,
-        lastError: record.lastError ? JSON.stringify(record.lastError) : null,
+        lastError: record.lastError ? stringifyJsonColumn(record.lastError) : null,
         updatedAt: new Date().toISOString(),
       })
       .run();

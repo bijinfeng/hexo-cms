@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
+import { stringifyJsonColumn, tryParseJsonColumn } from "./json-db";
 import { pluginStorage } from "./schema";
 import type { PluginStorageJsonValue, PluginStorageStoreValue } from "@hexo-cms/core";
 
@@ -23,9 +24,12 @@ export function loadPluginStorage(userId: string): PluginStorageStoreValue {
   const value: PluginStorageStoreValue = {};
 
   rows.forEach((row) => {
+    const parsed = tryParseJsonColumn<PluginStorageJsonValue>(row.value);
+    if (!parsed.ok) return;
+
     value[row.pluginId] = {
       ...(value[row.pluginId] ?? {}),
-      [row.key]: JSON.parse(row.value) as PluginStorageJsonValue,
+      [row.key]: parsed.value,
     };
   });
 
@@ -43,7 +47,7 @@ export function savePluginStorage(userId: string, value: PluginStorageStoreValue
           userId,
           pluginId,
           key,
-          value: JSON.stringify(storageValue),
+          value: stringifyJsonColumn(storageValue),
           updatedAt: new Date().toISOString(),
         })
         .run();

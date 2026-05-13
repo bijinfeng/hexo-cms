@@ -1,5 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "./db";
+import { parseJsonColumn, stringifyJsonColumn } from "./json-db";
 import { pluginLogs } from "./schema";
 import type { PluginLogLevel, PluginLogStoreValue } from "@hexo-cms/core";
 
@@ -36,7 +37,7 @@ export function loadPluginLogs(userId: string): PluginLogStoreValue {
         pluginId: row.pluginId,
         level: row.level as PluginLogLevel,
         message: row.message,
-        meta: parseLogMeta(row.meta),
+        meta: parseJsonColumn(row.meta, undefined),
         at: row.createdAt,
       },
     ];
@@ -57,19 +58,10 @@ export function savePluginLogs(userId: string, value: PluginLogStoreValue): void
           id: entry.id,
           level: entry.level,
           message: entry.message,
-          meta: entry.meta ? JSON.stringify(entry.meta) : null,
+          meta: entry.meta ? stringifyJsonColumn(entry.meta) : null,
           createdAt: entry.at,
         })
         .run();
     });
-  }
-}
-
-function parseLogMeta(value: string | null): Record<string, unknown> | undefined {
-  if (!value) return undefined;
-  try {
-    return JSON.parse(value) as Record<string, unknown>;
-  } catch {
-    return undefined;
   }
 }

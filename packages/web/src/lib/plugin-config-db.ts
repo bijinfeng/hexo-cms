@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
+import { parseJsonColumn, stringifyJsonColumn } from "./json-db";
 import { pluginConfig } from "./schema";
 import type { PluginConfigStoreValue } from "@hexo-cms/core";
 
@@ -24,11 +25,7 @@ export function loadPluginConfig(userId: string): PluginConfigStoreValue {
   const result: PluginConfigStoreValue = {};
   for (const row of rows) {
     if (!result[row.pluginId]) result[row.pluginId] = {};
-    try {
-      result[row.pluginId][row.key] = JSON.parse(row.value);
-    } catch {
-      result[row.pluginId][row.key] = row.value;
-    }
+    result[row.pluginId][row.key] = parseJsonColumn(row.value, row.value);
   }
   return result;
 }
@@ -44,7 +41,7 @@ export function savePluginConfig(userId: string, value: PluginConfigStoreValue):
           userId,
           pluginId,
           key,
-          value: JSON.stringify(fieldValue),
+          value: stringifyJsonColumn(fieldValue),
           updatedAt: new Date().toISOString(),
         })
         .run();

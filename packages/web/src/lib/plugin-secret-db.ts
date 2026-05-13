@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
+import { parseJsonColumn, stringifyJsonColumn } from "./json-db";
 import { pluginSecrets } from "./schema";
 import type { PluginSecretStoreValue } from "@hexo-cms/core";
 
@@ -20,11 +21,7 @@ export function loadPluginSecrets(userId: string): PluginSecretStoreValue {
     .get();
 
   if (!row) return {};
-  try {
-    return JSON.parse(row.value) as PluginSecretStoreValue;
-  } catch {
-    return {};
-  }
+  return parseJsonColumn<PluginSecretStoreValue>(row.value, {});
 }
 
 export function savePluginSecrets(userId: string, value: PluginSecretStoreValue): void {
@@ -33,7 +30,7 @@ export function savePluginSecrets(userId: string, value: PluginSecretStoreValue)
   db.insert(pluginSecrets)
     .values({
       userId,
-      value: JSON.stringify(value),
+      value: stringifyJsonColumn(value),
       updatedAt: new Date().toISOString(),
     })
     .run();
