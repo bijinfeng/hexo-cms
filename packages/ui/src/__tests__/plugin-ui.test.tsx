@@ -8,6 +8,7 @@ import {
   DashboardExtensionOutlet,
   PluginErrorBoundary,
   PluginProvider,
+  WebPluginLogStore,
   WebPluginSecretStore,
   WebPluginStorageStore,
   usePluginSystem,
@@ -416,6 +417,47 @@ describe("plugin UI", () => {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ storage: { "hexo-cms-attachments-helper": { copyCount: 3 } } }),
+    });
+  });
+
+  it("persists plugin logs through the web platform log endpoint", async () => {
+    const logs = {
+      "hexo-cms-attachments-helper": [
+        {
+          id: "log-1",
+          pluginId: "hexo-cms-attachments-helper",
+          level: "info" as const,
+          message: "Copied attachment",
+          at: "2026-05-13T00:00:00.000Z",
+        },
+      ],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ logs }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const store = new WebPluginLogStore();
+
+    expect(store.load()).toEqual({});
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/plugin/logs");
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(store.load()).toEqual(logs);
+
+    store.save(logs);
+
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/plugin/logs", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ logs }),
     });
   });
 

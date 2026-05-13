@@ -3,7 +3,6 @@ import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
   COMMENTS_OVERVIEW_PLUGIN_ID,
   SEO_INSPECTOR_PLUGIN_ID,
-  BrowserPluginLogStore,
   PluginManager,
   builtinPluginManifests,
   type DiagnosticsHandler,
@@ -13,6 +12,7 @@ import {
   type PluginConfigStore,
   type PluginConfigValue,
   type PluginFetch,
+  type PluginLogStore,
   type PluginManagerSnapshot,
   type PluginRuntimeErrorInput,
   type PluginSecretStore,
@@ -23,6 +23,7 @@ import { DataProviderProvider, useDataProvider } from "../context/data-provider-
 import { createSeoPostDiagnosticsHandler, createSeoSiteDiagnosticsHandler } from "./diagnostics/seo-inspector";
 import { createPlatformPluginConfigStore } from "./platform-plugin-config";
 import { createPlatformPluginFetch } from "./platform-plugin-http";
+import { createPlatformPluginLogStore } from "./platform-plugin-log";
 import { createPlatformPluginSecretStore } from "./platform-plugin-secret";
 import { createPlatformPluginStateStore } from "./platform-plugin-state";
 import { createPlatformPluginStorageStore } from "./platform-plugin-storage";
@@ -46,6 +47,7 @@ function createDefaultPluginManager(options: {
   configStore: PluginConfigStore;
   storageStore: PluginStorageStore;
   secretStore: PluginSecretStore;
+  logStore: PluginLogStore;
   fetchImpl: PluginFetch;
   dataProvider: import("@hexo-cms/core").DataProvider;
   diagnosticsHandlers: Record<string, DiagnosticsHandler>;
@@ -56,7 +58,7 @@ function createDefaultPluginManager(options: {
     configStore: options.configStore,
     storageStore: options.storageStore,
     secretStore: options.secretStore,
-    logStore: new BrowserPluginLogStore(),
+    logStore: options.logStore,
     fetchImpl: options.fetchImpl,
     dataProvider: options.dataProvider,
     diagnosticsHandlers: options.diagnosticsHandlers,
@@ -83,6 +85,7 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
   const configStore = useMemo(() => createPlatformPluginConfigStore(), []);
   const storageStore = useMemo(() => createPlatformPluginStorageStore(), []);
   const secretStore = useMemo(() => createPlatformPluginSecretStore(), []);
+  const logStore = useMemo(() => createPlatformPluginLogStore(), []);
   const fetchImpl = useMemo(() => createPlatformPluginFetch(), []);
 
   const manager = useMemo(() => {
@@ -94,6 +97,7 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
       configStore,
       storageStore,
       secretStore,
+      logStore,
       fetchImpl,
       dataProvider,
       diagnosticsHandlers: {
@@ -118,7 +122,7 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
     };
 
     return mgr;
-  }, [configStore, dataProvider, fetchImpl, secretStore, stateStore, storageStore]);
+  }, [configStore, dataProvider, fetchImpl, logStore, secretStore, stateStore, storageStore]);
   const [snapshot, setSnapshot] = useState<PluginManagerSnapshot>(() => manager.snapshot());
   const eventDataProvider = useMemo(
     () =>

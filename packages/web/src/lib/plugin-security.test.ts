@@ -27,6 +27,11 @@ vi.mock("./plugin-secret-db", () => ({
   deletePluginSecret: vi.fn(),
 }));
 
+vi.mock("./plugin-log-db", () => ({
+  loadPluginLogs: vi.fn(),
+  savePluginLogs: vi.fn(),
+}));
+
 const session = {
   session: {
     id: "session-1",
@@ -105,5 +110,39 @@ describe("plugin security API routes", () => {
 
     expect(setResponse.status).toBe(200);
     expect(secretDb.setPluginSecret).toHaveBeenCalledWith("user-1", "hexo-cms-analytics", "apiKey", "secret-value");
+  });
+
+  it("persists plugin logs through authenticated scoped API route", async () => {
+    const logDb = await import("./plugin-log-db");
+    const logs = {
+      "hexo-cms-attachments-helper": [
+        {
+          id: "log-1",
+          pluginId: "hexo-cms-attachments-helper",
+          level: "info" as const,
+          message: "Copied attachment",
+          at: "2026-05-13T00:00:00.000Z",
+        },
+      ],
+    };
+    vi.mocked(logDb.loadPluginLogs).mockReturnValue(logs);
+
+    const { Route } = await import("../routes/api/plugin/logs");
+    const getResponse = await getHandlers(Route).GET({
+      request: new Request("http://localhost/api/plugin/logs"),
+    });
+
+    expect(getResponse.status).toBe(200);
+    await expect(getResponse.json()).resolves.toEqual({ logs });
+
+    const putResponse = await getHandlers(Route).PUT({
+      request: new Request("http://localhost/api/plugin/logs", {
+        method: "PUT",
+        body: JSON.stringify({ logs }),
+      }),
+    });
+
+    expect(putResponse.status).toBe(200);
+    expect(logDb.savePluginLogs).toHaveBeenCalledWith("user-1", logs);
   });
 });

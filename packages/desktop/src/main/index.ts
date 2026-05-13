@@ -3,7 +3,7 @@ import { dirname, join } from "path";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { GitHubService, PermissionBroker, assertPluginHttpRequestAllowed, builtinPluginManifests } from "@hexo-cms/core";
-import type { GitHubConfig, PluginConfigStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
+import type { GitHubConfig, PluginConfigStoreValue, PluginLogStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
 import type { DeviceFlowInfo } from "@hexo-cms/ui/types/auth";
 import {
   createAnonymousSession,
@@ -163,6 +163,26 @@ function savePluginConfigToFile(value: PluginConfigStoreValue): void {
   const configPath = getPluginConfigPath();
   mkdirSync(dirname(configPath), { recursive: true });
   writeFileSync(configPath, JSON.stringify(value, null, 2));
+}
+
+function getPluginLogPath(): string {
+  return join(app.getPath("userData"), "plugins", "logs.json");
+}
+
+function loadPluginLogsFromFile(): PluginLogStoreValue {
+  const logPath = getPluginLogPath();
+  if (!existsSync(logPath)) return {};
+  try {
+    return JSON.parse(readFileSync(logPath, "utf-8")) as PluginLogStoreValue;
+  } catch {
+    return {};
+  }
+}
+
+function savePluginLogsToFile(value: PluginLogStoreValue): void {
+  const logPath = getPluginLogPath();
+  mkdirSync(dirname(logPath), { recursive: true });
+  writeFileSync(logPath, JSON.stringify(value, null, 2));
 }
 
 // ==================== 插件网络审计日志 ====================
@@ -659,6 +679,14 @@ ipcMain.handle("plugin-config:load", () => {
 
 ipcMain.handle("plugin-config:save", (_event, value: PluginConfigStoreValue) => {
   savePluginConfigToFile(value);
+});
+
+ipcMain.handle("plugin-logs:load", () => {
+  return loadPluginLogsFromFile();
+});
+
+ipcMain.handle("plugin-logs:save", (_event, value: PluginLogStoreValue) => {
+  savePluginLogsToFile(value);
 });
 
 // Onboarding repository import

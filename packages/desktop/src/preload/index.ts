@@ -42,6 +42,8 @@ const ALLOWED_CHANNELS = [
   "plugin-state:save",
   "plugin-config:load",
   "plugin-config:save",
+  "plugin-logs:load",
+  "plugin-logs:save",
   "window:minimize",
   "window:maximize",
   "window:unmaximize",

@@ -23,6 +23,11 @@ export {
   getAuditLogStore,
 } from "./platform-plugin-http";
 export {
+  DesktopPluginLogStore,
+  WebPluginLogStore,
+  createPlatformPluginLogStore,
+} from "./platform-plugin-log";
+export {
   DesktopPluginSecretStore,
   WebPluginSecretStore,
   createPlatformPluginSecretStore,

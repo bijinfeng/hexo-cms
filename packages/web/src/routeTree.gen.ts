@@ -28,6 +28,7 @@ import { Route as ApiDeployRouteImport } from './routes/api/deploy'
 import { Route as ApiPluginStorageRouteImport } from './routes/api/plugin/storage'
 import { Route as ApiPluginStateRouteImport } from './routes/api/plugin/state'
 import { Route as ApiPluginSecretsRouteImport } from './routes/api/plugin/secrets'
+import { Route as ApiPluginLogsRouteImport } from './routes/api/plugin/logs'
 import { Route as ApiPluginFetchRouteImport } from './routes/api/plugin/fetch'
 import { Route as ApiPluginConfigRouteImport } from './routes/api/plugin/config'
 import { Route as ApiOnboardingValidateRouteImport } from './routes/api/onboarding/validate'
@@ -137,6 +138,11 @@ const ApiPluginSecretsRoute = ApiPluginSecretsRouteImport.update({
   path: '/api/plugin/secrets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPluginLogsRoute = ApiPluginLogsRouteImport.update({
+  id: '/api/plugin/logs',
+  path: '/api/plugin/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPluginFetchRoute = ApiPluginFetchRouteImport.update({
   id: '/api/plugin/fetch',
   path: '/api/plugin/fetch',
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
   '/api/plugin/config': typeof ApiPluginConfigRoute
   '/api/plugin/fetch': typeof ApiPluginFetchRoute
+  '/api/plugin/logs': typeof ApiPluginLogsRoute
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
@@ -268,6 +275,7 @@ export interface FileRoutesByTo {
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
   '/api/plugin/config': typeof ApiPluginConfigRoute
   '/api/plugin/fetch': typeof ApiPluginFetchRoute
+  '/api/plugin/logs': typeof ApiPluginLogsRoute
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/api/onboarding/validate': typeof ApiOnboardingValidateRoute
   '/api/plugin/config': typeof ApiPluginConfigRoute
   '/api/plugin/fetch': typeof ApiPluginFetchRoute
+  '/api/plugin/logs': typeof ApiPluginLogsRoute
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/api/onboarding/validate'
     | '/api/plugin/config'
     | '/api/plugin/fetch'
+    | '/api/plugin/logs'
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/api/onboarding/validate'
     | '/api/plugin/config'
     | '/api/plugin/fetch'
+    | '/api/plugin/logs'
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
@@ -407,6 +418,7 @@ export interface FileRouteTypes {
     | '/api/onboarding/validate'
     | '/api/plugin/config'
     | '/api/plugin/fetch'
+    | '/api/plugin/logs'
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
@@ -438,6 +450,7 @@ export interface RootRouteChildren {
   ApiOnboardingValidateRoute: typeof ApiOnboardingValidateRoute
   ApiPluginConfigRoute: typeof ApiPluginConfigRoute
   ApiPluginFetchRoute: typeof ApiPluginFetchRoute
+  ApiPluginLogsRoute: typeof ApiPluginLogsRoute
   ApiPluginSecretsRoute: typeof ApiPluginSecretsRoute
   ApiPluginStateRoute: typeof ApiPluginStateRoute
   ApiPluginStorageRoute: typeof ApiPluginStorageRoute
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/api/plugin/secrets'
       fullPath: '/api/plugin/secrets'
       preLoaderRoute: typeof ApiPluginSecretsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/plugin/logs': {
+      id: '/api/plugin/logs'
+      path: '/api/plugin/logs'
+      fullPath: '/api/plugin/logs'
+      preLoaderRoute: typeof ApiPluginLogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/plugin/fetch': {
@@ -722,6 +742,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOnboardingValidateRoute: ApiOnboardingValidateRoute,
   ApiPluginConfigRoute: ApiPluginConfigRoute,
   ApiPluginFetchRoute: ApiPluginFetchRoute,
+  ApiPluginLogsRoute: ApiPluginLogsRoute,
   ApiPluginSecretsRoute: ApiPluginSecretsRoute,
   ApiPluginStateRoute: ApiPluginStateRoute,
   ApiPluginStorageRoute: ApiPluginStorageRoute,

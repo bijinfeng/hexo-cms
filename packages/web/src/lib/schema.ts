@@ -86,6 +86,16 @@ export const pluginNetworkAudit = sqliteTable("plugin_network_audit", {
   createdAt: text("created_at").notNull(),
 });
 
+export const pluginLogs = sqliteTable("plugin_logs", {
+  userId: text("user_id").notNull(),
+  pluginId: text("plugin_id").notNull(),
+  id: text("id").notNull(),
+  level: text("level").notNull(),
+  message: text("message").notNull(),
+  meta: text("meta"),
+  createdAt: text("created_at").notNull(),
+});
+
 export const pluginState = sqliteTable("plugin_state", {
   userId: text("user_id").notNull(),
   pluginId: text("plugin_id").notNull(),
