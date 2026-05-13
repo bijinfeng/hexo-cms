@@ -11,6 +11,30 @@ export function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 }
 
+interface PluginStoreHandlersOptions<T> {
+  payloadKey: string;
+  load: (userId: string) => T;
+  save: (userId: string, value: T) => void;
+  empty: () => T;
+}
+
+export function createPluginStoreHandlers<T>(options: PluginStoreHandlersOptions<T>) {
+  return {
+    GET: async ({ request }: { request: Request }) => {
+      const session = await getAuth(request);
+      if (!session) return json({ error: "Unauthorized" }, 401);
+      return json({ [options.payloadKey]: options.load(session.user.id) });
+    },
+    PUT: async ({ request }: { request: Request }) => {
+      const session = await getAuth(request);
+      if (!session) return json({ error: "Unauthorized" }, 401);
+      const body = (await request.json()) as Record<string, T | undefined>;
+      options.save(session.user.id, body[options.payloadKey] ?? options.empty());
+      return json({ success: true });
+    },
+  };
+}
+
 export async function getAuth(request: Request) {
   const { auth } = await import("../lib/auth");
   const session = await auth.api.getSession({ headers: request.headers });

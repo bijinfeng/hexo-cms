@@ -11,6 +11,12 @@ vi.mock("./db", () => {
   return { db: { select }, __mocks: { get, select, from, where, orderBy, limit } };
 });
 
+const session = {
+  user: {
+    id: "user-1",
+  },
+};
+
 describe("server-utils auth token lookup", () => {
   it("reads the GitHub access token via drizzle query", async () => {
     const { __mocks } = await import("./db") as any;
@@ -69,5 +75,36 @@ describe("server-utils auth token lookup", () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({ error: "CONFIG_REQUIRED" });
+  });
+
+  it("builds authenticated plugin store handlers with the configured payload key", async () => {
+    const { auth } = await import("../lib/auth");
+    vi.spyOn(auth.api, "getSession").mockResolvedValue(session as never);
+
+    const { createPluginStoreHandlers } = await import("./server-utils");
+    const load = vi.fn().mockReturnValue({ enabled: true });
+    const save = vi.fn();
+    const handlers = createPluginStoreHandlers({
+      payloadKey: "state",
+      load,
+      save,
+      empty: () => ({}),
+    });
+
+    const getResponse = await handlers.GET({
+      request: new Request("http://localhost/api/plugin/state"),
+    });
+    expect(getResponse.status).toBe(200);
+    await expect(getResponse.json()).resolves.toEqual({ state: { enabled: true } });
+    expect(load).toHaveBeenCalledWith("user-1");
+
+    const putResponse = await handlers.PUT({
+      request: new Request("http://localhost/api/plugin/state", {
+        method: "PUT",
+        body: JSON.stringify({ state: { enabled: false } }),
+      }),
+    });
+    expect(putResponse.status).toBe(200);
+    expect(save).toHaveBeenCalledWith("user-1", { enabled: false });
   });
 });
