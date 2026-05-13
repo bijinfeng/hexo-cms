@@ -1,6 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } from "electron";
-import { dirname, join } from "path";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { GitHubService, PermissionBroker, assertPluginHttpRequestAllowed, builtinPluginManifests } from "@hexo-cms/core";
 import type { GitHubConfig, PluginConfigStoreValue, PluginLogStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
@@ -16,6 +15,7 @@ import {
   startGitHubDeviceFlow,
   type StoredOAuthSession,
 } from "./auth";
+import { readJsonFile, writeJsonFile } from "./json-file-store";
 import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
 
 const KEYTAR_SERVICE = "hexo-cms";
@@ -70,19 +70,11 @@ function getConfigPath() {
 }
 
 function loadConfig(): GitHubConfig | null {
-  const configPath = getConfigPath();
-  if (existsSync(configPath)) {
-    try {
-      return JSON.parse(readFileSync(configPath, "utf-8"));
-    } catch {
-      return null;
-    }
-  }
-  return null;
+  return readJsonFile<GitHubConfig | null>(getConfigPath(), () => null);
 }
 
 function saveConfigToFile(config: GitHubConfig): void {
-  writeFileSync(getConfigPath(), JSON.stringify(config, null, 2));
+  writeJsonFile(getConfigPath(), config);
 }
 
 function getPluginStoragePath(): string {
@@ -90,19 +82,11 @@ function getPluginStoragePath(): string {
 }
 
 function loadPluginStorage(): PluginStorageStoreValue {
-  const storagePath = getPluginStoragePath();
-  if (!existsSync(storagePath)) return {};
-  try {
-    return JSON.parse(readFileSync(storagePath, "utf-8")) as PluginStorageStoreValue;
-  } catch {
-    return {};
-  }
+  return readJsonFile<PluginStorageStoreValue>(getPluginStoragePath(), () => ({}));
 }
 
 function savePluginStorage(value: PluginStorageStoreValue): void {
-  const storagePath = getPluginStoragePath();
-  mkdirSync(dirname(storagePath), { recursive: true });
-  writeFileSync(storagePath, JSON.stringify(value, null, 2));
+  writeJsonFile(getPluginStoragePath(), value);
 }
 
 async function loadPluginSecretsFromKeychain(): Promise<PluginSecretStoreValue> {
@@ -128,19 +112,11 @@ function getPluginStatePath(): string {
 }
 
 function loadPluginStateFromFile(): PluginStateStoreValue {
-  const statePath = getPluginStatePath();
-  if (!existsSync(statePath)) return {};
-  try {
-    return JSON.parse(readFileSync(statePath, "utf-8")) as PluginStateStoreValue;
-  } catch {
-    return {};
-  }
+  return readJsonFile<PluginStateStoreValue>(getPluginStatePath(), () => ({}));
 }
 
 function savePluginStateToFile(value: PluginStateStoreValue): void {
-  const statePath = getPluginStatePath();
-  mkdirSync(dirname(statePath), { recursive: true });
-  writeFileSync(statePath, JSON.stringify(value, null, 2));
+  writeJsonFile(getPluginStatePath(), value);
 }
 
 // ==================== 插件配置持久化 ====================
@@ -150,19 +126,11 @@ function getPluginConfigPath(): string {
 }
 
 function loadPluginConfigFromFile(): PluginConfigStoreValue {
-  const configPath = getPluginConfigPath();
-  if (!existsSync(configPath)) return {};
-  try {
-    return JSON.parse(readFileSync(configPath, "utf-8")) as PluginConfigStoreValue;
-  } catch {
-    return {};
-  }
+  return readJsonFile<PluginConfigStoreValue>(getPluginConfigPath(), () => ({}));
 }
 
 function savePluginConfigToFile(value: PluginConfigStoreValue): void {
-  const configPath = getPluginConfigPath();
-  mkdirSync(dirname(configPath), { recursive: true });
-  writeFileSync(configPath, JSON.stringify(value, null, 2));
+  writeJsonFile(getPluginConfigPath(), value);
 }
 
 function getPluginLogPath(): string {
@@ -170,19 +138,11 @@ function getPluginLogPath(): string {
 }
 
 function loadPluginLogsFromFile(): PluginLogStoreValue {
-  const logPath = getPluginLogPath();
-  if (!existsSync(logPath)) return {};
-  try {
-    return JSON.parse(readFileSync(logPath, "utf-8")) as PluginLogStoreValue;
-  } catch {
-    return {};
-  }
+  return readJsonFile<PluginLogStoreValue>(getPluginLogPath(), () => ({}));
 }
 
 function savePluginLogsToFile(value: PluginLogStoreValue): void {
-  const logPath = getPluginLogPath();
-  mkdirSync(dirname(logPath), { recursive: true });
-  writeFileSync(logPath, JSON.stringify(value, null, 2));
+  writeJsonFile(getPluginLogPath(), value);
 }
 
 // ==================== 插件网络审计日志 ====================
@@ -203,22 +163,14 @@ function getPluginNetworkAuditPath(): string {
 }
 
 function loadPluginNetworkAudit(): PluginNetworkAuditEntry[] {
-  const auditPath = getPluginNetworkAuditPath();
-  if (!existsSync(auditPath)) return [];
-  try {
-    return JSON.parse(readFileSync(auditPath, "utf-8")) as PluginNetworkAuditEntry[];
-  } catch {
-    return [];
-  }
+  return readJsonFile<PluginNetworkAuditEntry[]>(getPluginNetworkAuditPath(), () => []);
 }
 
 function appendPluginNetworkAudit(entry: Omit<PluginNetworkAuditEntry, "createdAt">): void {
   const entries = loadPluginNetworkAudit();
   entries.unshift({ ...entry, createdAt: new Date().toISOString() });
   const trimmed = entries.slice(0, MAX_AUDIT_ENTRIES);
-  const auditPath = getPluginNetworkAuditPath();
-  mkdirSync(dirname(auditPath), { recursive: true });
-  writeFileSync(auditPath, JSON.stringify(trimmed, null, 2));
+  writeJsonFile(getPluginNetworkAuditPath(), trimmed);
 }
 
 // ==================== 插件网络请求代理 ====================
