@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { afterEach, describe, expect, it } from "vitest";
-import { readJsonFile, writeJsonFile } from "./json-file-store";
+import { createJsonFileStore, readJsonFile, writeJsonFile } from "./json-file-store";
 
 let tempDir: string | null = null;
 
@@ -35,5 +35,22 @@ describe("desktop JSON file store", () => {
 
     expect(JSON.parse(readFileSync(filePath, "utf-8"))).toEqual({ plugin: { state: "enabled" } });
     expect(readJsonFile(filePath, () => ({}))).toEqual({ plugin: { state: "enabled" } });
+  });
+
+  it("creates typed stores around dynamic file paths", () => {
+    const root = createTempDir();
+    let fileName = "state.json";
+    const store = createJsonFileStore<Record<string, { state: string }>>(
+      () => join(root, "plugins", fileName),
+      () => ({}),
+    );
+
+    expect(store.load()).toEqual({});
+
+    store.save({ pluginA: { state: "enabled" } });
+    expect(store.load()).toEqual({ pluginA: { state: "enabled" } });
+
+    fileName = "next-state.json";
+    expect(store.load()).toEqual({});
   });
 });

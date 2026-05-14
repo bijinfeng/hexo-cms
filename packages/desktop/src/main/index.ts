@@ -15,7 +15,7 @@ import {
   startGitHubDeviceFlow,
   type StoredOAuthSession,
 } from "./auth";
-import { readJsonFile, writeJsonFile } from "./json-file-store";
+import { createJsonFileStore } from "./json-file-store";
 import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
 
 const KEYTAR_SERVICE = "hexo-cms";
@@ -69,24 +69,28 @@ function getConfigPath() {
   return join(app.getPath("userData"), "github-config.json");
 }
 
+const configStore = createJsonFileStore<GitHubConfig | null>(getConfigPath, () => null);
+
 function loadConfig(): GitHubConfig | null {
-  return readJsonFile<GitHubConfig | null>(getConfigPath(), () => null);
+  return configStore.load();
 }
 
 function saveConfigToFile(config: GitHubConfig): void {
-  writeJsonFile(getConfigPath(), config);
+  configStore.save(config);
 }
 
 function getPluginStoragePath(): string {
   return join(app.getPath("userData"), "plugins", "storage.json");
 }
 
+const pluginStorageStore = createJsonFileStore<PluginStorageStoreValue>(getPluginStoragePath, () => ({}));
+
 function loadPluginStorage(): PluginStorageStoreValue {
-  return readJsonFile<PluginStorageStoreValue>(getPluginStoragePath(), () => ({}));
+  return pluginStorageStore.load();
 }
 
 function savePluginStorage(value: PluginStorageStoreValue): void {
-  writeJsonFile(getPluginStoragePath(), value);
+  pluginStorageStore.save(value);
 }
 
 async function loadPluginSecretsFromKeychain(): Promise<PluginSecretStoreValue> {
@@ -111,12 +115,14 @@ function getPluginStatePath(): string {
   return join(app.getPath("userData"), "plugins", "state.json");
 }
 
+const pluginStateStore = createJsonFileStore<PluginStateStoreValue>(getPluginStatePath, () => ({}));
+
 function loadPluginStateFromFile(): PluginStateStoreValue {
-  return readJsonFile<PluginStateStoreValue>(getPluginStatePath(), () => ({}));
+  return pluginStateStore.load();
 }
 
 function savePluginStateToFile(value: PluginStateStoreValue): void {
-  writeJsonFile(getPluginStatePath(), value);
+  pluginStateStore.save(value);
 }
 
 // ==================== 插件配置持久化 ====================
@@ -125,24 +131,28 @@ function getPluginConfigPath(): string {
   return join(app.getPath("userData"), "plugins", "config.json");
 }
 
+const pluginConfigStore = createJsonFileStore<PluginConfigStoreValue>(getPluginConfigPath, () => ({}));
+
 function loadPluginConfigFromFile(): PluginConfigStoreValue {
-  return readJsonFile<PluginConfigStoreValue>(getPluginConfigPath(), () => ({}));
+  return pluginConfigStore.load();
 }
 
 function savePluginConfigToFile(value: PluginConfigStoreValue): void {
-  writeJsonFile(getPluginConfigPath(), value);
+  pluginConfigStore.save(value);
 }
 
 function getPluginLogPath(): string {
   return join(app.getPath("userData"), "plugins", "logs.json");
 }
 
+const pluginLogStore = createJsonFileStore<PluginLogStoreValue>(getPluginLogPath, () => ({}));
+
 function loadPluginLogsFromFile(): PluginLogStoreValue {
-  return readJsonFile<PluginLogStoreValue>(getPluginLogPath(), () => ({}));
+  return pluginLogStore.load();
 }
 
 function savePluginLogsToFile(value: PluginLogStoreValue): void {
-  writeJsonFile(getPluginLogPath(), value);
+  pluginLogStore.save(value);
 }
 
 // ==================== 插件网络审计日志 ====================
@@ -162,15 +172,17 @@ function getPluginNetworkAuditPath(): string {
   return join(app.getPath("userData"), "plugins", "network-audit.json");
 }
 
+const pluginNetworkAuditStore = createJsonFileStore<PluginNetworkAuditEntry[]>(getPluginNetworkAuditPath, () => []);
+
 function loadPluginNetworkAudit(): PluginNetworkAuditEntry[] {
-  return readJsonFile<PluginNetworkAuditEntry[]>(getPluginNetworkAuditPath(), () => []);
+  return pluginNetworkAuditStore.load();
 }
 
 function appendPluginNetworkAudit(entry: Omit<PluginNetworkAuditEntry, "createdAt">): void {
   const entries = loadPluginNetworkAudit();
   entries.unshift({ ...entry, createdAt: new Date().toISOString() });
   const trimmed = entries.slice(0, MAX_AUDIT_ENTRIES);
-  writeJsonFile(getPluginNetworkAuditPath(), trimmed);
+  pluginNetworkAuditStore.save(trimmed);
 }
 
 // ==================== 插件网络请求代理 ====================
