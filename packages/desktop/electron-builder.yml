@@ -39,5 +39,6 @@ linux:
 npmRebuild: false
 publish:
   provider: github
-  owner: your-github-username
+  owner: bijinfeng
   repo: hexo-cms
+  releaseType: draft

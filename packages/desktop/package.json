@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "main": "out/main/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bijinfeng/hexo-cms.git"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build && electron-builder",

@@ -8,6 +8,7 @@ import { createGitHubServiceProvider } from "./github-service-provider";
 import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
 import { createPluginHttpProxy, type PluginFetchRequest } from "./plugin-http-proxy";
 import { deleteTaxonomy, getTaxonomySummary, renameTaxonomy, type TaxonomyDeleteInput, type TaxonomyMutation } from "./taxonomy-operations";
+import { initUpdater, checkForUpdates as updaterCheckForUpdates, downloadUpdate, quitAndInstall, setChannel, getCurrentChannel } from "./auto-updater";
 
 const KEYTAR_SERVICE = "hexo-cms";
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID ?? "";
@@ -109,6 +110,29 @@ function createWindow(): void {
   }
 }
 
+// ==================== 更新 IPC ====================
+
+ipcMain.handle("update:check", async () => {
+  updaterCheckForUpdates();
+});
+
+ipcMain.handle("update:download", async () => {
+  downloadUpdate();
+});
+
+ipcMain.handle("update:install", async () => {
+  quitAndInstall();
+});
+
+ipcMain.handle("update:set-channel", async (_event, channel: "stable" | "beta") => {
+  setChannel(channel);
+  updaterCheckForUpdates();
+});
+
+ipcMain.handle("update:get-version", async () => {
+  return { version: app.getVersion(), channel: getCurrentChannel() };
+});
+
 // ==================== 窗口控制 IPC ====================
 
 ipcMain.handle("window:minimize", (event) => {
@@ -140,6 +164,10 @@ app.whenReady().then(() => {
 
   createWindow();
   createTray();
+
+  const channel = getCurrentChannel();
+  initUpdater(mainWindow!, channel);
+  updaterCheckForUpdates();
 
   app.on("activate", function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
