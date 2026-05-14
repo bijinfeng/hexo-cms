@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } from "electron";
 import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
-import { GitHubService, PermissionBroker, assertPluginHttpRequestAllowed, builtinPluginManifests } from "@hexo-cms/core";
 import type { GitHubConfig, PluginConfigStoreValue, PluginLogStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
 import type { DeviceFlowInfo } from "@hexo-cms/ui/types/auth";
 import {
@@ -16,7 +15,9 @@ import {
   type StoredOAuthSession,
 } from "./auth";
 import { createDesktopPersistence, type PluginSecretMutation } from "./desktop-persistence";
+import { createGitHubServiceProvider } from "./github-service-provider";
 import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
+import { createPluginHttpProxy, type PluginFetchRequest } from "./plugin-http-proxy";
 
 const KEYTAR_SERVICE = "hexo-cms";
 const LEGACY_TOKEN_ACCOUNT = "github-token";
@@ -25,6 +26,13 @@ const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID ?? "";
 const desktopPersistence = createDesktopPersistence({
   getUserDataPath: () => app.getPath("userData"),
   keytarService: KEYTAR_SERVICE,
+});
+const pluginHttpProxy = createPluginHttpProxy({
+  appendAudit: (entry) => desktopPersistence.appendPluginNetworkAudit(entry),
+});
+const githubServiceProvider = createGitHubServiceProvider({
+  loadConfig: () => desktopPersistence.loadConfig(),
+  getAccessToken: () => getGitHubAccessToken(),
 });
 
 // ==================== 托盘 ====================
@@ -67,134 +75,6 @@ function createTray(): void {
   });
 }
 
-// ==================== 插件网络请求代理 ====================
-
-interface PluginFetchRequest {
-  pluginId?: string;
-  url: string;
-  method?: string;
-  headers?: Record<string, string>;
-  body?: string;
-  timeoutMs?: number;
-}
-
-interface PluginFetchResponseBody {
-  ok: boolean;
-  status: number;
-  statusText: string;
-  headers: Record<string, string>;
-  body: string;
-}
-
-const MAX_PLUGIN_FETCH_RESPONSE_SIZE = 10 * 1024 * 1024;
-const DEFAULT_PLUGIN_FETCH_TIMEOUT_MS = 10_000;
-const pluginPermissionBroker = new PermissionBroker(builtinPluginManifests);
-
-function sanitizePluginFetchHeaders(headers: Record<string, string> | undefined): Record<string, string> {
-  if (!headers) return {};
-  const result: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    const normalized = key.toLowerCase();
-    if (normalized !== "cookie" && normalized !== "set-cookie") {
-      result[key] = value;
-    }
-  }
-  return result;
-}
-
-async function executePluginFetch(req: PluginFetchRequest): Promise<PluginFetchResponseBody> {
-  if (!req.url || typeof req.url !== "string") {
-    throw new Error("Invalid URL");
-  }
-  if (!req.pluginId || typeof req.pluginId !== "string") {
-    throw new Error("Plugin id is required");
-  }
-
-  const manifest = builtinPluginManifests.find((plugin) => plugin.id === req.pluginId);
-  if (!manifest) throw new Error("Unknown plugin");
-  const parsedUrl = assertPluginHttpRequestAllowed(req.pluginId, manifest, pluginPermissionBroker, req.url);
-
-  const timeoutMs = req.timeoutMs ?? DEFAULT_PLUGIN_FETCH_TIMEOUT_MS;
-  const controller = new globalThis.AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  const auditPluginId = typeof req.pluginId === "string" ? req.pluginId : "unknown";
-  const auditMethod = req.method ?? "GET";
-
-  try {
-    const response = await fetch(parsedUrl.toString(), {
-      method: auditMethod,
-      headers: sanitizePluginFetchHeaders(req.headers),
-      body: req.body,
-      signal: controller.signal,
-      credentials: "omit",
-    });
-
-    const contentLength = response.headers.get("content-length");
-    if (contentLength && parseInt(contentLength, 10) > MAX_PLUGIN_FETCH_RESPONSE_SIZE) {
-      desktopPersistence.appendPluginNetworkAudit({
-        pluginId: auditPluginId,
-        url: parsedUrl.toString(),
-        method: auditMethod,
-        status: 413,
-        error: "response_too_large",
-      });
-      throw new Error("Response too large");
-    }
-
-    const body = await response.text();
-    if (body.length > MAX_PLUGIN_FETCH_RESPONSE_SIZE) {
-      desktopPersistence.appendPluginNetworkAudit({
-        pluginId: auditPluginId,
-        url: parsedUrl.toString(),
-        method: auditMethod,
-        status: 413,
-        error: "response_too_large",
-      });
-      throw new Error("Response too large");
-    }
-
-    const responseHeaders: Record<string, string> = {};
-    response.headers.forEach((value, key) => {
-      responseHeaders[key.toLowerCase()] = value;
-    });
-
-    desktopPersistence.appendPluginNetworkAudit({
-      pluginId: auditPluginId,
-      url: parsedUrl.toString(),
-      method: auditMethod,
-      status: response.status,
-    });
-
-    return {
-      ok: response.ok,
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-      body,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    if (message !== "Response too large") {
-      desktopPersistence.appendPluginNetworkAudit({
-        pluginId: auditPluginId,
-        url: parsedUrl.toString(),
-        method: auditMethod,
-        status: 0,
-        error: message,
-      });
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-// ==================== GitHubService 工厂（带缓存）====================
-
-let cachedGitHubService: GitHubService | null = null;
-let cachedToken: string | null = null;
-let cachedConfig: GitHubConfig | null = null;
 let activeDeviceFlow: { deviceCode: string; deviceFlow: DeviceFlowInfo } | null = null;
 let lastDeviceFlowError: string | null = null;
 let pollingDeviceFlow = false;
@@ -224,52 +104,12 @@ async function deleteStoredOAuthSession(): Promise<void> {
   }
   activeDeviceFlow = null;
   lastDeviceFlowError = null;
-  invalidateGitHubServiceCache();
+  githubServiceProvider.invalidate();
 }
 
 async function getGitHubAccessToken(): Promise<string | null> {
   const session = await getStoredOAuthSession();
   return session?.accessToken ?? null;
-}
-
-async function getGitHubService(): Promise<GitHubService | null> {
-  const config = desktopPersistence.loadConfig();
-  if (!config) {
-    cachedGitHubService = null;
-    return null;
-  }
-
-  const token = await getGitHubAccessToken();
-
-  if (!token) {
-    cachedGitHubService = null;
-    return null;
-  }
-
-  // 返回缓存实例（如果 config 和 token 未变）
-  if (
-    cachedGitHubService &&
-    cachedToken === token &&
-    cachedConfig?.owner === config.owner &&
-    cachedConfig?.repo === config.repo &&
-    cachedConfig?.branch === config.branch &&
-    cachedConfig?.postsDir === config.postsDir &&
-    cachedConfig?.mediaDir === config.mediaDir
-  ) {
-    return cachedGitHubService;
-  }
-
-  // 创建新实例并缓存
-  cachedToken = token;
-  cachedConfig = config;
-  cachedGitHubService = new GitHubService(token, config);
-  return cachedGitHubService;
-}
-
-function invalidateGitHubServiceCache(): void {
-  cachedGitHubService = null;
-  cachedToken = null;
-  cachedConfig = null;
 }
 
 async function pollActiveDeviceFlow(): Promise<void> {
@@ -316,7 +156,7 @@ async function pollActiveDeviceFlow(): Promise<void> {
       });
       activeDeviceFlow = null;
       lastDeviceFlowError = null;
-      invalidateGitHubServiceCache();
+      githubServiceProvider.invalidate();
     }
   } finally {
     pollingDeviceFlow = false;
@@ -458,7 +298,7 @@ ipcMain.handle("config:get", () => {
 ipcMain.handle("config:save", (_event, config: GitHubConfig) => {
   try {
     desktopPersistence.saveConfig(config);
-    invalidateGitHubServiceCache();
+    githubServiceProvider.invalidate();
     return true;
   } catch (error) {
     console.error(JSON.stringify({ level: "error", message: "IPC: config:save failed", error: String(error) }));
@@ -492,7 +332,7 @@ ipcMain.handle("plugin-secret:mutate", async (_event, mutation: PluginSecretMuta
 });
 
 ipcMain.handle("plugin-http:fetch", async (_event, req: PluginFetchRequest) => {
-  return executePluginFetch(req);
+  return pluginHttpProxy.fetch(req);
 });
 
 ipcMain.handle("plugin-network-audit:list", async (_event, limit?: number) => {
@@ -555,7 +395,7 @@ ipcMain.handle("onboarding:validateRepository", async (_event, input: { owner: s
 // 文章管理
 ipcMain.handle("github:get-posts", async () => {
   try {
-    const github = await getGitHubService();
+    const github = await githubServiceProvider.getGitHubService();
     if (!github) return [];
     return await github.getPosts();
   } catch (error) {
@@ -565,7 +405,7 @@ ipcMain.handle("github:get-posts", async () => {
 });
 
 ipcMain.handle("github:get-post", async (_event, path: string) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     return await github.getPost(path);
@@ -576,7 +416,7 @@ ipcMain.handle("github:get-post", async (_event, path: string) => {
 });
 
 ipcMain.handle("github:save-post", async (_event, post) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     await github.savePost(post);
@@ -587,7 +427,7 @@ ipcMain.handle("github:save-post", async (_event, post) => {
 });
 
 ipcMain.handle("github:delete-post", async (_event, path: string) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     await github.deletePost(path);
@@ -600,7 +440,7 @@ ipcMain.handle("github:delete-post", async (_event, path: string) => {
 // 页面管理（复用 posts API，路径前缀不同）
 ipcMain.handle("github:get-pages", async () => {
   try {
-    const github = await getGitHubService();
+    const github = await githubServiceProvider.getGitHubService();
     if (!github) return [];
     return await github.getPosts();
   } catch (error) {
@@ -610,7 +450,7 @@ ipcMain.handle("github:get-pages", async () => {
 });
 
 ipcMain.handle("github:get-page", async (_event, path: string) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     return await github.getPost(path);
@@ -621,7 +461,7 @@ ipcMain.handle("github:get-page", async (_event, path: string) => {
 });
 
 ipcMain.handle("github:save-page", async (_event, post) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     await github.savePost(post);
@@ -632,7 +472,7 @@ ipcMain.handle("github:save-page", async (_event, post) => {
 });
 
 ipcMain.handle("github:delete-page", async (_event, path: string) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     await github.deletePost(path);
@@ -644,7 +484,7 @@ ipcMain.handle("github:delete-page", async (_event, path: string) => {
 
 // 标签和分类管理
 ipcMain.handle("github:get-tags", async () => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) return { tags: [], categories: [], total: 0 };
 
   const posts = await github.getPosts();
@@ -681,7 +521,7 @@ ipcMain.handle("github:get-tags", async () => {
 });
 
 ipcMain.handle("github:rename-tag", async (_event, { type, oldName, newName }: { type: "tag" | "category"; oldName: string; newName: string }) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) return { updatedCount: 0 };
 
   const posts = await github.getPosts();
@@ -713,7 +553,7 @@ ipcMain.handle("github:rename-tag", async (_event, { type, oldName, newName }: {
 });
 
 ipcMain.handle("github:delete-tag", async (_event, { type, name }: { type: "tag" | "category"; name: string }) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) return { updatedCount: 0 };
 
   const posts = await github.getPosts();
@@ -746,7 +586,7 @@ ipcMain.handle("github:delete-tag", async (_event, { type, name }: { type: "tag"
 
 // 媒体管理
 ipcMain.handle("github:get-media", async () => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) return [];
 
   const config = desktopPersistence.loadConfig();
@@ -767,7 +607,7 @@ ipcMain.handle("github:get-media", async () => {
 });
 
 ipcMain.handle("github:upload-media", async (_event, { buffer, path, name }: { buffer: ArrayBuffer; path: string; name: string; type: string }) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     const bytes = new Uint8Array(buffer);
@@ -780,7 +620,7 @@ ipcMain.handle("github:upload-media", async (_event, { buffer, path, name }: { b
 });
 
 ipcMain.handle("github:delete-media", async (_event, path: string) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     await github.deleteMedia(path);
@@ -792,7 +632,7 @@ ipcMain.handle("github:delete-media", async (_event, path: string) => {
 
 // 统计数据
 ipcMain.handle("github:get-stats", async () => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) return { totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 };
 
   const posts = await github.getPosts();
@@ -806,7 +646,7 @@ ipcMain.handle("github:get-stats", async () => {
 
 // 主题管理
 ipcMain.handle("github:get-themes", async () => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) return { currentTheme: "", installedThemes: [] };
 
   try {
@@ -825,7 +665,7 @@ ipcMain.handle("github:get-themes", async () => {
 });
 
 ipcMain.handle("github:switch-theme", async (_event, themeName: string) => {
-  const github = await getGitHubService();
+  const github = await githubServiceProvider.getGitHubService();
   if (!github) throw new Error("GitHub not configured");
   try {
     const configFile = await github.getRawFile("_config.yml");
