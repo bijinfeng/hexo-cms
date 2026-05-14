@@ -2,18 +2,7 @@ import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } from "ele
 import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import type { GitHubConfig, PluginConfigStoreValue, PluginLogStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
-import type { DeviceFlowInfo } from "@hexo-cms/ui/types/auth";
-import {
-  createAnonymousSession,
-  createAuthenticatedSession,
-  createDeviceFlowSession,
-  fetchGitHubUser,
-  parseStoredOAuthSession,
-  pollGitHubDeviceFlowToken,
-  serializeStoredOAuthSession,
-  startGitHubDeviceFlow,
-  type StoredOAuthSession,
-} from "./auth";
+import { createDesktopAuthManager } from "./desktop-auth";
 import { createDesktopPersistence, type PluginSecretMutation } from "./desktop-persistence";
 import { createGitHubServiceProvider } from "./github-service-provider";
 import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
@@ -21,8 +10,6 @@ import { createPluginHttpProxy, type PluginFetchRequest } from "./plugin-http-pr
 import { deleteTaxonomy, getTaxonomySummary, renameTaxonomy, type TaxonomyDeleteInput, type TaxonomyMutation } from "./taxonomy-operations";
 
 const KEYTAR_SERVICE = "hexo-cms";
-const LEGACY_TOKEN_ACCOUNT = "github-token";
-const OAUTH_SESSION_ACCOUNT = "github-oauth-session";
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID ?? "";
 const desktopPersistence = createDesktopPersistence({
   getUserDataPath: () => app.getPath("userData"),
@@ -31,10 +18,20 @@ const desktopPersistence = createDesktopPersistence({
 const pluginHttpProxy = createPluginHttpProxy({
   appendAudit: (entry) => desktopPersistence.appendPluginNetworkAudit(entry),
 });
+let getDesktopAuthAccessToken: () => Promise<string | null> = async () => null;
 const githubServiceProvider = createGitHubServiceProvider({
   loadConfig: () => desktopPersistence.loadConfig(),
-  getAccessToken: () => getGitHubAccessToken(),
+  getAccessToken: () => getDesktopAuthAccessToken(),
 });
+const desktopAuth = createDesktopAuthManager({
+  clientId: GITHUB_CLIENT_ID,
+  keytarService: KEYTAR_SERVICE,
+  invalidateGitHubService: () => githubServiceProvider.invalidate(),
+  openExternal: (url) => {
+    shell.openExternal(url);
+  },
+});
+getDesktopAuthAccessToken = () => desktopAuth.getAccessToken();
 
 // ==================== 托盘 ====================
 
@@ -75,96 +72,6 @@ function createTray(): void {
     }
   });
 }
-
-let activeDeviceFlow: { deviceCode: string; deviceFlow: DeviceFlowInfo } | null = null;
-let lastDeviceFlowError: string | null = null;
-let pollingDeviceFlow = false;
-
-async function getStoredOAuthSession(): Promise<StoredOAuthSession | null> {
-  try {
-    const keytar = await import("keytar");
-    const value = await keytar.default.getPassword(KEYTAR_SERVICE, OAUTH_SESSION_ACCOUNT);
-    return parseStoredOAuthSession(value);
-  } catch {
-    return null;
-  }
-}
-
-async function saveStoredOAuthSession(session: StoredOAuthSession): Promise<void> {
-  const keytar = await import("keytar");
-  await keytar.default.setPassword(KEYTAR_SERVICE, OAUTH_SESSION_ACCOUNT, serializeStoredOAuthSession(session));
-}
-
-async function deleteStoredOAuthSession(): Promise<void> {
-  try {
-    const keytar = await import("keytar");
-    await keytar.default.deletePassword(KEYTAR_SERVICE, OAUTH_SESSION_ACCOUNT);
-    await keytar.default.deletePassword(KEYTAR_SERVICE, LEGACY_TOKEN_ACCOUNT);
-  } catch {
-    // Signing out should be idempotent even if the OS keychain is unavailable.
-  }
-  activeDeviceFlow = null;
-  lastDeviceFlowError = null;
-  githubServiceProvider.invalidate();
-}
-
-async function getGitHubAccessToken(): Promise<string | null> {
-  const session = await getStoredOAuthSession();
-  return session?.accessToken ?? null;
-}
-
-async function pollActiveDeviceFlow(): Promise<void> {
-  if (!activeDeviceFlow || pollingDeviceFlow) return;
-  pollingDeviceFlow = true;
-
-  try {
-    while (activeDeviceFlow) {
-      if (Date.now() >= new Date(activeDeviceFlow.deviceFlow.expiresAt).getTime()) {
-        activeDeviceFlow = null;
-        lastDeviceFlowError = "AUTH_TIMEOUT";
-        return;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, Math.max(activeDeviceFlow?.deviceFlow.interval ?? 5, 1) * 1000));
-      if (!activeDeviceFlow) return;
-
-      const result = await pollGitHubDeviceFlowToken({
-        clientId: GITHUB_CLIENT_ID,
-        deviceCode: activeDeviceFlow.deviceCode,
-      });
-
-      if (result.status === "pending") continue;
-      if (result.status === "slow_down") {
-        activeDeviceFlow.deviceFlow.interval += result.intervalDelta ?? 5;
-        continue;
-      }
-      if (result.status === "error") {
-        activeDeviceFlow = null;
-        lastDeviceFlowError = result.error;
-        return;
-      }
-      if (result.status !== "success") continue;
-
-      const user = await fetchGitHubUser(result.token);
-      await saveStoredOAuthSession({
-        accessToken: result.token,
-        tokenType: result.tokenType,
-        scope: result.scope,
-        githubUserId: user?.id,
-        user,
-        createdAt: new Date().toISOString(),
-        lastValidatedAt: new Date().toISOString(),
-      });
-      activeDeviceFlow = null;
-      lastDeviceFlowError = null;
-      githubServiceProvider.invalidate();
-    }
-  } finally {
-    pollingDeviceFlow = false;
-  }
-}
-
-
 
 function createWindow(): void {
   const isMac = process.platform === "darwin";
@@ -249,46 +156,19 @@ app.on("window-all-closed", () => {
 
 // Auth
 ipcMain.handle("auth:getSession", async () => {
-  const session = await getStoredOAuthSession();
-  if (session) return createAuthenticatedSession(session);
-  if (activeDeviceFlow || lastDeviceFlowError) return createDeviceFlowSession(activeDeviceFlow?.deviceFlow ?? null, lastDeviceFlowError);
-  return createAnonymousSession();
+  return desktopAuth.getSession();
 });
 
 ipcMain.handle("auth:startDeviceFlow", async () => {
-  const started = await startGitHubDeviceFlow({ clientId: GITHUB_CLIENT_ID });
-  if (started.session.state !== "authenticating" || !started.session.deviceFlow) {
-    return started.session;
-  }
-
-  activeDeviceFlow = {
-    deviceCode: started.deviceCode,
-    deviceFlow: started.session.deviceFlow,
-  };
-  lastDeviceFlowError = null;
-
-  shell.openExternal(started.session.deviceFlow.verificationUri);
-  void pollActiveDeviceFlow();
-  return started.session;
+  return desktopAuth.startDeviceFlow();
 });
 
 ipcMain.handle("auth:signOut", async () => {
-  await deleteStoredOAuthSession();
+  await desktopAuth.signOut();
 });
 
 ipcMain.handle("auth:reauthorize", async () => {
-  await deleteStoredOAuthSession();
-  const started = await startGitHubDeviceFlow({ clientId: GITHUB_CLIENT_ID });
-  if (started.session.state === "authenticating" && started.session.deviceFlow) {
-    activeDeviceFlow = {
-      deviceCode: started.deviceCode,
-      deviceFlow: started.session.deviceFlow,
-    };
-    lastDeviceFlowError = null;
-    shell.openExternal(started.session.deviceFlow.verificationUri);
-    void pollActiveDeviceFlow();
-  }
-  return started.session;
+  return desktopAuth.reauthorize();
 });
 
 // 配置管理
@@ -366,7 +246,7 @@ ipcMain.handle("plugin-logs:save", (_event, value: PluginLogStoreValue) => {
 
 // Onboarding repository import
 ipcMain.handle("onboarding:listRepositories", async (_event, input: { query?: string } = {}) => {
-  const token = await getGitHubAccessToken();
+  const token = await desktopAuth.getAccessToken();
   if (!token) return [];
 
   const { Octokit } = await import("octokit");
@@ -377,7 +257,7 @@ ipcMain.handle("onboarding:listRepositories", async (_event, input: { query?: st
 });
 
 ipcMain.handle("onboarding:validateRepository", async (_event, input: { owner: string; repo: string; branch?: string }) => {
-  const token = await getGitHubAccessToken();
+  const token = await desktopAuth.getAccessToken();
   if (!token) {
     return {
       ok: false,
@@ -604,7 +484,7 @@ ipcMain.handle("github:get-deployments", async () => {
   const config = desktopPersistence.loadConfig();
   if (!config) return [];
 
-  const token = await getGitHubAccessToken();
+  const token = await desktopAuth.getAccessToken();
 
   if (!token) return [];
 
@@ -637,7 +517,7 @@ ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => 
   const config = desktopPersistence.loadConfig();
   if (!config) throw new Error("GitHub not configured");
   try {
-    const token = await getGitHubAccessToken();
+    const token = await desktopAuth.getAccessToken();
     if (!token) throw new Error("No token found");
     const { Octokit } = await import("octokit");
     const octokit = new Octokit({

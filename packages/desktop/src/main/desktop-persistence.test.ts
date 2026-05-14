@@ -21,6 +21,9 @@ function createMemoryKeychain(initial: Record<string, string> = {}): KeychainAda
     async setPassword(_service, account, password) {
       values.set(account, password);
     },
+    async deletePassword(_service, account) {
+      return values.delete(account);
+    },
   };
 }
 
