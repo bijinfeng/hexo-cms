@@ -64,6 +64,7 @@ Thumbs.db
 
 # Misc
 .turbo/
+.worktrees/
 
 # Claude Code local settings
 .claude/settings.local.json
