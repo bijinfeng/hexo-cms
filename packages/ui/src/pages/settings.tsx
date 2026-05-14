@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -21,7 +22,14 @@ import type { GitHubConfig } from "@hexo-cms/core";
 import type { AuthClient, AuthSession } from "../types/auth";
 import { PluginSettingsPanel } from "../plugin";
 
-const settingsSections = [
+export interface SettingsSectionDef {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  render: () => ReactNode;
+}
+
+const baseSections = [
   { id: "site", label: "站点信息", icon: Globe },
   { id: "github", label: "GitHub 集成", icon: GithubIcon },
   { id: "profile", label: "个人资料", icon: User },
@@ -30,34 +38,35 @@ const settingsSections = [
   { id: "security", label: "安全设置", icon: Shield },
 ];
 
-const settingSectionIds = new Set(settingsSections.map((section) => section.id));
-
-function getInitialSettingsSection(): string {
+function getInitialSettingsSection(allowedIds: Set<string>): string {
   if (typeof window === "undefined") return "site";
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("section") ?? window.location.hash.replace(/^#/, "");
-  return normalizeSettingsSection(requested);
-}
-
-function normalizeSettingsSection(value?: string | null): string {
-  return value && settingSectionIds.has(value) ? value : "site";
+  return requested && allowedIds.has(requested) ? requested : "site";
 }
 
 export interface SettingsPageProps {
   authClient?: AuthClient;
   initialSection?: string;
   onSignedOut?: () => void;
+  extraSections?: SettingsSectionDef[];
 }
 
-export function SettingsPage({ authClient, initialSection, onSignedOut }: SettingsPageProps) {
-  const [activeSection, setActiveSection] = useState(() =>
-    initialSection ? normalizeSettingsSection(initialSection) : getInitialSettingsSection(),
-  );
+export function SettingsPage({ authClient, initialSection, onSignedOut, extraSections }: SettingsPageProps) {
+  const allSections = extraSections && extraSections.length > 0
+    ? [...baseSections, ...extraSections]
+    : baseSections;
+  const sectionIds = new Set(allSections.map((s) => s.id));
+
+  const [activeSection, setActiveSection] = useState(() => {
+    if (initialSection) return sectionIds.has(initialSection) ? initialSection : "site";
+    return getInitialSettingsSection(sectionIds);
+  });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setActiveSection(initialSection ? normalizeSettingsSection(initialSection) : getInitialSettingsSection());
-  }, [initialSection]);
+    setActiveSection(initialSection ? (sectionIds.has(initialSection) ? initialSection : "site") : getInitialSettingsSection(sectionIds));
+  }, [initialSection, extraSections]);
 
   function handleSave() {
     setSaved(true);
@@ -93,7 +102,7 @@ export function SettingsPage({ authClient, initialSection, onSignedOut }: Settin
         {/* Sidebar Nav */}
         <div className="lg:w-52 flex-shrink-0">
           <nav className="space-y-0.5">
-            {settingsSections.map((section) => {
+            {allSections.map((section) => {
               const Icon = section.icon;
               return (
                 <button
@@ -124,6 +133,9 @@ export function SettingsPage({ authClient, initialSection, onSignedOut }: Settin
           {activeSection === "notifications" && <NotificationSettings />}
           {activeSection === "plugins" && <PluginSettingsPanel />}
           {activeSection === "security" && <SecuritySettings />}
+          {extraSections?.map((section) =>
+            activeSection === section.id ? <section key={section.id}>{section.render()}</section> : null,
+          )}
         </div>
       </div>
     </div>

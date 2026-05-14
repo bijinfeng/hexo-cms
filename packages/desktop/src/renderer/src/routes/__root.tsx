@@ -12,6 +12,8 @@ import {
 } from "@hexo-cms/ui/app-shell";
 import { desktopAuthClient, subscribeToDesktopAuthChanges } from "../lib/desktop-auth-client";
 import { desktopDataProvider } from "../lib/desktop-data-provider-instance";
+import { UpdateBanner } from "../components/UpdateBanner";
+import { useUpdater } from "../hooks/useUpdater";
 
 function RootComponent() {
   const routerState = useRouterState();
@@ -22,6 +24,7 @@ function RootComponent() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [hasConfig, setHasConfig] = useState<boolean | null>(null);
   const [isPending, setIsPending] = useState(true);
+  const updater = useUpdater();
 
   useEffect(() => {
     let active = true;
@@ -83,6 +86,7 @@ function RootComponent() {
     <DataProviderProvider provider={desktopDataProvider}>
       <PluginProvider>
         <ErrorBoundary>
+          {updater && <UpdateBanner updater={updater} />}
           <CMSLayout isElectron>
             <ErrorBoundary>
               <Outlet />
