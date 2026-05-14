@@ -53,9 +53,34 @@ export const ELECTRON_IPC_CHANNELS = [
   "window:unmaximize",
   "window:close",
   "window:isMaximized",
+  "update:check",
+  "update:download",
+  "update:install",
+  "update:set-channel",
+  "update:get-version",
 ] as const;
 
 export type ElectronIpcChannel = (typeof ELECTRON_IPC_CHANNELS)[number];
+
+export type UpdateChannel = "stable" | "beta";
+
+export type UpdateStatus =
+  | "idle"
+  | "checking"
+  | "up-to-date"
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "error";
+
+export interface UpdateStatusPayload {
+  status: UpdateStatus;
+  version?: string;
+  releaseDate?: string;
+  percent?: number;
+  bytesPerSecond?: number;
+  message?: string;
+}
 
 const ELECTRON_IPC_CHANNEL_SET = new Set<string>(ELECTRON_IPC_CHANNELS);
 
@@ -71,4 +96,10 @@ export interface ElectronAPI {
   listOnboardingRepositories: (input: RepositoryListInput) => Promise<RepositoryOption[]>;
   validateOnboardingRepository: (input: RepositorySelection) => Promise<RepositoryValidation>;
   invoke: <T = unknown>(channel: ElectronIpcChannel, ...args: unknown[]) => Promise<T>;
+  onUpdateStatus: (callback: (payload: UpdateStatusPayload) => void) => () => void;
+  checkForUpdates: () => Promise<void>;
+  downloadUpdate: () => Promise<void>;
+  quitAndInstall: () => Promise<void>;
+  setUpdateChannel: (channel: UpdateChannel) => Promise<void>;
+  getVersion: () => Promise<{ version: string; channel: UpdateChannel }>;
 }
