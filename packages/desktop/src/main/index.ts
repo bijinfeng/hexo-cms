@@ -18,6 +18,7 @@ import { createDesktopPersistence, type PluginSecretMutation } from "./desktop-p
 import { createGitHubServiceProvider } from "./github-service-provider";
 import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
 import { createPluginHttpProxy, type PluginFetchRequest } from "./plugin-http-proxy";
+import { deleteTaxonomy, getTaxonomySummary, renameTaxonomy, type TaxonomyDeleteInput, type TaxonomyMutation } from "./taxonomy-operations";
 
 const KEYTAR_SERVICE = "hexo-cms";
 const LEGACY_TOKEN_ACCOUNT = "github-token";
@@ -487,101 +488,21 @@ ipcMain.handle("github:get-tags", async () => {
   const github = await githubServiceProvider.getGitHubService();
   if (!github) return { tags: [], categories: [], total: 0 };
 
-  const posts = await github.getPosts();
-  const tagMap = new Map<string, number>();
-  const categoryMap = new Map<string, number>();
-
-  for (const post of posts) {
-    const tags = post.frontmatter.tags;
-    if (Array.isArray(tags)) {
-      for (const tag of tags) tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
-    } else if (typeof tags === "string" && tags) {
-      tagMap.set(tags, (tagMap.get(tags) || 0) + 1);
-    }
-
-    const category = post.frontmatter.category || post.frontmatter.categories;
-    if (typeof category === "string" && category) {
-      categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
-    } else if (Array.isArray(category)) {
-      for (const cat of category) {
-        if (typeof cat === "string") categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
-      }
-    }
-  }
-
-  const tagList = Array.from(tagMap.entries())
-    .map(([name, count], i) => ({ id: String(i + 1), name, slug: name.toLowerCase().replace(/\s+/g, "-"), count }))
-    .sort((a, b) => b.count - a.count);
-
-  const categoryList = Array.from(categoryMap.entries())
-    .map(([name, count], i) => ({ id: String(i + 1), name, slug: name.toLowerCase().replace(/\s+/g, "-"), count }))
-    .sort((a, b) => b.count - a.count);
-
-  return { tags: tagList, categories: categoryList, total: posts.length };
+  return getTaxonomySummary(github);
 });
 
-ipcMain.handle("github:rename-tag", async (_event, { type, oldName, newName }: { type: "tag" | "category"; oldName: string; newName: string }) => {
+ipcMain.handle("github:rename-tag", async (_event, mutation: TaxonomyMutation) => {
   const github = await githubServiceProvider.getGitHubService();
   if (!github) return { updatedCount: 0 };
 
-  const posts = await github.getPosts();
-  let updatedCount = 0;
-
-  for (const post of posts) {
-    let changed = false;
-    const fm = { ...post.frontmatter };
-
-    if (type === "tag") {
-      if (Array.isArray(fm.tags)) {
-        const idx = fm.tags.indexOf(oldName);
-        if (idx !== -1) { fm.tags[idx] = newName; changed = true; }
-      } else if (fm.tags === oldName) {
-        fm.tags = newName; changed = true;
-      }
-    } else {
-      if (fm.category === oldName) { fm.category = newName; changed = true; }
-      if (fm.categories === oldName) { fm.categories = newName; changed = true; }
-    }
-
-    if (changed) {
-      await github.savePost({ ...post, frontmatter: fm });
-      updatedCount++;
-    }
-  }
-
-  return { updatedCount };
+  return renameTaxonomy(github, mutation);
 });
 
-ipcMain.handle("github:delete-tag", async (_event, { type, name }: { type: "tag" | "category"; name: string }) => {
+ipcMain.handle("github:delete-tag", async (_event, input: TaxonomyDeleteInput) => {
   const github = await githubServiceProvider.getGitHubService();
   if (!github) return { updatedCount: 0 };
 
-  const posts = await github.getPosts();
-  let updatedCount = 0;
-
-  for (const post of posts) {
-    let changed = false;
-    const fm = { ...post.frontmatter };
-
-    if (type === "tag") {
-      if (Array.isArray(fm.tags)) {
-        const filtered = fm.tags.filter((t: string) => t !== name);
-        if (filtered.length !== fm.tags.length) { fm.tags = filtered; changed = true; }
-      } else if (fm.tags === name) {
-        fm.tags = []; changed = true;
-      }
-    } else {
-      if (fm.category === name) { delete fm.category; changed = true; }
-      if (fm.categories === name) { delete fm.categories; changed = true; }
-    }
-
-    if (changed) {
-      await github.savePost({ ...post, frontmatter: fm });
-      updatedCount++;
-    }
-  }
-
-  return { updatedCount };
+  return deleteTaxonomy(github, input);
 });
 
 // 媒体管理
