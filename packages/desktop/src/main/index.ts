@@ -15,13 +15,17 @@ import {
   startGitHubDeviceFlow,
   type StoredOAuthSession,
 } from "./auth";
-import { createJsonFileStore } from "./json-file-store";
+import { createDesktopPersistence, type PluginSecretMutation } from "./desktop-persistence";
 import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
 
 const KEYTAR_SERVICE = "hexo-cms";
 const LEGACY_TOKEN_ACCOUNT = "github-token";
 const OAUTH_SESSION_ACCOUNT = "github-oauth-session";
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID ?? "";
+const desktopPersistence = createDesktopPersistence({
+  getUserDataPath: () => app.getPath("userData"),
+  keytarService: KEYTAR_SERVICE,
+});
 
 // ==================== 托盘 ====================
 
@@ -63,128 +67,6 @@ function createTray(): void {
   });
 }
 
-// ==================== 配置存储 ====================
-
-function getConfigPath() {
-  return join(app.getPath("userData"), "github-config.json");
-}
-
-const configStore = createJsonFileStore<GitHubConfig | null>(getConfigPath, () => null);
-
-function loadConfig(): GitHubConfig | null {
-  return configStore.load();
-}
-
-function saveConfigToFile(config: GitHubConfig): void {
-  configStore.save(config);
-}
-
-function getPluginStoragePath(): string {
-  return join(app.getPath("userData"), "plugins", "storage.json");
-}
-
-const pluginStorageStore = createJsonFileStore<PluginStorageStoreValue>(getPluginStoragePath, () => ({}));
-
-function loadPluginStorage(): PluginStorageStoreValue {
-  return pluginStorageStore.load();
-}
-
-function savePluginStorage(value: PluginStorageStoreValue): void {
-  pluginStorageStore.save(value);
-}
-
-async function loadPluginSecretsFromKeychain(): Promise<PluginSecretStoreValue> {
-  const keytar = await import("keytar");
-  const value = await keytar.default.getPassword(KEYTAR_SERVICE, "plugin-secrets");
-  if (!value) return {};
-  try {
-    return JSON.parse(value) as PluginSecretStoreValue;
-  } catch {
-    return {};
-  }
-}
-
-async function savePluginSecretsToKeychain(value: PluginSecretStoreValue): Promise<void> {
-  const keytar = await import("keytar");
-  await keytar.default.setPassword(KEYTAR_SERVICE, "plugin-secrets", JSON.stringify(value));
-}
-
-// ==================== 插件状态持久化 ====================
-
-function getPluginStatePath(): string {
-  return join(app.getPath("userData"), "plugins", "state.json");
-}
-
-const pluginStateStore = createJsonFileStore<PluginStateStoreValue>(getPluginStatePath, () => ({}));
-
-function loadPluginStateFromFile(): PluginStateStoreValue {
-  return pluginStateStore.load();
-}
-
-function savePluginStateToFile(value: PluginStateStoreValue): void {
-  pluginStateStore.save(value);
-}
-
-// ==================== 插件配置持久化 ====================
-
-function getPluginConfigPath(): string {
-  return join(app.getPath("userData"), "plugins", "config.json");
-}
-
-const pluginConfigStore = createJsonFileStore<PluginConfigStoreValue>(getPluginConfigPath, () => ({}));
-
-function loadPluginConfigFromFile(): PluginConfigStoreValue {
-  return pluginConfigStore.load();
-}
-
-function savePluginConfigToFile(value: PluginConfigStoreValue): void {
-  pluginConfigStore.save(value);
-}
-
-function getPluginLogPath(): string {
-  return join(app.getPath("userData"), "plugins", "logs.json");
-}
-
-const pluginLogStore = createJsonFileStore<PluginLogStoreValue>(getPluginLogPath, () => ({}));
-
-function loadPluginLogsFromFile(): PluginLogStoreValue {
-  return pluginLogStore.load();
-}
-
-function savePluginLogsToFile(value: PluginLogStoreValue): void {
-  pluginLogStore.save(value);
-}
-
-// ==================== 插件网络审计日志 ====================
-
-interface PluginNetworkAuditEntry {
-  pluginId: string;
-  url: string;
-  method: string;
-  status: number;
-  error?: string;
-  createdAt: string;
-}
-
-const MAX_AUDIT_ENTRIES = 200;
-
-function getPluginNetworkAuditPath(): string {
-  return join(app.getPath("userData"), "plugins", "network-audit.json");
-}
-
-const pluginNetworkAuditStore = createJsonFileStore<PluginNetworkAuditEntry[]>(getPluginNetworkAuditPath, () => []);
-
-function loadPluginNetworkAudit(): PluginNetworkAuditEntry[] {
-  return pluginNetworkAuditStore.load();
-}
-
-function appendPluginNetworkAudit(entry: Omit<PluginNetworkAuditEntry, "createdAt">): void {
-  const entries = loadPluginNetworkAudit();
-  entries.unshift({ ...entry, createdAt: new Date().toISOString() });
-  const trimmed = entries.slice(0, MAX_AUDIT_ENTRIES);
-  pluginNetworkAuditStore.save(trimmed);
-}
-
 // ==================== 插件网络请求代理 ====================
 
 interface PluginFetchRequest {
@@ -203,10 +85,6 @@ interface PluginFetchResponseBody {
   headers: Record<string, string>;
   body: string;
 }
-
-type PluginSecretMutation =
-  | { op: "set"; pluginId: string; key: string; value: string }
-  | { op: "delete"; pluginId: string; key: string };
 
 const MAX_PLUGIN_FETCH_RESPONSE_SIZE = 10 * 1024 * 1024;
 const DEFAULT_PLUGIN_FETCH_TIMEOUT_MS = 10_000;
@@ -254,7 +132,7 @@ async function executePluginFetch(req: PluginFetchRequest): Promise<PluginFetchR
 
     const contentLength = response.headers.get("content-length");
     if (contentLength && parseInt(contentLength, 10) > MAX_PLUGIN_FETCH_RESPONSE_SIZE) {
-      appendPluginNetworkAudit({
+      desktopPersistence.appendPluginNetworkAudit({
         pluginId: auditPluginId,
         url: parsedUrl.toString(),
         method: auditMethod,
@@ -266,7 +144,7 @@ async function executePluginFetch(req: PluginFetchRequest): Promise<PluginFetchR
 
     const body = await response.text();
     if (body.length > MAX_PLUGIN_FETCH_RESPONSE_SIZE) {
-      appendPluginNetworkAudit({
+      desktopPersistence.appendPluginNetworkAudit({
         pluginId: auditPluginId,
         url: parsedUrl.toString(),
         method: auditMethod,
@@ -281,7 +159,7 @@ async function executePluginFetch(req: PluginFetchRequest): Promise<PluginFetchR
       responseHeaders[key.toLowerCase()] = value;
     });
 
-    appendPluginNetworkAudit({
+    desktopPersistence.appendPluginNetworkAudit({
       pluginId: auditPluginId,
       url: parsedUrl.toString(),
       method: auditMethod,
@@ -298,7 +176,7 @@ async function executePluginFetch(req: PluginFetchRequest): Promise<PluginFetchR
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     if (message !== "Response too large") {
-      appendPluginNetworkAudit({
+      desktopPersistence.appendPluginNetworkAudit({
         pluginId: auditPluginId,
         url: parsedUrl.toString(),
         method: auditMethod,
@@ -355,7 +233,7 @@ async function getGitHubAccessToken(): Promise<string | null> {
 }
 
 async function getGitHubService(): Promise<GitHubService | null> {
-  const config = loadConfig();
+  const config = desktopPersistence.loadConfig();
   if (!config) {
     cachedGitHubService = null;
     return null;
@@ -574,12 +452,12 @@ ipcMain.handle("auth:reauthorize", async () => {
 
 // 配置管理
 ipcMain.handle("config:get", () => {
-  return loadConfig();
+  return desktopPersistence.loadConfig();
 });
 
 ipcMain.handle("config:save", (_event, config: GitHubConfig) => {
   try {
-    saveConfigToFile(config);
+    desktopPersistence.saveConfig(config);
     invalidateGitHubServiceCache();
     return true;
   } catch (error) {
@@ -589,11 +467,11 @@ ipcMain.handle("config:save", (_event, config: GitHubConfig) => {
 });
 
 ipcMain.handle("plugin-storage:load", () => {
-  return loadPluginStorage();
+  return desktopPersistence.loadPluginStorage();
 });
 
 ipcMain.handle("plugin-storage:save", (_event, value: PluginStorageStoreValue) => {
-  savePluginStorage(value);
+  desktopPersistence.savePluginStorage(value);
 });
 
 ipcMain.handle("plugin-secret:load", async () => {
@@ -602,22 +480,15 @@ ipcMain.handle("plugin-secret:load", async () => {
 });
 
 ipcMain.handle("plugin-secret:save", async (_event, value: PluginSecretStoreValue) => {
-  await savePluginSecretsToKeychain(value);
+  await desktopPersistence.savePluginSecrets(value);
 });
 
 ipcMain.handle("plugin-secret:has", async (_event, { pluginId, key }: { pluginId: string; key: string }) => {
-  if (!pluginId || !key) return false;
-  const secrets = await loadPluginSecretsFromKeychain();
-  return typeof secrets[pluginId]?.[key] === "string";
+  return desktopPersistence.hasPluginSecret(pluginId, key);
 });
 
 ipcMain.handle("plugin-secret:mutate", async (_event, mutation: PluginSecretMutation) => {
-  if (!mutation.pluginId || !mutation.key) throw new Error("Invalid secret target");
-  const secrets = await loadPluginSecretsFromKeychain();
-  const namespace = { ...(secrets[mutation.pluginId] ?? {}) };
-  if (mutation.op === "set") namespace[mutation.key] = mutation.value;
-  else delete namespace[mutation.key];
-  await savePluginSecretsToKeychain({ ...secrets, [mutation.pluginId]: namespace });
+  await desktopPersistence.mutatePluginSecret(mutation);
 });
 
 ipcMain.handle("plugin-http:fetch", async (_event, req: PluginFetchRequest) => {
@@ -625,32 +496,31 @@ ipcMain.handle("plugin-http:fetch", async (_event, req: PluginFetchRequest) => {
 });
 
 ipcMain.handle("plugin-network-audit:list", async (_event, limit?: number) => {
-  const entries = loadPluginNetworkAudit();
-  return entries.slice(0, typeof limit === "number" && limit > 0 ? limit : 50);
+  return desktopPersistence.listPluginNetworkAudit(limit);
 });
 
 ipcMain.handle("plugin-state:load", () => {
-  return loadPluginStateFromFile();
+  return desktopPersistence.loadPluginState();
 });
 
 ipcMain.handle("plugin-state:save", (_event, value: PluginStateStoreValue) => {
-  savePluginStateToFile(value);
+  desktopPersistence.savePluginState(value);
 });
 
 ipcMain.handle("plugin-config:load", () => {
-  return loadPluginConfigFromFile();
+  return desktopPersistence.loadPluginConfig();
 });
 
 ipcMain.handle("plugin-config:save", (_event, value: PluginConfigStoreValue) => {
-  savePluginConfigToFile(value);
+  desktopPersistence.savePluginConfig(value);
 });
 
 ipcMain.handle("plugin-logs:load", () => {
-  return loadPluginLogsFromFile();
+  return desktopPersistence.loadPluginLogs();
 });
 
 ipcMain.handle("plugin-logs:save", (_event, value: PluginLogStoreValue) => {
-  savePluginLogsToFile(value);
+  desktopPersistence.savePluginLogs(value);
 });
 
 // Onboarding repository import
@@ -879,7 +749,7 @@ ipcMain.handle("github:get-media", async () => {
   const github = await getGitHubService();
   if (!github) return [];
 
-  const config = loadConfig();
+  const config = desktopPersistence.loadConfig();
   const mediaDir = config?.mediaDir || "source/images";
 
   try {
@@ -970,7 +840,7 @@ ipcMain.handle("github:switch-theme", async (_event, themeName: string) => {
 
 // 部署管理
 ipcMain.handle("github:get-deployments", async () => {
-  const config = loadConfig();
+  const config = desktopPersistence.loadConfig();
   if (!config) return [];
 
   const token = await getGitHubAccessToken();
@@ -1003,7 +873,7 @@ ipcMain.handle("github:get-deployments", async () => {
 });
 
 ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => {
-  const config = loadConfig();
+  const config = desktopPersistence.loadConfig();
   if (!config) throw new Error("GitHub not configured");
   try {
     const token = await getGitHubAccessToken();
