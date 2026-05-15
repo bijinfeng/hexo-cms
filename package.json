@@ -16,28 +16,42 @@
     "type-check": "pnpm -r exec tsc --noEmit",
     "prepare": "husky"
   },
+  "dependencies": {
+    "es-toolkit": "catalog:libs",
+    "lucide-react": "catalog:libs",
+    "octokit": "catalog:libs",
+    "react": "catalog:react",
+    "react-dom": "catalog:react"
+  },
   "devDependencies": {
-    "@commitlint/cli": "^20.5.3",
-    "@commitlint/config-conventional": "^20.5.3",
-    "@eslint/js": "^10.0.1",
-    "@typescript-eslint/eslint-plugin": "^8.59.1",
-    "@typescript-eslint/parser": "^8.59.1",
-    "@vitest/coverage-v8": "^4.1.5",
-    "@vitest/ui": "^4.1.5",
-    "eslint": "^10.2.1",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.4.0",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.5"
+    "@commitlint/cli": "catalog:git-hooks",
+    "@commitlint/config-conventional": "catalog:git-hooks",
+    "@eslint/js": "catalog:lint",
+    "@tailwindcss/vite": "catalog:build",
+    "@testing-library/jest-dom": "catalog:test",
+    "@testing-library/react": "catalog:test",
+    "@testing-library/user-event": "catalog:test",
+    "@types/node": "catalog:types",
+    "@types/react": "catalog:types",
+    "@types/react-dom": "catalog:types",
+    "@typescript-eslint/eslint-plugin": "catalog:lint",
+    "@typescript-eslint/parser": "catalog:lint",
+    "@vitejs/plugin-react": "catalog:build",
+    "@vitest/coverage-v8": "catalog:test",
+    "@vitest/ui": "catalog:test",
+    "eslint": "catalog:lint",
+    "eslint-plugin-react": "catalog:lint",
+    "eslint-plugin-react-hooks": "catalog:lint",
+    "husky": "catalog:git-hooks",
+    "jsdom": "catalog:test",
+    "lint-staged": "catalog:git-hooks",
+    "tailwindcss": "catalog:build",
+    "typescript": "catalog:types",
+    "vitest": "catalog:test"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix"
     ]
-  },
-  "dependencies": {
-    "es-toolkit": "^1.46.1"
   }
 }

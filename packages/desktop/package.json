@@ -23,25 +23,12 @@
     "@tanstack/router-plugin": "^1.167.32",
     "better-sqlite3": "^12.9.0",
     "electron-updater": "^6.3.9",
-    "keytar": "^7.9.0",
-    "lucide-react": "^1.14.0",
-    "octokit": "^5.0.5",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "keytar": "^7.9.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.18",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^25.6.0",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.1",
     "electron": "41.5.0",
     "electron-builder": "^26.0.12",
-    "electron-vite": "^5.0.0",
-    "jsdom": "^29.1.1",
-    "tailwindcss": "^4.1.18",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.5"
+    "electron-vite": "^5.0.0"
   }
 }

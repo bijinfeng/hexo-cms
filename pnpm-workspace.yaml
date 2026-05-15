@@ -1,5 +1,50 @@
 packages:
   - 'packages/*'
+
+catalogs:
+  react:
+    react: ^19.2.0
+    react-dom: ^19.2.0
+
+  libs:
+    es-toolkit: ^1.46.1
+    lucide-react: ^1.14.0
+    octokit: ^5.0.5
+
+  types:
+    typescript: ^6.0.2
+    '@types/node': ^25.6.0
+    '@types/react': ^19.2.0
+    '@types/react-dom': ^19.2.0
+
+  lint:
+    eslint: ^10.2.1
+    '@eslint/js': ^10.0.1
+    '@typescript-eslint/eslint-plugin': ^8.59.1
+    '@typescript-eslint/parser': ^8.59.1
+    eslint-plugin-react: ^7.37.5
+    eslint-plugin-react-hooks: ^7.1.1
+
+  test:
+    vitest: ^4.1.5
+    '@vitest/coverage-v8': ^4.1.5
+    '@vitest/ui': ^4.1.5
+    jsdom: ^29.1.1
+    '@testing-library/react': ^16.3.2
+    '@testing-library/jest-dom': ^6.9.1
+    '@testing-library/user-event': ^14.6.1
+
+  build:
+    '@vitejs/plugin-react': ^6.0.1
+    tailwindcss: ^4.1.18
+    '@tailwindcss/vite': ^4.1.18
+
+  git-hooks:
+    husky: ^9.1.7
+    lint-staged: ^16.4.0
+    '@commitlint/cli': ^20.5.3
+    '@commitlint/config-conventional': ^20.5.3
+
 allowBuilds:
   better-sqlite3: true
   electron: true
