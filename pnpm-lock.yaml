@@ -100,6 +100,9 @@ importers:
       keytar:
         specifier: ^7.9.0
         version: 7.9.0
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.5)
       octokit:
         specifier: ^5.0.5
         version: 5.0.5
