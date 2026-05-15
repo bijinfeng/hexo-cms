@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import type { Extension } from "@tiptap/core";
 import { getBuiltinExtensions } from "./extensions";
@@ -29,14 +29,15 @@ export function Editor({
   const allExtensions = useMemo(() => {
     const builtin = getBuiltinExtensions();
 
-    const imageExtIndex = builtin.findIndex((e) => e.name === "image");
-    if (imageExtIndex !== -1 && onUploadMedia) {
-      builtin[imageExtIndex] = (builtin[imageExtIndex] as Extension).configure({
-        uploadFn: onUploadMedia,
-      });
-    }
+    const extensionsWithUpload = onUploadMedia
+      ? builtin.map((ext) =>
+          ext.name === "image"
+            ? (ext as Extension).configure({ uploadFn: onUploadMedia })
+            : ext
+        )
+      : builtin;
 
-    const merged = [...builtin];
+    const merged = [...extensionsWithUpload];
     for (const ext of extensions) {
       const idx = merged.findIndex((e) => e.name === ext.name);
       if (idx !== -1) {
@@ -67,6 +68,14 @@ export function Editor({
       },
     },
   });
+
+  const prevValueRef = useRef(value);
+  useEffect(() => {
+    if (editor && value !== prevValueRef.current && !sourceMode) {
+      editor.commands.setContent(value, { contentType: "markdown" });
+    }
+    prevValueRef.current = value;
+  }, [value, editor, sourceMode]);
 
   const handleImageUploadClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -109,8 +118,9 @@ export function Editor({
   const handleSourceChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       markdownRef.current = e.target.value;
+      onChange(e.target.value);
     },
-    [],
+    [onChange],
   );
 
   return (
