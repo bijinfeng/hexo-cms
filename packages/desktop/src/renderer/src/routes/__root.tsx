@@ -1,5 +1,5 @@
 import { createRootRoute, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CMSLayout,
   DataProviderProvider,
@@ -24,10 +24,12 @@ function RootComponent() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [hasConfig, setHasConfig] = useState<boolean | null>(null);
   const [isPending, setIsPending] = useState(true);
+  const loadingRef = useRef(false);
   const updater = useUpdater();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let active = true;
+    loadingRef.current = true;
     const refreshSession = () => {
       setIsPending(true);
       setHasConfig(null);
@@ -50,7 +52,10 @@ function RootComponent() {
           }
         })
         .finally(() => {
-          if (active) setIsPending(false);
+          if (active) {
+            loadingRef.current = false;
+            setIsPending(false);
+          }
         });
     };
 
@@ -66,6 +71,7 @@ function RootComponent() {
   const guardPending = isPending || (session?.state === "authenticated" && hasConfig === null && !isSetupRoute);
 
   useEffect(() => {
+    if (loadingRef.current) return;
     const redirect = getAuthRedirect({ pathname, session, hasConfig, isPending: guardPending });
     if (redirect) navigate({ to: redirect, replace: true });
   }, [session, hasConfig, guardPending, pathname, navigate]);
