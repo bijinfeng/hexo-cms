@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "packages/ui/src/styles.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@hexo-cms/ui/components",
+    "ui": "@hexo-cms/ui/components/ui",
+    "utils": "@hexo-cms/ui/utils",
+    "lib": "@hexo-cms/ui/lib",
+    "hooks": "@hexo-cms/ui/hooks"
+  },
+  "iconLibrary": "lucide"
+}

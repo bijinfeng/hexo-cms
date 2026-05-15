@@ -7,6 +7,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./app-shell": "./src/app-shell.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts",
+    "./lib/*": "./src/lib/*.ts",
     "./lib/electron-api": "./src/lib/electron-api.ts",
     "./lib/repository-config": "./src/lib/repository-config.ts",
     "./pages/comments": "./src/pages/comments.tsx",
@@ -28,6 +31,7 @@
     "./types/auth": "./src/types/auth.ts",
     "./types/electron-api": "./src/types/electron-api.ts",
     "./types/onboarding": "./src/types/onboarding.ts",
+    "./utils": "./src/utils.ts",
     "./with-cache": "./src/with-cache.ts"
   },
   "dependencies": {

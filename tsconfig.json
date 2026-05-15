@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@hexo-cms/ui/components/*": ["packages/ui/src/components/*"],
+      "@hexo-cms/ui/hooks/*": ["packages/ui/src/hooks/*"],
+      "@hexo-cms/ui/lib/*": ["packages/ui/src/lib/*"],
+      "@hexo-cms/ui/utils": ["packages/ui/src/utils.ts"]
+    }
+  }
+}
