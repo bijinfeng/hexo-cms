@@ -437,7 +437,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
               ) : null}
             </div>
 
-            <div className="min-h-72 divide-y divide-[var(--border-default)]">
+            <div className="min-h-72 max-h-96 overflow-y-auto divide-y divide-[var(--border-default)]"> 
               {loadingRepos ? (
                 <div className="flex min-h-72 items-center justify-center gap-2 text-sm text-[var(--text-secondary)]">
                   <Loader2 className="h-4 w-4 animate-spin" />

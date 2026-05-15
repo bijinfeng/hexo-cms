@@ -1,5 +1,5 @@
 import { createRootRoute, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
   CMSLayout,
   DataProviderProvider,
@@ -26,7 +26,7 @@ function RootComponent() {
   const [isPending, setIsPending] = useState(true);
   const updater = useUpdater();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let active = true;
     const refreshSession = () => {
       setIsPending(true);

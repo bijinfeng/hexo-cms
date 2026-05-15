@@ -1,5 +1,5 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
   CMSLayout,
   DataProviderProvider,
@@ -64,7 +64,7 @@ function RootComponent() {
   const [hasConfig, setHasConfig] = useState<boolean | null>(null);
   const [isPending, setIsPending] = useState(true);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let active = true;
 
     async function loadSessionAndConfig() {
