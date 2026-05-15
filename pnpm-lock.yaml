@@ -261,6 +261,9 @@ importers:
       '@hexo-cms/core':
         specifier: workspace:*
         version: link:../core
+      '@hexo-cms/editor':
+        specifier: workspace:*
+        version: link:../editor
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@19.2.14)(react@19.2.5)
