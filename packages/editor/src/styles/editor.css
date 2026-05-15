@@ -1,0 +1,277 @@
+/* TipTap editor core styles */
+.tiptap-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.tiptap-editor .ProseMirror {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  outline: none;
+  overflow-y: auto;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-tertiary, #9ca3af);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Heading styles */
+.tiptap-editor .ProseMirror h1 { font-size: 2em; font-weight: 700; margin: 0.67em 0; }
+.tiptap-editor .ProseMirror h2 { font-size: 1.5em; font-weight: 600; margin: 0.75em 0 0.5em; }
+.tiptap-editor .ProseMirror h3 { font-size: 1.25em; font-weight: 600; margin: 0.5em 0; }
+.tiptap-editor .ProseMirror h4 { font-size: 1.1em; font-weight: 600; margin: 0.5em 0; }
+.tiptap-editor .ProseMirror h5 { font-size: 1em; font-weight: 600; margin: 0.5em 0; }
+.tiptap-editor .ProseMirror h6 { font-size: 0.9em; font-weight: 600; margin: 0.5em 0; }
+
+/* List styles */
+.tiptap-editor .ProseMirror ul,
+.tiptap-editor .ProseMirror ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+.tiptap-editor .ProseMirror ul { list-style-type: disc; }
+.tiptap-editor .ProseMirror ul ul { list-style-type: circle; }
+.tiptap-editor .ProseMirror ul ul ul { list-style-type: square; }
+.tiptap-editor .ProseMirror ol { list-style-type: decimal; }
+.tiptap-editor .ProseMirror li { margin: 0.25em 0; }
+
+/* Task list */
+.tiptap-editor .ProseMirror [data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+.tiptap-editor .ProseMirror [data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+.tiptap-editor .ProseMirror [data-type="taskList"] li label {
+  flex-shrink: 0;
+  margin-top: 0.25em;
+}
+.tiptap-editor .ProseMirror [data-type="taskList"] li label input[type="checkbox"] {
+  cursor: pointer;
+}
+.tiptap-editor .ProseMirror [data-type="taskList"] li[data-checked="true"] > div > p {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Blockquote */
+.tiptap-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--border-default, #e5e7eb);
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: var(--text-secondary, #666);
+}
+
+/* Code */
+.tiptap-editor .ProseMirror code {
+  background: var(--bg-muted, #f3f4f6);
+  border-radius: 0.25em;
+  padding: 0.15em 0.4em;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+}
+
+.tiptap-editor .ProseMirror pre {
+  background: var(--bg-muted, #1e1e1e);
+  border-radius: 0.5em;
+  padding: 1em;
+  margin: 0.5em 0;
+  overflow-x: auto;
+}
+
+.tiptap-editor .ProseMirror pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Horizontal rule */
+.tiptap-editor .ProseMirror hr {
+  border: none;
+  border-top: 2px solid var(--border-default, #e5e7eb);
+  margin: 1.5em 0;
+}
+
+/* Links */
+.tiptap-editor .ProseMirror a {
+  color: var(--brand-primary, #2563eb);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Tables */
+.tiptap-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+  overflow: hidden;
+}
+
+.tiptap-editor .ProseMirror table td,
+.tiptap-editor .ProseMirror table th {
+  border: 1px solid var(--border-default, #e5e7eb);
+  padding: 0.5em 0.75em;
+  min-width: 80px;
+  position: relative;
+}
+
+.tiptap-editor .ProseMirror table th {
+  background: var(--bg-muted, #f9fafb);
+  font-weight: 600;
+  text-align: left;
+}
+
+.tiptap-editor .ProseMirror .selectedCell {
+  background: var(--brand-primary-subtle, rgba(37, 99, 235, 0.05));
+}
+
+/* Images */
+.tiptap-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5em;
+  margin: 0.5em 0;
+}
+
+.tiptap-editor .ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--brand-primary, #2563eb);
+}
+
+/* Selection */
+.tiptap-editor .ProseMirror ::selection {
+  background: var(--brand-primary-subtle, rgba(37, 99, 235, 0.2));
+}
+
+/* ===== Toolbar styles ===== */
+.tiptap-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-default, #e5e7eb);
+  background: var(--bg-surface, #fff);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.tiptap-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary, #9ca3af);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tiptap-toolbar-btn:hover {
+  color: var(--text-primary, #1a1a1a);
+  background: var(--bg-muted, #f3f4f6);
+}
+
+.tiptap-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tiptap-toolbar-separator {
+  width: 1px;
+  height: 18px;
+  background: var(--border-default, #e5e7eb);
+  margin: 0 4px;
+}
+
+/* ===== Bubble menu styles ===== */
+.tiptap-bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-default, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tiptap-bubble-menu .tiptap-toolbar-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.tiptap-bubble-menu .tiptap-toolbar-btn.is-active {
+  color: var(--brand-primary, #2563eb);
+  background: var(--brand-primary-subtle, rgba(37, 99, 235, 0.1));
+}
+
+/* Heading dropdown in bubble menu */
+.tiptap-heading-dropdown {
+  position: relative;
+}
+
+.tiptap-heading-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-default, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+  padding: 4px;
+  z-index: 50;
+}
+
+.tiptap-heading-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.tiptap-heading-dropdown-item:hover {
+  background: var(--bg-muted, #f3f4f6);
+}
+
+.tiptap-heading-dropdown-item.is-active {
+  color: var(--brand-primary, #2563eb);
+  background: var(--brand-primary-subtle, rgba(37, 99, 235, 0.1));
+}
+
+/* ===== Source toggle (textarea mode) ===== */
+.tiptap-source-textarea {
+  flex: 1;
+  width: 100%;
+  padding: 1.5rem 2rem;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary, #1a1a1a);
+  background: var(--bg-surface, #fff);
+}
