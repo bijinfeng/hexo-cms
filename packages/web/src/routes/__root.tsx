@@ -129,7 +129,10 @@ function RootComponent() {
           {isPublicRoute || isSetupRoute ? (
             <Outlet />
           ) : (
-            <CMSLayout>
+            <CMSLayout
+              authClient={webAuthClient}
+              onSignedOut={() => navigate({ to: "/login", replace: true })}
+            >
               <ErrorBoundary>
                 <Outlet />
               </ErrorBoundary>

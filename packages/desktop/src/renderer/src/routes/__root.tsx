@@ -87,7 +87,11 @@ function RootComponent() {
       <PluginProvider>
         <ErrorBoundary>
           {updater && <UpdateBanner updater={updater} />}
-          <CMSLayout isElectron>
+          <CMSLayout
+            isElectron
+            authClient={desktopAuthClient}
+            onSignedOut={() => navigate({ to: "/login", replace: true })}
+          >
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

@@ -5,6 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { cn } from "../../utils";
 import { usePluginSystem } from "../../plugin";
+import type { AuthClient } from "../../types/auth";
 
 const routeTitles: Record<string, string> = {
   "/": "数据大盘",
@@ -19,7 +20,17 @@ const routeTitles: Record<string, string> = {
   "/settings": "站点设置",
 };
 
-export function CMSLayout({ children, isElectron }: { children: ReactNode; isElectron?: boolean }) {
+export function CMSLayout({
+  children,
+  isElectron,
+  authClient,
+  onSignedOut,
+}: {
+  children: ReactNode;
+  isElectron?: boolean;
+  authClient?: AuthClient;
+  onSignedOut?: () => void;
+}) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { snapshot } = usePluginSystem();
@@ -72,6 +83,8 @@ export function CMSLayout({ children, isElectron }: { children: ReactNode; isEle
             isElectron={isElectron}
             onMenuToggle={() => setMobileSidebarOpen((v) => !v)}
             showSearch={showTopbarSearch}
+            authClient={authClient}
+            onSignedOut={onSignedOut}
           />
           <main className="flex-1 overflow-y-auto p-6">
             {children}
