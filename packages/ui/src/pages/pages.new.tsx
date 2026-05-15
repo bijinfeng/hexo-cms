@@ -1,11 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import CodeMirror from "@uiw/react-codemirror";
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { oneDark } from "@codemirror/theme-one-dark";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
 import {
@@ -13,17 +11,7 @@ import {
   Save,
   Eye,
   EyeOff,
-  Bold,
-  Italic,
-  Link,
   Image,
-  List,
-  ListOrdered,
-  Code,
-  Quote,
-  Heading1,
-  Heading2,
-  Minus,
   Upload,
   Globe,
   FileText,
@@ -38,11 +26,8 @@ export function NewPagePage() {
   const [preview, setPreview] = useState(false);
   const [status, setStatus] = useState<"draft" | "published">("published");
   const [slug, setSlug] = useState("");
-  const [isDarkMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const onChange = useCallback((value: string) => {
     setContent(value);
@@ -55,30 +40,6 @@ export function NewPagePage() {
       return sanitizeHtml(content);
     }
   }, [content]);
-
-  function insertMarkdown(before: string, after = "", placeholder = "") {
-    setContent((prev) => prev + before + placeholder + after);
-  }
-
-  async function handleImageUpload(file: File) {
-    setUploading(true);
-    try {
-      const config = await dataProvider.getConfig();
-      if (!config) {
-        setError("请先在设置页面配置 GitHub 仓库");
-        return;
-      }
-      const dir = config.media_dir || "source/images";
-      const path = `${dir}/${file.name}`;
-      const result = await dataProvider.uploadMedia(file, path);
-      insertMarkdown(`![${file.name}](${result.url})`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "图片上传失败");
-    } finally {
-      setUploading(false);
-      if (imageInputRef.current) imageInputRef.current.value = "";
-    }
-  }
 
   async function handleSave(publish = false) {
     if (!title.trim()) {
@@ -107,36 +68,8 @@ export function NewPagePage() {
     }
   }
 
-  const toolbarActions = [
-    { icon: Heading1, label: "H1", action: () => insertMarkdown("# ", "", "标题") },
-    { icon: Heading2, label: "H2", action: () => insertMarkdown("## ", "", "标题") },
-    { separator: true },
-    { icon: Bold, label: "粗体", action: () => insertMarkdown("**", "**", "粗体文字") },
-    { icon: Italic, label: "斜体", action: () => insertMarkdown("*", "*", "斜体文字") },
-    { icon: Code, label: "代码", action: () => insertMarkdown("`", "`", "代码") },
-    { separator: true },
-    { icon: Link, label: "链接", action: () => insertMarkdown("[", "](url)", "链接文字") },
-    { icon: Image, label: "图片", action: () => imageInputRef.current?.click() },
-    { separator: true },
-    { icon: List, label: "无序列表", action: () => insertMarkdown("- ", "", "列表项") },
-    { icon: ListOrdered, label: "有序列表", action: () => insertMarkdown("1. ", "", "列表项") },
-    { icon: Quote, label: "引用", action: () => insertMarkdown("> ", "", "引用内容") },
-    { icon: Minus, label: "分割线", action: () => insertMarkdown("\n---\n") },
-  ];
-
   return (
     <div className="h-full flex flex-col animate-fade-in -m-6">
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleImageUpload(file);
-        }}
-      />
-
       {/* Topbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-[var(--border-default)] bg-[var(--bg-surface)] flex-shrink-0">
         <button
@@ -189,29 +122,6 @@ export function NewPagePage() {
             />
           </div>
 
-          {!preview && (
-            <div className="flex items-center gap-0.5 px-8 py-2 border-b border-[var(--border-default)] flex-shrink-0 flex-wrap">
-              {toolbarActions.map((action, i) =>
-                "separator" in action ? (
-                  <div key={i} className="w-px h-4 bg-[var(--border-default)] mx-1" />
-                ) : (
-                  <button
-                    key={i}
-                    onClick={action.action}
-                    title={action.label}
-                    disabled={action.label === "图片" && uploading}
-                    className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    {action.label === "图片" && uploading
-                      ? <Loader2 size={14} className="animate-spin" />
-                      : <action.icon size={14} />
-                    }
-                  </button>
-                )
-              )}
-            </div>
-          )}
-
           <div className="flex-1 overflow-hidden">
             {preview ? (
               <div className="h-full overflow-y-auto px-8 py-6">
@@ -221,17 +131,7 @@ export function NewPagePage() {
                 />
               </div>
             ) : (
-              <div className="h-full overflow-hidden">
-                <CodeMirror
-                  value={content}
-                  height="100%"
-                  extensions={[markdown({ base: markdownLanguage })]}
-                  onChange={onChange}
-                  theme={isDarkMode ? oneDark : undefined}
-                  basicSetup={{ lineNumbers: true, foldGutter: true, bracketMatching: true, autocompletion: true }}
-                  style={{ fontSize: "14px", fontFamily: "var(--font-mono)" }}
-                />
-              </div>
+              <MarkdownEditor value={content} onChange={onChange} />
             )}
           </div>
         </div>
