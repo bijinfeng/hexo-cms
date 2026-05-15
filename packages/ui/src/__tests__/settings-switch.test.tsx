@@ -31,9 +31,17 @@ describe("SettingsPage switches", () => {
     const enabledSwitch = screen.getByRole("switch", { name: "新评论通知" });
     const disabledSwitch = screen.getByRole("switch", { name: "垃圾评论通知" });
 
-    expect(enabledSwitch).toHaveClass("w-10", "h-5", "p-0", "border-0");
-    expect(enabledSwitch.querySelector("span")).toHaveClass("left-0.5", "top-0.5", "translate-x-5");
-    expect(disabledSwitch.querySelector("span")).toHaveClass("left-0.5", "top-0.5", "translate-x-0");
-    expect(disabledSwitch.querySelector("span")).not.toHaveClass("translate-x-0.5");
+    const enabledThumb = enabledSwitch.querySelector("span");
+    const disabledThumb = disabledSwitch.querySelector("span");
+
+    expect(enabledSwitch).toHaveClass("w-9", "h-5", "border-2");
+    expect(enabledSwitch).toHaveAttribute("data-state", "checked");
+    expect(enabledThumb).toHaveClass(
+      "size-4",
+      "data-[state=checked]:translate-x-4",
+      "data-[state=unchecked]:translate-x-0",
+    );
+    expect(enabledThumb).toHaveAttribute("data-state", "checked");
+    expect(disabledThumb).toHaveAttribute("data-state", "unchecked");
   });
 });

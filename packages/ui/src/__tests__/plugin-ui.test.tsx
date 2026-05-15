@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ATTACHMENTS_HELPER_PLUGIN_ID, COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
 import { DataProviderProvider } from "../context/data-provider-context";
@@ -61,6 +61,13 @@ function EnabledPluginDashboardWidgets() {
   const configs = Object.fromEntries(snapshot.plugins.map(({ manifest, config }) => [manifest.id, config]));
   const dashboardWidgets = DashboardExtensionOutlet({ widgets: snapshot.extensions.dashboardWidgets, configs });
   return <>{dashboardWidgets.map((widget) => widget.content)}</>;
+}
+
+async function selectComboboxOption(user: ReturnType<typeof userEvent.setup>, label: string, option: string) {
+  const trigger = screen.getByRole("combobox", { name: label });
+  trigger.focus();
+  fireEvent.keyDown(trigger, { key: "ArrowDown" });
+  await user.click(await screen.findByRole("option", { name: option }));
 }
 
 describe("plugin UI", () => {
@@ -147,14 +154,14 @@ describe("plugin UI", () => {
     expect(commentsCard).not.toBeNull();
 
     await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
-    await user.selectOptions(screen.getByLabelText("评论服务"), "waline");
+    await selectComboboxOption(user, "评论服务", "Waline");
     await user.type(screen.getByLabelText("评论后台 URL"), "https://comments.example.com");
     await user.click(screen.getByRole("switch", { name: "展示待审核提醒" }));
 
     unmount();
     renderWithProviders(<PluginSettingsPanel />);
 
-    expect(screen.getByLabelText("评论服务")).toHaveValue("waline");
+    expect(screen.getByRole("combobox", { name: "评论服务" })).toHaveTextContent("Waline");
     expect(screen.getByLabelText("评论后台 URL")).toHaveValue("https://comments.example.com");
     expect(screen.getByRole("switch", { name: "展示待审核提醒" })).toHaveAttribute("aria-checked", "false");
   });

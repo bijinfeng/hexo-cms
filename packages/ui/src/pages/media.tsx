@@ -3,6 +3,7 @@ import { useDataProvider } from "../context/data-provider-context";
 import { ATTACHMENTS_HELPER_PLUGIN_ID } from "@hexo-cms/core";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { Alert } from "../components/ui/alert";
 import { usePluginSystem } from "../plugin";
 import {
   Upload,
@@ -176,9 +177,9 @@ export function MediaPage() {
 
       {/* Error */}
       {error && (
-        <div className="p-3 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)] text-sm text-[var(--status-error)]" role="alert">
+        <Alert variant="destructive">
           {error}
-        </div>
+        </Alert>
       )}
 
 

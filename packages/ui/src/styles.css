@@ -9,6 +9,33 @@
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
   /* Primary - Warm Orange */
   --color-primary-50: #fff7ed;
   --color-primary-100: #ffedd5;
@@ -38,9 +65,34 @@
 :root {
   color-scheme: light;
 
+  --radius: 0.5rem;
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--brand-primary);
+  --primary-foreground: var(--text-on-primary);
+  --secondary: var(--bg-muted);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-muted);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--bg-muted);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--status-error);
+  --destructive-foreground: var(--text-on-primary);
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--brand-primary);
+  --success: var(--status-success);
+  --warning: var(--status-warning);
+  --info: var(--status-info);
+
   /* Backgrounds */
   --bg-base: #f9fafb;
   --bg-surface: #ffffff;
+  --bg-card: #ffffff;
   --bg-elevated: #ffffff;
   --bg-overlay: rgba(255, 255, 255, 0.85);
   --bg-muted: #f3f4f6;
@@ -108,6 +160,7 @@
   /* Backgrounds */
   --bg-base: #0a0a0a;
   --bg-surface: #111111;
+  --bg-card: #111111;
   --bg-elevated: #1a1a1a;
   --bg-overlay: rgba(17, 17, 17, 0.9);
   --bg-muted: #1f1f1f;

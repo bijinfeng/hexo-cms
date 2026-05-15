@@ -4,6 +4,15 @@ import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Alert } from "../components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import {
   FileText,
   Plus,
@@ -513,9 +522,9 @@ export function PostsPage() {
 
       {/* Error message */}
       {error && (
-        <div className="p-3 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)] text-sm text-[var(--status-error)]" role="alert">
+        <Alert variant="destructive">
           {error}
-        </div>
+        </Alert>
       )}
 
 
@@ -580,17 +589,23 @@ export function PostsPage() {
                     <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
                       分类
                     </label>
-                    <select
+                    <Select
                       value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)] transition-colors cursor-pointer"
+                      onValueChange={setSelectedCategory}
                     >
-                      {allCategories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {allCategories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Date Range Filter */}

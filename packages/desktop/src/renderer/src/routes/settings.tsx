@@ -2,8 +2,19 @@ import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-ro
 import { SettingsPage, type SettingsSectionDef } from "@hexo-cms/ui/pages/settings";
 import { desktopAuthClient } from "../lib/desktop-auth-client";
 import { RefreshCw } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@hexo-cms/ui";
-import { Button } from "@hexo-cms/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@hexo-cms/ui";
 import { useUpdater } from "../hooks/useUpdater";
 
 function UpdatesSection() {
@@ -27,14 +38,20 @@ function UpdatesSection() {
 
           <div className="flex items-center justify-between">
             <span className="text-sm text-[var(--text-secondary)]">更新通道</span>
-            <select
+            <Select
               value={channel}
-              onChange={(e) => setChannel(e.target.value as "stable" | "beta")}
-              className="text-sm px-2 py-1 rounded-md border border-[var(--border-base)] bg-[var(--bg-base)] text-[var(--text-primary)] cursor-pointer"
+              onValueChange={(value) => setChannel(value as "stable" | "beta")}
             >
-              <option value="stable">Stable</option>
-              <option value="beta">Beta</option>
-            </select>
+              <SelectTrigger className="w-28" size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="stable">Stable</SelectItem>
+                  <SelectItem value="beta">Beta</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

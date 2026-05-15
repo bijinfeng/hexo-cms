@@ -4,6 +4,7 @@ import { AlertCircle, ArrowRight, CheckCircle2, Loader2, RefreshCw, Search, Sett
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { GithubIcon } from "../components/ui/github-icon";
+import { Input } from "../components/ui/input";
 import type { AuthSession } from "../types/auth";
 import type {
   OnboardingClient,
@@ -503,29 +504,26 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
               </Button>
               {showManual && (
                 <div className="mt-4 grid gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-4 sm:grid-cols-[1fr_1fr_120px_auto]">
-                  <input
+                  <Input
                     type="text"
                     value={manualOwner}
                     onChange={(event) => setManualOwner(event.target.value)}
                     placeholder="owner"
                     aria-label="仓库所有者"
-                    className="form-input"
                   />
-                  <input
+                  <Input
                     type="text"
                     value={manualRepo}
                     onChange={(event) => setManualRepo(event.target.value)}
                     placeholder="repo"
                     aria-label="仓库名称"
-                    className="form-input"
                   />
-                  <input
+                  <Input
                     type="text"
                     value={manualBranch}
                     onChange={(event) => setManualBranch(event.target.value)}
                     placeholder="main"
                     aria-label="分支"
-                    className="form-input"
                   />
                   <Button
                     type="button"

@@ -10,6 +10,16 @@ import type {
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { Switch } from "../components/ui/switch";
 import { PluginErrorBoundary } from "./plugin-error-boundary";
 import { usePluginSystem } from "./plugin-provider";
 
@@ -269,22 +279,11 @@ function PluginSettingsFieldControl({
           <div className="text-sm font-medium text-[var(--text-primary)]">{field.label}</div>
           {field.description && <div className="text-xs text-[var(--text-tertiary)]">{field.description}</div>}
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={checked}
+        <Switch
+          checked={checked}
+          onCheckedChange={onChange}
           aria-label={field.label}
-          onClick={() => onChange(!checked)}
-          className={`relative h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-0 p-0 transition-colors ${
-            checked ? "bg-[var(--brand-primary)]" : "bg-[var(--border-strong)]"
-          }`}
-        >
-          <span
-            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-              checked ? "translate-x-5" : "translate-x-0"
-            }`}
-          />
-        </button>
+        />
       </div>
     );
   }
@@ -296,18 +295,23 @@ function PluginSettingsFieldControl({
           {field.label}
         </label>
         {field.description && <div className="mt-0.5 text-xs text-[var(--text-tertiary)]">{field.description}</div>}
-        <select
-          id={inputId}
-          className="form-input mt-2"
+        <Select
           value={typeof value === "string" ? value : ""}
-          onChange={(event) => onChange(event.target.value)}
+          onValueChange={onChange}
         >
-          {field.options?.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id={inputId} className="mt-2 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {field.options?.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
     );
   }
@@ -318,10 +322,10 @@ function PluginSettingsFieldControl({
         {field.label}
       </label>
       {field.description && <div className="mt-0.5 text-xs text-[var(--text-tertiary)]">{field.description}</div>}
-      <input
+      <Input
         id={inputId}
         type={field.type === "password" ? "password" : field.type === "url" ? "url" : "text"}
-        className="form-input mt-2"
+        className="mt-2"
         value={typeof value === "string" ? value : ""}
         placeholder={field.placeholder}
         onChange={(event) => onChange(event.target.value)}

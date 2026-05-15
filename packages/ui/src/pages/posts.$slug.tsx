@@ -3,6 +3,16 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Alert } from "../components/ui/alert";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Skeleton } from "../components/skeleton";
 import { DiagnosticsPanel } from "../plugin/diagnostics-panel";
 import type { HexoPost } from "@hexo-cms/core";
@@ -225,9 +235,9 @@ export function EditPostPage() {
 
       {/* Error message */}
       {error && (
-        <div className="mx-6 mt-3 p-3 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)] text-sm text-[var(--status-error)]" role="alert">
+        <Alert variant="destructive" className="mx-6 mt-3">
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="flex flex-1 overflow-hidden">
@@ -304,11 +314,11 @@ export function EditPostPage() {
 
             {/* Date */}
             <SidebarSection title="发布日期" icon={Calendar}>
-              <input
+              <Input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="form-input text-xs"
+                className="text-xs"
               />
             </SidebarSection>
 
@@ -321,16 +331,21 @@ export function EditPostPage() {
 
             {/* Category */}
             <SidebarSection title="分类" icon={FolderOpen}>
-              <select
+              <Select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="form-input text-xs"
+                onValueChange={setCategory}
               >
-                <option value="">选择分类...</option>
-                {availableCategories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full text-xs" size="sm">
+                  <SelectValue placeholder="选择分类..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {availableCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </SidebarSection>
 
             {/* Tags */}

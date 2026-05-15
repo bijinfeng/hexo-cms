@@ -4,6 +4,7 @@ import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Alert } from "../components/ui/alert";
 import { DashboardWidgetGrid } from "../components/dashboard-widgets";
 import { Skeleton, SkeletonCard } from "../components/skeleton";
 import { DashboardExtensionOutlet, usePluginSystem } from "../plugin";
@@ -129,7 +130,7 @@ export function DashboardPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--status-error-bg)] border border-[var(--status-error)]" role="alert">
+        <Alert variant="destructive" className="flex items-center gap-3 p-4">
           <AlertCircle size={18} className="text-[var(--status-error)] flex-shrink-0" />
           <span className="text-sm text-[var(--status-error)] flex-1">{error}</span>
           <button
@@ -139,7 +140,7 @@ export function DashboardPage() {
             <RefreshCw size={14} />
             重试
           </button>
-        </div>
+        </Alert>
       )}
 
       <DashboardWidgetGrid

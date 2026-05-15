@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Alert } from "../components/ui/alert";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
@@ -155,9 +156,9 @@ export function EditPagePage() {
       </div>
 
       {error && (
-        <div className="mx-6 mt-3 p-3 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)] text-sm text-[var(--status-error)]" role="alert">
+        <Alert variant="destructive" className="mx-6 mt-3">
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="flex flex-1 overflow-hidden">

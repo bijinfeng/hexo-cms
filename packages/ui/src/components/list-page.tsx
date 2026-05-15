@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { useState, useMemo } from "react";
 import { Search, Loader2, AlertCircle, Inbox } from "lucide-react";
+import { Alert } from "./ui/alert";
+import { Input } from "./ui/input";
 
 interface ListPageProps<T> {
   title: string;
@@ -91,12 +93,12 @@ export function ListPage<T>({
         ) : (
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="form-input w-full pl-9"
+              className="pl-9"
             />
           </div>
         )}
@@ -104,9 +106,9 @@ export function ListPage<T>({
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)] text-sm text-[var(--status-error)]">
+        <Alert variant="destructive">
           {error}
-        </div>
+        </Alert>
       )}
 
       {filtered.length === 0 ? (
