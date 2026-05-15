@@ -2,6 +2,7 @@
 export { CMSLayout } from "./components/layout/CMSLayout";
 export { Sidebar } from "./components/layout/Sidebar";
 export { Topbar } from "./components/layout/Topbar";
+export { UserMenu } from "./components/user-menu";
 
 // UI Components
 export { Badge } from "./components/ui/badge";
