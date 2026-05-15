@@ -101,6 +101,7 @@ export default [
         URLSearchParams: 'readonly',
         Headers: 'readonly',
         Event: 'readonly',
+        KeyboardEvent: 'readonly',
         CustomEvent: 'readonly',
         MouseEvent: 'readonly',
         Node: 'readonly',

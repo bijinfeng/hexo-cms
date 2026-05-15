@@ -9,6 +9,7 @@ import type { DataProvider } from "@hexo-cms/core";
 
 vi.mock("@tanstack/react-router", () => ({
   useRouterState: () => ({ location: { pathname: "/media" } }),
+  useNavigate: () => vi.fn(),
   Link: ({
     children,
     to,
