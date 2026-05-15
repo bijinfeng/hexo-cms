@@ -170,7 +170,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 ) : (
                   <Search size={15} className="shrink-0 text-[var(--text-tertiary)]" />
                 )}
-                <span className="truncate">{item.label || item.title}</span>
+                <span className="truncate">
+                  {item.type === "post" ? item.title : item.label}
+                </span>
                 {item.type === "nav" && (
                   <span className="ml-auto text-[10px] text-[var(--text-tertiary)] font-mono shrink-0">
                     {item.to}
