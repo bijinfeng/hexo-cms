@@ -56,20 +56,24 @@ git push && git push --tags
 1. 检出代码
 2. 安装依赖
 3. 构建桌面端 (`electron-vite build`)
-4. 打包并发布到 GitHub Releases
+4. 三端并行打包并发布到 GitHub Releases（ubuntu-latest / windows-latest / macos-latest）
 
-构建产物会作为 **draft release** 创建，不会立即对用户可见。
+构建产物：
+- `Hexo-CMS-{version}.AppImage` (Linux)
+- `Hexo-CMS-Setup-{version}.exe` (Windows NSIS 安装包)
+- `Hexo-CMS-{version}.dmg` (macOS)
+
+产物会作为 **draft release** 创建，不会立即对用户可见。
 
 ### 5. 检查并发布 Draft Release
 
 1. 前往 [GitHub Releases](https://github.com/bijinfeng/hexo-cms/releases)
 2. 找到对应的 draft release
-3. 检查构建产物：
-   - `Hexo-CMS-{version}.AppImage` (Linux)
+3. 检查三端构建产物是否齐全
 4. 编辑 release notes，填写更新内容
 5. 点击 **Publish release**
 
-> 构建产物目前仅包含 Linux AppImage。macOS/Windows 构建需要在 CI 中配置对应 runner 和代码签名后启用。
+> macOS 构建当前未配置代码签名和公证（notarization），用户打开 DMG 时需手动允许。
 
 ### 6. 用户端自动更新
 
@@ -95,5 +99,4 @@ git push && git push --tags
 
 - 当前未配置代码签名，macOS 用户需手动信任应用
 - Release 类型为 draft，务必手动检查后发布
-- 构建仅支持 Linux (ubuntu-latest runner)，macOS/Windows 需后续扩展 CI 矩阵
 - 推送 tag 前确保版本号和 tag 保持一致
