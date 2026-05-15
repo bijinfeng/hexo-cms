@@ -19,11 +19,11 @@ const codeSplitting = {
   groups: [
     {
       name: "vendor-editor",
-      test: /node_modules\/(?:@codemirror|@lezer|style-mod|w3c-keyname)\//,
+      test: /node_modules\/(?:@tiptap|prosemirror|orderedmap|rope-sequence|w3c-keyname)\//,
     },
     {
       name: "vendor-markdown",
-      test: /node_modules\/(?:dompurify|marked)\//,
+      test: /node_modules\/(?:marked)\//,
     },
   ],
 };
