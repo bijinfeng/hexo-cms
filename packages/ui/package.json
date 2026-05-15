@@ -41,7 +41,7 @@
     "clsx": "^2.1.1",
     "dompurify": "^3.4.2",
     "marked": "^18.0.2",
-    "simple-icons": "^16.18.0",
+    "simple-icons": "^16.19.0",
     "tailwind-merge": "^3.5.0"
   },
   "scripts": {
