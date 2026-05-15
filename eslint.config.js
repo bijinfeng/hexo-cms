@@ -101,6 +101,8 @@ export default [
         Headers: 'readonly',
         Event: 'readonly',
         CustomEvent: 'readonly',
+        MouseEvent: 'readonly',
+        Node: 'readonly',
         // React
         React: 'readonly',
         JSX: 'readonly',
