@@ -40,15 +40,10 @@ import { Route as ApiGithubStatsRouteImport } from './routes/api/github/stats'
 import { Route as ApiGithubPostsRouteImport } from './routes/api/github/posts'
 import { Route as ApiGithubPagesRouteImport } from './routes/api/github/pages'
 import { Route as ApiGithubMediaRouteImport } from './routes/api/github/media'
-import { Route as ApiGithubDiscussionsRouteImport } from './routes/api/github/discussions'
 import { Route as ApiGithubConfigFileRouteImport } from './routes/api/github/config-file'
 import { Route as ApiGithubConfigRouteImport } from './routes/api/github/config'
-import { Route as ApiGithubCommentConfigRouteImport } from './routes/api/github/comment-config'
 import { Route as ApiAuthTokenRouteImport } from './routes/api/auth/token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as ApiGithubDiscussionsIdModerateRouteImport } from './routes/api/github/discussions.$id.moderate'
-import { Route as ApiGithubDiscussionsIdLockRouteImport } from './routes/api/github/discussions.$id.lock'
-import { Route as ApiGithubDiscussionsIdCommentsRouteImport } from './routes/api/github/discussions.$id.comments'
 
 const ThemesRoute = ThemesRouteImport.update({
   id: '/themes',
@@ -206,11 +201,6 @@ const ApiGithubMediaRoute = ApiGithubMediaRouteImport.update({
   path: '/api/github/media',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiGithubDiscussionsRoute = ApiGithubDiscussionsRouteImport.update({
-  id: '/api/github/discussions',
-  path: '/api/github/discussions',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiGithubConfigFileRoute = ApiGithubConfigFileRouteImport.update({
   id: '/api/github/config-file',
   path: '/api/github/config-file',
@@ -219,11 +209,6 @@ const ApiGithubConfigFileRoute = ApiGithubConfigFileRouteImport.update({
 const ApiGithubConfigRoute = ApiGithubConfigRouteImport.update({
   id: '/api/github/config',
   path: '/api/github/config',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiGithubCommentConfigRoute = ApiGithubCommentConfigRouteImport.update({
-  id: '/api/github/comment-config',
-  path: '/api/github/comment-config',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthTokenRoute = ApiAuthTokenRouteImport.update({
@@ -236,24 +221,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiGithubDiscussionsIdModerateRoute =
-  ApiGithubDiscussionsIdModerateRouteImport.update({
-    id: '/$id/moderate',
-    path: '/$id/moderate',
-    getParentRoute: () => ApiGithubDiscussionsRoute,
-  } as any)
-const ApiGithubDiscussionsIdLockRoute =
-  ApiGithubDiscussionsIdLockRouteImport.update({
-    id: '/$id/lock',
-    path: '/$id/lock',
-    getParentRoute: () => ApiGithubDiscussionsRoute,
-  } as any)
-const ApiGithubDiscussionsIdCommentsRoute =
-  ApiGithubDiscussionsIdCommentsRouteImport.update({
-    id: '/$id/comments',
-    path: '/$id/comments',
-    getParentRoute: () => ApiGithubDiscussionsRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -275,10 +242,8 @@ export interface FileRoutesByFullPath {
   '/posts/new': typeof PostsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/token': typeof ApiAuthTokenRoute
-  '/api/github/comment-config': typeof ApiGithubCommentConfigRoute
   '/api/github/config': typeof ApiGithubConfigRoute
   '/api/github/config-file': typeof ApiGithubConfigFileRoute
-  '/api/github/discussions': typeof ApiGithubDiscussionsRouteWithChildren
   '/api/github/media': typeof ApiGithubMediaRoute
   '/api/github/pages': typeof ApiGithubPagesRoute
   '/api/github/posts': typeof ApiGithubPostsRoute
@@ -293,9 +258,6 @@ export interface FileRoutesByFullPath {
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
-  '/api/github/discussions/$id/comments': typeof ApiGithubDiscussionsIdCommentsRoute
-  '/api/github/discussions/$id/lock': typeof ApiGithubDiscussionsIdLockRoute
-  '/api/github/discussions/$id/moderate': typeof ApiGithubDiscussionsIdModerateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -317,10 +279,8 @@ export interface FileRoutesByTo {
   '/posts/new': typeof PostsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/token': typeof ApiAuthTokenRoute
-  '/api/github/comment-config': typeof ApiGithubCommentConfigRoute
   '/api/github/config': typeof ApiGithubConfigRoute
   '/api/github/config-file': typeof ApiGithubConfigFileRoute
-  '/api/github/discussions': typeof ApiGithubDiscussionsRouteWithChildren
   '/api/github/media': typeof ApiGithubMediaRoute
   '/api/github/pages': typeof ApiGithubPagesRoute
   '/api/github/posts': typeof ApiGithubPostsRoute
@@ -335,9 +295,6 @@ export interface FileRoutesByTo {
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
-  '/api/github/discussions/$id/comments': typeof ApiGithubDiscussionsIdCommentsRoute
-  '/api/github/discussions/$id/lock': typeof ApiGithubDiscussionsIdLockRoute
-  '/api/github/discussions/$id/moderate': typeof ApiGithubDiscussionsIdModerateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -360,10 +317,8 @@ export interface FileRoutesById {
   '/posts/new': typeof PostsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/token': typeof ApiAuthTokenRoute
-  '/api/github/comment-config': typeof ApiGithubCommentConfigRoute
   '/api/github/config': typeof ApiGithubConfigRoute
   '/api/github/config-file': typeof ApiGithubConfigFileRoute
-  '/api/github/discussions': typeof ApiGithubDiscussionsRouteWithChildren
   '/api/github/media': typeof ApiGithubMediaRoute
   '/api/github/pages': typeof ApiGithubPagesRoute
   '/api/github/posts': typeof ApiGithubPostsRoute
@@ -378,9 +333,6 @@ export interface FileRoutesById {
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
-  '/api/github/discussions/$id/comments': typeof ApiGithubDiscussionsIdCommentsRoute
-  '/api/github/discussions/$id/lock': typeof ApiGithubDiscussionsIdLockRoute
-  '/api/github/discussions/$id/moderate': typeof ApiGithubDiscussionsIdModerateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -404,10 +356,8 @@ export interface FileRouteTypes {
     | '/posts/new'
     | '/api/auth/$'
     | '/api/auth/token'
-    | '/api/github/comment-config'
     | '/api/github/config'
     | '/api/github/config-file'
-    | '/api/github/discussions'
     | '/api/github/media'
     | '/api/github/pages'
     | '/api/github/posts'
@@ -422,9 +372,6 @@ export interface FileRouteTypes {
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
-    | '/api/github/discussions/$id/comments'
-    | '/api/github/discussions/$id/lock'
-    | '/api/github/discussions/$id/moderate'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -446,10 +393,8 @@ export interface FileRouteTypes {
     | '/posts/new'
     | '/api/auth/$'
     | '/api/auth/token'
-    | '/api/github/comment-config'
     | '/api/github/config'
     | '/api/github/config-file'
-    | '/api/github/discussions'
     | '/api/github/media'
     | '/api/github/pages'
     | '/api/github/posts'
@@ -464,9 +409,6 @@ export interface FileRouteTypes {
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
-    | '/api/github/discussions/$id/comments'
-    | '/api/github/discussions/$id/lock'
-    | '/api/github/discussions/$id/moderate'
   id:
     | '__root__'
     | '/'
@@ -488,10 +430,8 @@ export interface FileRouteTypes {
     | '/posts/new'
     | '/api/auth/$'
     | '/api/auth/token'
-    | '/api/github/comment-config'
     | '/api/github/config'
     | '/api/github/config-file'
-    | '/api/github/discussions'
     | '/api/github/media'
     | '/api/github/pages'
     | '/api/github/posts'
@@ -506,9 +446,6 @@ export interface FileRouteTypes {
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
-    | '/api/github/discussions/$id/comments'
-    | '/api/github/discussions/$id/lock'
-    | '/api/github/discussions/$id/moderate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -527,10 +464,8 @@ export interface RootRouteChildren {
   ApiDeployRoute: typeof ApiDeployRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAuthTokenRoute: typeof ApiAuthTokenRoute
-  ApiGithubCommentConfigRoute: typeof ApiGithubCommentConfigRoute
   ApiGithubConfigRoute: typeof ApiGithubConfigRoute
   ApiGithubConfigFileRoute: typeof ApiGithubConfigFileRoute
-  ApiGithubDiscussionsRoute: typeof ApiGithubDiscussionsRouteWithChildren
   ApiGithubMediaRoute: typeof ApiGithubMediaRoute
   ApiGithubPagesRoute: typeof ApiGithubPagesRoute
   ApiGithubPostsRoute: typeof ApiGithubPostsRoute
@@ -766,13 +701,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGithubMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/github/discussions': {
-      id: '/api/github/discussions'
-      path: '/api/github/discussions'
-      fullPath: '/api/github/discussions'
-      preLoaderRoute: typeof ApiGithubDiscussionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/github/config-file': {
       id: '/api/github/config-file'
       path: '/api/github/config-file'
@@ -785,13 +713,6 @@ declare module '@tanstack/react-router' {
       path: '/api/github/config'
       fullPath: '/api/github/config'
       preLoaderRoute: typeof ApiGithubConfigRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/github/comment-config': {
-      id: '/api/github/comment-config'
-      path: '/api/github/comment-config'
-      fullPath: '/api/github/comment-config'
-      preLoaderRoute: typeof ApiGithubCommentConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/token': {
@@ -807,27 +728,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/api/github/discussions/$id/moderate': {
-      id: '/api/github/discussions/$id/moderate'
-      path: '/$id/moderate'
-      fullPath: '/api/github/discussions/$id/moderate'
-      preLoaderRoute: typeof ApiGithubDiscussionsIdModerateRouteImport
-      parentRoute: typeof ApiGithubDiscussionsRoute
-    }
-    '/api/github/discussions/$id/lock': {
-      id: '/api/github/discussions/$id/lock'
-      path: '/$id/lock'
-      fullPath: '/api/github/discussions/$id/lock'
-      preLoaderRoute: typeof ApiGithubDiscussionsIdLockRouteImport
-      parentRoute: typeof ApiGithubDiscussionsRoute
-    }
-    '/api/github/discussions/$id/comments': {
-      id: '/api/github/discussions/$id/comments'
-      path: '/$id/comments'
-      fullPath: '/api/github/discussions/$id/comments'
-      preLoaderRoute: typeof ApiGithubDiscussionsIdCommentsRouteImport
-      parentRoute: typeof ApiGithubDiscussionsRoute
     }
   }
 }
@@ -856,21 +756,6 @@ const PostsRouteChildren: PostsRouteChildren = {
 
 const PostsRouteWithChildren = PostsRoute._addFileChildren(PostsRouteChildren)
 
-interface ApiGithubDiscussionsRouteChildren {
-  ApiGithubDiscussionsIdCommentsRoute: typeof ApiGithubDiscussionsIdCommentsRoute
-  ApiGithubDiscussionsIdLockRoute: typeof ApiGithubDiscussionsIdLockRoute
-  ApiGithubDiscussionsIdModerateRoute: typeof ApiGithubDiscussionsIdModerateRoute
-}
-
-const ApiGithubDiscussionsRouteChildren: ApiGithubDiscussionsRouteChildren = {
-  ApiGithubDiscussionsIdCommentsRoute: ApiGithubDiscussionsIdCommentsRoute,
-  ApiGithubDiscussionsIdLockRoute: ApiGithubDiscussionsIdLockRoute,
-  ApiGithubDiscussionsIdModerateRoute: ApiGithubDiscussionsIdModerateRoute,
-}
-
-const ApiGithubDiscussionsRouteWithChildren =
-  ApiGithubDiscussionsRoute._addFileChildren(ApiGithubDiscussionsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CommentsRoute: CommentsRoute,
@@ -887,10 +772,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDeployRoute: ApiDeployRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAuthTokenRoute: ApiAuthTokenRoute,
-  ApiGithubCommentConfigRoute: ApiGithubCommentConfigRoute,
   ApiGithubConfigRoute: ApiGithubConfigRoute,
   ApiGithubConfigFileRoute: ApiGithubConfigFileRoute,
-  ApiGithubDiscussionsRoute: ApiGithubDiscussionsRouteWithChildren,
   ApiGithubMediaRoute: ApiGithubMediaRoute,
   ApiGithubPagesRoute: ApiGithubPagesRoute,
   ApiGithubPostsRoute: ApiGithubPostsRoute,
