@@ -21,6 +21,7 @@ import {
   Copy,
   CheckCircle2,
 } from "lucide-react";
+import { Checkbox } from "../components/ui/checkbox";
 
 const typeConfig = {
   image: { icon: ImageIcon, color: "var(--brand-primary)", label: "图片" },
@@ -67,6 +68,8 @@ export function MediaPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [copiedPath, setCopiedPath] = useState("");
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [batchDeleting, setBatchDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -125,8 +128,48 @@ export function MediaPage() {
     try {
       await dataProvider.deleteMedia(path);
       setMediaItems((prev) => prev.filter((item) => item.path !== path));
+      setSelectedPaths((prev) => {
+        const next = new Set(prev);
+        next.delete(path);
+        return next;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "删除失败");
+    }
+  }
+
+  function toggleSelect(path: string) {
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const allPaths = new Set(filtered.map((item) => item.path));
+    if (selectedPaths.size === allPaths.size && allPaths.size > 0) {
+      setSelectedPaths(new Set());
+    } else {
+      setSelectedPaths(allPaths);
+    }
+  }
+
+  async function handleBatchDelete() {
+    if (selectedPaths.size === 0) return;
+    setBatchDeleting(true);
+    setError("");
+    try {
+      for (const path of selectedPaths) {
+        await dataProvider.deleteMedia(path);
+      }
+      setMediaItems((prev) => prev.filter((item) => !selectedPaths.has(item.path)));
+      setSelectedPaths(new Set());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "批量删除失败");
+    } finally {
+      setBatchDeleting(false);
     }
   }
 
@@ -185,6 +228,31 @@ export function MediaPage() {
       )}
 
 
+      {/* Batch actions */}
+      {selectedPaths.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[var(--brand-primary-subtle)] border border-[var(--brand-primary-muted)]">
+          <span className="text-sm font-medium text-[var(--brand-primary)]">
+            已选择 {selectedPaths.size} 个文件
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[var(--status-error)] border-[var(--status-error)] hover:bg-[var(--status-error-bg)]"
+            onClick={handleBatchDelete}
+            disabled={batchDeleting}
+          >
+            {batchDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            批量删除
+          </Button>
+          <button
+            className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+            onClick={() => setSelectedPaths(new Set())}
+          >
+            取消选择
+          </button>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Tabs value={activeFilter} onValueChange={setActiveFilter}>
@@ -239,6 +307,13 @@ export function MediaPage() {
                 key={item.path}
                 className="group relative rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-sm)] transition-all overflow-hidden cursor-pointer"
               >
+                <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Checkbox
+                    checked={selectedPaths.has(item.path)}
+                    onCheckedChange={() => toggleSelect(item.path)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
                 <div className="aspect-video bg-[var(--bg-muted)] flex items-center justify-center relative">
                   {type === "image" ? (
                     <div className="w-full h-full bg-gradient-to-br from-[var(--orange-100)] to-[var(--green-100)]" />
@@ -288,7 +363,12 @@ export function MediaPage() {
         <Card>
           <CardContent className="p-0">
             <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 px-6 py-3 border-b border-[var(--border-default)] text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-              <span></span>
+              <div className="flex items-center">
+                <Checkbox
+                  checked={filtered.length > 0 && selectedPaths.size === filtered.length}
+                  onCheckedChange={toggleSelectAll}
+                />
+              </div>
               <span>文件名</span>
               <span className="hidden md:block">类型</span>
               <span className="hidden sm:block">大小</span>
@@ -310,8 +390,14 @@ export function MediaPage() {
                       key={item.path}
                       className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 items-center px-6 py-3 hover:bg-[var(--bg-muted)] transition-colors group"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-[var(--bg-muted)] flex items-center justify-center flex-shrink-0">
-                        <Icon size={16} style={{ color: config.color }} />
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={selectedPaths.has(item.path)}
+                          onCheckedChange={() => toggleSelect(item.path)}
+                        />
+                        <div className="w-10 h-10 rounded-lg bg-[var(--bg-muted)] flex items-center justify-center flex-shrink-0">
+                          <Icon size={16} style={{ color: config.color }} />
+                        </div>
                       </div>
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-[var(--text-primary)] truncate">
