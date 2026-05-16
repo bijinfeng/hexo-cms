@@ -10,19 +10,17 @@
 
 ```
 hexo-cms/                      ← pnpm workspace 根目录
-├── .claude/                   ← Claude Code 配置
-│   └── README.md             ← AI 文档入口
 ├── docs/                      ← 项目文档
-│   ├── ai/
-│   │   ├── AGENTS.md         ← AI 助手上下文
-│   │   └── CLAUDE.md         ← 你在这里
+│   ├── ai/                   ← AI 助手上下文
 │   ├── DESIGN_SYSTEM.md      ← 设计规范（颜色、字体、组件）
 │   ├── PROJECT_PLAN.md       ← 功能规划
+│   ├── ROADMAP.md            ← 路线图（MVP 剩余 + 后续规划）
 │   └── ...
 ├── pnpm-workspace.yaml       ← workspace 配置
 ├── package.json              ← 根 package（仅 scripts）
 └── packages/
     ├── core/                 ← @hexo-cms/core：纯逻辑，无 UI
+    ├── editor/               ← @hexo-cms/editor：TipTap 富文本编辑器
     ├── ui/                   ← @hexo-cms/ui：共享 React 组件和页面
     ├── web/                  ← @hexo-cms/web：TanStack Start 全栈 Web 应用
     └── desktop/              ← @hexo-cms/desktop：Electron 桌面应用
@@ -31,8 +29,9 @@ hexo-cms/                      ← pnpm workspace 根目录
 ## 包职责
 
 | 包 | 技术 | 职责 |
-|---|---|---|
-| `@hexo-cms/core` | TypeScript | GitHubService、类型定义，无 UI 依赖 |
+|---|---|---|---|
+| `@hexo-cms/core` | TypeScript | GitHubService、类型定义、插件系统，无 UI 依赖 |
+| `@hexo-cms/editor` | TipTap + React | 富文本编辑器，WYSIWYG + 源码切换，独立包 |
 | `@hexo-cms/ui` | React + Tailwind | 共享页面组件（纯 React，无路由） |
 | `@hexo-cms/web` | TanStack Start | Web 应用，薄路由壳 + API 路由 |
 | `@hexo-cms/desktop` | Electron + TanStack Router | 桌面应用，IPC 替代 HTTP API |
@@ -66,7 +65,7 @@ GITHUB_CLIENT_SECRET=...
 | 数据库 | SQLite via better-sqlite3，文件 `./hexo-cms.db` |
 | GitHub API | Octokit（@hexo-cms/core 中的 GitHubService） |
 | 样式 | Tailwind CSS v4（@theme 语法，非 v3 config 文件） |
-| 编辑器 | @uiw/react-codemirror + @codemirror/lang-markdown |
+| 编辑器 | TipTap + @tiptap/react（WYSIWYG + 源码切换） |
 | 图标 | lucide-react |
 | 包管理 | pnpm workspace |
 
@@ -78,6 +77,19 @@ index.ts            # 导出所有
 types.ts            # GitHubConfig, HexoPost, GitHubRepoConfig
 github.ts           # GitHubService 类（Octokit 封装）
 data-provider.ts    # DataProvider 接口定义（平台无关抽象层）
+```
+
+### packages/editor/src/
+```
+index.ts            # 导出 Editor 组件 + 类型
+Editor.tsx          # 主编辑器组件（TipTap + BubbleMenu + Toolbar + 源码切换）
+Toolbar.tsx         # 固定顶部工具栏
+BubbleMenu.tsx      # 浮动气泡菜单
+extensions/
+  index.ts          # 聚合所有内置扩展
+  image-upload.ts   # 自定义 ImageUpload Node（拖拽/粘贴上传）
+styles/
+  editor.css        # TipTap/prose 样式
 ```
 
 ### packages/ui/src/
@@ -433,30 +445,42 @@ export const Route = createFileRoute("/xxx")({ component: XxxPage });
 
 | 功能 | 状态 |
 |---|---|
-| Monorepo 架构（core/ui/web/desktop）| ✅ 已完成 |
-| 所有页面路由（11个）| ✅ 已完成（含静态 UI） |
-| GitHub OAuth 登录（Web） | ✅ 已完成 |
+| Monorepo 架构（core/editor/ui/web/desktop）| ✅ 已完成 |
+| 所有页面路由（17个）| ✅ 已完成 |
+| GitHub OAuth 登录（Web + Desktop Device Flow） | ✅ 已完成 |
+| Onboarding 项目导入（仓库搜索/验证/配置） | ✅ 已完成 |
 | Settings 保存 GitHub 配置 | ✅ 已完成 |
-| Posts 页从 GitHub 加载文章 | ✅ 已完成 |
-| CodeMirror Markdown 编辑器 | ✅ 已完成 |
-| Electron 桌面应用框架 | ✅ 已完成（main/preload/renderer） |
-| 新建文章保存到 GitHub | ✅ 已完成 |
-| 编辑已有文章 `/posts/$slug` | ✅ 已完成（含删除、图片上传） |
-| Markdown 实时预览（渲染 HTML） | ✅ 已完成（marked 库） |
-| 图片上传到 GitHub | ✅ 已完成（MediaPage 完整实现） |
-| 标签/分类管理 | ✅ 已完成（读取、重命名、删除，批量更新文章） |
-| 仪表板真实数据 | ✅ 已完成（/api/github/stats） |
-| 桌面端 GitHub token 管理 UI | ✅ 已完成（系统钥匙串存储） |
-| 页面管理（Pages） | ✅ 已完成（列表、新建、编辑、删除，完整 CRUD） |
-| 部署管理（Deploy） | ✅ 已完成（GitHub Actions API，手动触发） |
-| 主题管理（Themes） | ✅ 已完成（读取 _config.yml，列出 themes/ 目录，切换主题） |
-| 文章搜索和过滤 | ✅ 已完成（全文搜索、状态/分类/日期过滤、高级筛选面板） |
-| 文章批量操作 | ✅ 已完成（批量选择、批量删除、批量发布/取消发布） |
-| DataProvider 架构重构 | ✅ 已完成（Web/Desktop 100% 共享 UI 代码） |
+| Posts 页完整 CRUD | ✅ 已完成 |
+| TipTap 富文本编辑器（WYSIWYG + 源码切换） | ✅ 已完成 |
+| Electron 桌面应用框架 | ✅ 已完成 |
+| Markdown 实时预览（marked + DOMPurify） | ✅ 已完成 |
+| 图片上传到 GitHub（拖拽/粘贴） | ✅ 已完成 |
+| MediaPage 完整实现 | ✅ 已完成 |
+| 标签/分类管理 | ✅ 已完成 |
+| Dashboard 真实统计数据 | ✅ 已完成 |
+| 页面管理（Pages） | ✅ 已完成 |
+| 部署管理（Deploy） | ✅ 已完成 |
+| 主题管理（Themes） | ✅ 已完成 |
+| 文章搜索/筛选/批量操作 | ✅ 已完成 |
+| DataProvider 架构（Web/Desktop 100% UI 共享） | ✅ 已完成 |
+| 插件系统（Manifest/权限/Storage/Secrets/HTTP/Events/Log） | ✅ 已完成 |
+| 内置插件（Attachments Helper + Comments Overview） | ✅ 已完成 |
+| 桌面端自动更新（electron-updater + Stable/Beta 通道） | ✅ 已完成 |
+| Command Palette（Cmd+K 全局搜索/导航） | ✅ 已完成 |
+| UserMenu（头像下拉菜单） | ✅ 已完成 |
+| CI/CD（lint/type-check/test/build） | ✅ 已完成 |
+| 桌面端发版流程（GitHub Actions + draft release） | ✅ 已完成 |
+| 评论管理 | 🔸 Mock 数据，待接入真实评论系统 |
+| 菜单/导航管理 | ❌ 未实现 |
+| E2E 测试（Playwright） | ❌ 未实现 |
+
+详见 `docs/ROADMAP.md`。
 
 ## 已知问题
 
-1. **TypeScript 误报**：`@tanstack/react-start/api` 模块解析报错，运行时正常，忽略即可
-2. **端口冲突**：dev server 可能用 3001/3002，`auth.ts` 的 `trustedOrigins` 已覆盖三个端口
+1. **TypeScript 误报**：`@tanstack/react-start/api` 模块解析报错，运行时正常
+2. **端口冲突**：dev server 可能用 3001/3002，`auth.ts` 的 `trustedOrigins` 已覆盖
 3. **pnpm EPERM**：遇到权限错误删 `node_modules` 重装
-4. **API 路由警告**：TanStack Router 插件会对 `api/` 下的文件报 "does not export a Route" 警告，这是正常的，运行时无影响
+4. **API 路由警告**：TanStack Router 插件会对 `api/` 下的文件报 "does not export a Route" 警告，运行时无影响
+5. **macOS 代码签名**：桌面端未配置签名和公证，用户需手动信任
+6. **评论页**：使用静态 mock 数据，未接入真实评论系统
