@@ -29,7 +29,7 @@
     "@tiptap/react": "^3.17.1",
     "@tiptap/starter-kit": "^3.17.1",
     "clsx": "^2.1.1",
-    "marked": "^18.0.2",
+    "marked": "^18.0.3",
     "tailwind-merge": "^3.5.0"
   },
   "peerDependencies": {
