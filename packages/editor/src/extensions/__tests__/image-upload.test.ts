@@ -22,7 +22,6 @@ describe("ImageUpload extension", () => {
   });
 
   it("has a group that includes inline", () => {
-    // @ts-expect-error - accessing static config
     const group = ImageUpload.config?.group;
     if (group) {
       try {

@@ -212,10 +212,10 @@ export function MediaPage() {
 
         <div className="flex items-center gap-2">
           <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "grid" | "list")}>
-            <ToggleGroupItem value="grid" size="icon" className="w-7 h-7">
+            <ToggleGroupItem value="grid" size="sm" className="w-7 h-7">
               <Grid3x3 size={14} />
             </ToggleGroupItem>
-            <ToggleGroupItem value="list" size="icon" className="w-7 h-7">
+            <ToggleGroupItem value="list" size="sm" className="w-7 h-7">
               <List size={14} />
             </ToggleGroupItem>
           </ToggleGroup>

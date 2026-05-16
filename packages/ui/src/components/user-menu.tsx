@@ -45,7 +45,7 @@ export function UserMenu({ authClient, onSignedOut }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <button className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity ml-1" aria-label="用户菜单">
           <Avatar className="w-8 h-8">
-            <AvatarImage src={user?.avatarUrl} alt={displayName} />
+            <AvatarImage src={user?.avatarUrl ?? undefined} alt={displayName} />
             <AvatarFallback>{initial}</AvatarFallback>
           </Avatar>
         </button>
@@ -54,7 +54,7 @@ export function UserMenu({ authClient, onSignedOut }: UserMenuProps) {
         <DropdownMenuLabel>
           <div className="flex items-center gap-3">
             <Avatar className="w-9 h-9">
-              <AvatarImage src={user?.avatarUrl} alt="" />
+              <AvatarImage src={user?.avatarUrl ?? undefined} alt="" />
               <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">

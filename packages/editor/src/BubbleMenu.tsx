@@ -62,7 +62,6 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
     <TiptapBubbleMenu
       editor={editor}
       className="tiptap-bubble-menu"
-      tippyOptions={{ duration: 150, placement: "top" }}
     >
       <button
         type="button"
