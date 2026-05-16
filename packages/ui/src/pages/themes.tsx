@@ -5,6 +5,14 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/skeleton";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
+import {
   Palette,
   CheckCircle2,
   Download,
@@ -18,6 +26,7 @@ export function ThemesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [switching, setSwitching] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     loadThemes();
@@ -44,9 +53,9 @@ export function ThemesPage() {
       setSwitching(true);
       await dataProvider.switchTheme(themeName);
       setCurrentTheme(themeName);
-      alert(`已切换到主题「${themeName}」，请重新部署站点以生效`);
+      setNotification(`已切换到主题「${themeName}」，请重新部署站点以生效`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "切换主题失败");
+      setNotification(err instanceof Error ? err.message : "切换主题失败");
     } finally {
       setSwitching(false);
     }
@@ -157,6 +166,18 @@ export function ThemesPage() {
           })}
         </div>
       )}
+
+      <Dialog open={!!notification} onOpenChange={() => setNotification(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>提示</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>{notification}</DialogDescription>
+          <DialogFooter>
+            <Button onClick={() => setNotification(null)}>确定</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

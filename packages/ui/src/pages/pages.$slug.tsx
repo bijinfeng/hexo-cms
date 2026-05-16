@@ -5,6 +5,14 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Alert } from "../components/ui/alert";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
@@ -32,6 +40,7 @@ export function EditPagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [postPath, setPostPath] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     loadPage();
@@ -94,8 +103,10 @@ export function EditPagePage() {
   }
 
   async function handleDelete() {
-    if (!confirm(`确定要删除页面「${title}」吗？此操作不可恢复。`)) return;
+    setDeleteOpen(true);
+  }
 
+  async function confirmDelete() {
     try {
       await dataProvider.deletePage(postPath);
       navigate({ to: "/pages" });
@@ -207,6 +218,28 @@ export function EditPagePage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>
+              确定要删除页面「{title}」吗？此操作不可恢复。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              取消
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90"
+            >
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

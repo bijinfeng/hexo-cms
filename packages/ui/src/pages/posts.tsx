@@ -88,6 +88,7 @@ export function PostsPage() {
   const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState(false);
   const [showBatchPublishDialog, setShowBatchPublishDialog] = useState(false);
   const [showBatchUnpublishDialog, setShowBatchUnpublishDialog] = useState(false);
+  const [deleteConfirmPost, setDeleteConfirmPost] = useState<PostDisplayItem | null>(null);
 
   useEffect(() => {
     loadPosts();
@@ -120,16 +121,19 @@ export function PostsPage() {
   }
 
   async function handleDeletePost(post: PostDisplayItem) {
-    if (!confirm(`确定要删除文章「${post.title}」吗？此操作不可恢复。`)) {
-      return;
-    }
+    setDeleteConfirmPost(post);
+  }
 
+  async function confirmSingleDelete() {
+    if (!deleteConfirmPost) return;
     try {
-      await dataProvider.deletePost(post.path);
-      setPosts((prev) => prev.filter((p) => p.id !== post.id));
+      await dataProvider.deletePost(deleteConfirmPost.path);
+      setPosts((prev) => prev.filter((p) => p.id !== deleteConfirmPost.id));
     } catch (err) {
       console.error("Failed to delete post:", err);
       setError(err instanceof Error ? err.message : "删除失败");
+    } finally {
+      setDeleteConfirmPost(null);
     }
   }
 
@@ -478,6 +482,29 @@ export function PostsPage() {
               ) : (
                 "确认取消发布"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 单篇删除确认对话框 */}
+      <Dialog open={!!deleteConfirmPost} onOpenChange={(v) => !v && setDeleteConfirmPost(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>
+              确定要删除文章「{deleteConfirmPost?.title}」吗？此操作不可恢复。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmPost(null)}>
+              取消
+            </Button>
+            <Button
+              onClick={confirmSingleDelete}
+              className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90"
+            >
+              确认删除
             </Button>
           </DialogFooter>
         </DialogContent>

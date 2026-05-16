@@ -52,6 +52,7 @@ export function TagsPage() {
   const [processing, setProcessing] = useState(false);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [newName, setNewName] = useState("");
+  const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     loadTagsAndCategories();
@@ -95,7 +96,7 @@ export function TagsPage() {
       closeDialog();
       await loadTagsAndCategories();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "重命名失败");
+      setNotification(err instanceof Error ? err.message : "重命名失败");
     } finally {
       setProcessing(false);
     }
@@ -110,7 +111,7 @@ export function TagsPage() {
       closeDialog();
       await loadTagsAndCategories();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "删除失败");
+      setNotification(err instanceof Error ? err.message : "删除失败");
     } finally {
       setProcessing(false);
     }
@@ -358,6 +359,18 @@ export function TagsPage() {
           </button>
         </div>
       )}
+
+      <Dialog open={!!notification} onOpenChange={() => setNotification(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>提示</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-[var(--text-secondary)]">{notification}</p>
+          <DialogFooter>
+            <Button onClick={() => setNotification(null)}>确定</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

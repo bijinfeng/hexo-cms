@@ -5,6 +5,14 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/skeleton";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
+import {
   Zap,
   GitCommit,
   CheckCircle2,
@@ -98,6 +106,7 @@ export function DeployPage() {
   const [avgDuration, setAvgDuration] = useState("");
   const [deploying, setDeploying] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     loadDeployments();
@@ -151,10 +160,10 @@ export function DeployPage() {
       const config = await dataProvider.getConfig();
       if (!config) return;
       await dataProvider.triggerDeploy(config.workflow_file || config.workflowFile || "pages.yml");
-      alert("部署已触发，请稍后刷新查看状态");
+      setNotification("部署已触发，请稍后刷新查看状态");
       setTimeout(() => loadDeployments(), 3000);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "触发部署失败");
+      setNotification(err instanceof Error ? err.message : "触发部署失败");
     } finally {
       setDeploying(false);
     }
@@ -364,6 +373,18 @@ export function DeployPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!notification} onOpenChange={() => setNotification(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>提示</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>{notification}</DialogDescription>
+          <DialogFooter>
+            <Button onClick={() => setNotification(null)}>确定</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
