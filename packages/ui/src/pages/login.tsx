@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Zap, ArrowRight, Shield, GitBranch, Sparkles } from "lucide-react";
+import { Zap, ArrowRight, Shield, GitBranch, Sparkles, Loader2 } from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
 import type { AuthClient, AuthSession } from "../types/auth";
 
@@ -167,7 +167,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
             className="w-full flex items-center justify-center gap-3 h-11 px-6 rounded-xl bg-[#24292e] dark:bg-[#f0f6ff] text-white dark:text-[#24292e] font-semibold text-sm hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <Loader2 size={18} className="animate-spin" />
             ) : (
               <GithubIcon size={18} />
             )}

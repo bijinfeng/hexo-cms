@@ -5,6 +5,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { GithubIcon } from "../components/ui/github-icon";
 import { Input } from "../components/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
 import type { AuthSession } from "../types/auth";
 import type {
   OnboardingClient,
@@ -586,31 +587,35 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
 
                     {config && (
                       <div className="space-y-4">
-                        <details className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-3">
-                          <summary className="cursor-pointer text-sm font-medium text-[var(--text-primary)]">
+                        <Collapsible>
+                          <CollapsibleTrigger className="w-full flex items-center justify-between rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-3 cursor-pointer text-sm font-medium text-[var(--text-primary)]">
                             高级配置
-                          </summary>
-                          <dl className="mt-3 space-y-2 text-xs">
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-[var(--text-tertiary)]">branch</dt>
-                              <dd className="font-mono text-[var(--text-primary)]">{config.branch}</dd>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="rounded-b-lg border border-t-0 border-[var(--border-default)] bg-[var(--bg-surface)] px-3 pb-3 pt-1">
+                              <dl className="space-y-2 text-xs">
+                                <div className="flex justify-between gap-3">
+                                  <dt className="text-[var(--text-tertiary)]">branch</dt>
+                                  <dd className="font-mono text-[var(--text-primary)]">{config.branch}</dd>
+                                </div>
+                                <div className="flex justify-between gap-3">
+                                  <dt className="text-[var(--text-tertiary)]">postsDir</dt>
+                                  <dd className="font-mono text-[var(--text-primary)]">{config.postsDir}</dd>
+                                </div>
+                                <div className="flex justify-between gap-3">
+                                  <dt className="text-[var(--text-tertiary)]">mediaDir</dt>
+                                  <dd className="font-mono text-[var(--text-primary)]">{config.mediaDir}</dd>
+                                </div>
+                                <div className="flex justify-between gap-3">
+                                  <dt className="text-[var(--text-tertiary)]">workflowFile</dt>
+                                  <dd className="break-all font-mono text-[var(--text-primary)]">
+                                    {config.workflowFile}
+                                  </dd>
+                                </div>
+                              </dl>
                             </div>
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-[var(--text-tertiary)]">postsDir</dt>
-                              <dd className="font-mono text-[var(--text-primary)]">{config.postsDir}</dd>
-                            </div>
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-[var(--text-tertiary)]">mediaDir</dt>
-                              <dd className="font-mono text-[var(--text-primary)]">{config.mediaDir}</dd>
-                            </div>
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-[var(--text-tertiary)]">workflowFile</dt>
-                              <dd className="break-all font-mono text-[var(--text-primary)]">
-                                {config.workflowFile}
-                              </dd>
-                            </div>
-                          </dl>
-                        </details>
+                          </CollapsibleContent>
+                        </Collapsible>
 
                         <Button
                           type="button"

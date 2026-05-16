@@ -2,6 +2,7 @@ import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "./ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { AlertCircle } from "lucide-react";
 
 interface ErrorBoundaryProps {
@@ -50,14 +51,16 @@ function DefaultFallback({ error, onRetry }: { error: Error; onRetry: () => void
           页面遇到了一个意外错误。你的数据是安全的。
         </AlertDescription>
         {error && (
-          <details className="mt-3">
-            <summary className="text-xs cursor-pointer hover:opacity-80">
+          <Collapsible>
+            <CollapsibleTrigger className="text-xs cursor-pointer hover:opacity-80 block mt-3">
               错误详情
-            </summary>
-            <pre className="mt-2 p-3 bg-[var(--bg-muted)] rounded text-xs text-left overflow-auto max-h-32">
-              {error.message}
-            </pre>
-          </details>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <pre className="mt-2 p-3 bg-[var(--bg-muted)] rounded text-xs text-left overflow-auto max-h-32">
+                {error.message}
+              </pre>
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </Alert>
       <Button variant="outline" onClick={onRetry}>

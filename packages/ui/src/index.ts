@@ -28,6 +28,7 @@ export { Skeleton as UISkeleton } from "./components/ui/skeleton";
 export { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar";
 export { Separator } from "./components/ui/separator";
 export { Checkbox } from "./components/ui/checkbox";
+export { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./components/ui/collapsible";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 export { Toggle } from "./components/ui/toggle";
 export { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
