@@ -1,8 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Search, FilePlus, Rocket, ArrowRight } from "lucide-react";
+import { FilePlus, Rocket, Search } from "lucide-react";
 import { useDataProvider } from "../context/data-provider-context";
 import type { HexoPost } from "@hexo-cms/core";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "./ui/command";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -26,23 +34,16 @@ const ACTIONS = [
   { id: "deploy", label: "触发部署", to: "/deploy", icon: Rocket },
 ];
 
-type ResultItem =
-  | { type: "nav"; label: string; to: string }
-  | { type: "action"; id: string; label: string; to: string; icon: React.ComponentType<{ size?: number; className?: string }> }
-  | { type: "post"; path: string; title: string };
-
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [recentPosts, setRecentPosts] = useState<HexoPost[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
       setQuery("");
-      setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 0);
       dataProvider.getPosts().then((posts) => {
         const sorted = [...posts]
@@ -71,50 +72,23 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       )
     : [];
 
-  const results: ResultItem[] = [
-    ...filteredActions.map((a) => ({ type: "action" as const, ...a })),
-    ...filteredNav.map((n) => ({ type: "nav" as const, ...n })),
-    ...filteredPosts.map((p) => ({
-      type: "post" as const,
-      path: p.path,
-      title: p.title || "无标题",
-    })),
-  ];
-
   const handleSelect = useCallback(
-    (index: number) => {
-      const item = results[index];
-      if (!item) return;
-      if (item.type === "post") {
-        navigate({ to: "/posts/$slug", params: { slug: item.path.replace(/^source\/_posts\//, "").replace(/\.md$/, "") } });
-      } else {
-        navigate({ to: item.to });
-      }
+    (to: string) => {
+      navigate({ to } as any);
       onClose();
     },
-    [results, navigate, onClose]
+    [navigate, onClose]
   );
 
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        handleSelect(selectedIndex);
-      } else if (e.key === "Escape") {
-        onClose();
-      }
+  const handleSelectPost = useCallback(
+    (path: string) => {
+      navigate({
+        to: "/posts/$slug",
+        params: { slug: path.replace(/^source\/_posts\//, "").replace(/\.md$/, "") },
+      });
+      onClose();
     },
-    [results.length, selectedIndex, handleSelect, onClose]
+    [navigate, onClose]
   );
 
   if (!isOpen) return null;
@@ -127,61 +101,65 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       <div className="absolute inset-0 bg-black/40" />
 
       <div
-        className="relative w-full max-w-lg rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden animate-fade-in"
+        className="relative w-full max-w-lg animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2.5 px-4 h-12 border-b border-[var(--border-default)]">
-          <Search size={16} className="text-[var(--text-tertiary)] shrink-0" />
-          <input
+        <Command shouldFilter={false} className="shadow-2xl">
+          <CommandInput
             ref={inputRef}
-            type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onValueChange={setQuery}
             placeholder="搜索命令或文章..."
-            className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
           />
-          <kbd className="text-[10px] font-mono bg-[var(--bg-muted)] border border-[var(--border-default)] rounded px-1.5 py-0.5 text-[var(--text-tertiary)] shrink-0">
-            Esc
-          </kbd>
-        </div>
+          <CommandList>
+            <CommandEmpty>无匹配结果</CommandEmpty>
 
-        <div className="max-h-72 overflow-y-auto p-2">
-          {results.length === 0 ? (
-            <div className="text-sm text-[var(--text-tertiary)] text-center py-8">
-              无匹配结果
-            </div>
-          ) : (
-            results.map((item, i) => (
-              <button
-                key={item.type === "post" ? item.path : (item.type === "action" ? item.id : item.to)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left transition-colors cursor-pointer ${
-                  i === selectedIndex
-                    ? "bg-[var(--bg-muted)] text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"
-                }`}
-                onClick={() => handleSelect(i)}
-                onMouseEnter={() => setSelectedIndex(i)}
-              >
-                {item.type === "action" ? (
-                  <item.icon size={15} className="shrink-0 text-[var(--text-tertiary)]" />
-                ) : item.type === "nav" ? (
-                  <ArrowRight size={15} className="shrink-0 text-[var(--text-tertiary)]" />
-                ) : (
-                  <Search size={15} className="shrink-0 text-[var(--text-tertiary)]" />
-                )}
-                <span className="truncate">
-                  {item.type === "post" ? item.title : item.label}
-                </span>
-                {item.type === "nav" && (
-                  <span className="ml-auto text-[10px] text-[var(--text-tertiary)] font-mono shrink-0">
-                    {item.to}
-                  </span>
-                )}
-              </button>
-            ))
-          )}
-        </div>
+            {filteredActions.length > 0 && (
+              <CommandGroup heading="快捷操作">
+                {filteredActions.map((a) => (
+                  <CommandItem
+                    key={a.id}
+                    value={a.id}
+                    onSelect={() => handleSelect(a.to)}
+                  >
+                    <a.icon size={15} className="text-[var(--text-tertiary)]" />
+                    {a.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {filteredNav.length > 0 && (
+              <CommandGroup heading="页面导航">
+                {filteredNav.map((item) => (
+                  <CommandItem
+                    key={item.to}
+                    value={item.to}
+                    onSelect={() => handleSelect(item.to)}
+                  >
+                    <Search size={15} className="text-[var(--text-tertiary)]" />
+                    {item.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {filteredPosts.length > 0 && (
+              <CommandGroup heading="最近文章">
+                {filteredPosts.map((p) => (
+                  <CommandItem
+                    key={p.path}
+                    value={p.path}
+                    onSelect={() => handleSelectPost(p.path)}
+                  >
+                    <Search size={15} className="text-[var(--text-tertiary)]" />
+                    {p.title || "无标题"}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
       </div>
     </div>
   );

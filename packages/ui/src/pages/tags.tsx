@@ -4,6 +4,15 @@ import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import {
   Tag,
   FolderOpen,
@@ -15,7 +24,6 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
-  X,
 } from "lucide-react";
 
 const tagColors = [
@@ -35,7 +43,7 @@ interface DialogState {
 export function TagsPage() {
   const dataProvider = useDataProvider();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"tags" | "categories">("tags");
+  const [activeTab, setActiveTab] = useState("tags");
   const [tags, setTags] = useState<Array<{ id: string; name: string; slug: string; count: number; color?: string }>>([]);
   const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string; count: number; color?: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -140,55 +148,43 @@ export function TagsPage() {
     if (!dialog) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
-        <div className="bg-[var(--bg-surface)] rounded-xl shadow-[var(--shadow-lg)] border border-[var(--border-default)] w-full max-w-md mx-4 animate-scale-in">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-[var(--border-default)]">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+      <Dialog open={!!dialog} onOpenChange={() => closeDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
               {dialog.type === "rename" ? "重命名" : "删除"}
               {dialog.itemType === "tag" ? "标签" : "分类"}
-            </h3>
-            <button
-              onClick={closeDialog}
-              disabled={processing}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors disabled:opacity-50"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="p-4 space-y-4">
-            {dialog.type === "rename" ? (
-              <>
-                <p className="text-sm text-[var(--text-secondary)]">
+            </DialogTitle>
+            <DialogDescription>
+              {dialog.type === "rename" ? (
+                <>
                   将 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 重命名为：
-                </p>
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  disabled={processing}
-                  placeholder="输入新名称"
-                  className="w-full h-10 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--brand-primary)] transition-colors disabled:opacity-50"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newName.trim()) {
-                      handleRename();
-                    }
-                  }}
-                />
-              </>
-            ) : (
-              <p className="text-sm text-[var(--text-secondary)]">
-                确定要删除 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 吗？
-                此操作将从所有文章中移除该{dialog.itemType === "tag" ? "标签" : "分类"}。
-              </p>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--border-default)]">
+                </>
+              ) : (
+                <>
+                  确定要删除 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 吗？
+                  此操作将从所有文章中移除该{dialog.itemType === "tag" ? "标签" : "分类"}。
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {dialog.type === "rename" && (
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              disabled={processing}
+              placeholder="输入新名称"
+              className="w-full h-10 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--brand-primary)] transition-colors disabled:opacity-50"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newName.trim()) {
+                  handleRename();
+                }
+              }}
+            />
+          )}
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={closeDialog}
@@ -212,9 +208,9 @@ export function TagsPage() {
                 "确认删除"
               )}
             </Button>
-          </div>
-        </div>
-      </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     );
   };
 
@@ -237,32 +233,20 @@ export function TagsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)] w-fit">
-        <button
-          onClick={() => setActiveTab("tags")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
-            activeTab === "tags"
-              ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          <Tag size={14} />
-          标签
-          <span className="text-xs text-[var(--text-tertiary)]">{tags.length}</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("categories")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
-            activeTab === "categories"
-              ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          <FolderOpen size={14} />
-          分类
-          <span className="text-xs text-[var(--text-tertiary)]">{categories.length}</span>
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="tags">
+            <Tag size={14} />
+            标签
+            <span className="text-xs text-[var(--text-tertiary)] ml-1">{tags.length}</span>
+          </TabsTrigger>
+          <TabsTrigger value="categories">
+            <FolderOpen size={14} />
+            分类
+            <span className="text-xs text-[var(--text-tertiary)] ml-1">{categories.length}</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Search */}
       <div className="flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors max-w-sm">

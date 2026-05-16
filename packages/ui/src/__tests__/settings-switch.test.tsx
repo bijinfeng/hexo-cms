@@ -26,7 +26,7 @@ describe("SettingsPage switches", () => {
 
     render(<SettingsPage />);
 
-    await user.click(screen.getByRole("button", { name: "通知设置" }));
+    await user.click(screen.getByRole("tab", { name: "通知设置" }));
 
     const enabledSwitch = screen.getByRole("switch", { name: "新评论通知" });
     const disabledSwitch = screen.getByRole("switch", { name: "垃圾评论通知" });

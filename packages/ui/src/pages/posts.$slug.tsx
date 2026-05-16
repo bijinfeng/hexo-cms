@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Alert } from "../components/ui/alert";
 import { Input } from "../components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -288,28 +289,10 @@ export function EditPostPage() {
             )}
             {/* Status */}
             <SidebarSection title="发布状态" icon={Globe}>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setStatus("draft")}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    status === "draft"
-                      ? "bg-[var(--bg-muted)] text-[var(--text-primary)] border border-[var(--border-strong)]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"
-                  }`}
-                >
-                  草稿
-                </button>
-                <button
-                  onClick={() => setStatus("published")}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    status === "published"
-                      ? "bg-[var(--brand-primary-subtle)] text-[var(--brand-primary)] border border-[var(--brand-primary-muted)]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"
-                  }`}
-                >
-                  发布
-                </button>
-              </div>
+              <ToggleGroup type="single" value={status} onValueChange={(v) => v && setStatus(v as "draft" | "published")} className="w-full">
+                <ToggleGroupItem value="draft" className="flex-1 text-xs">草稿</ToggleGroupItem>
+                <ToggleGroupItem value="published" className="flex-1 text-xs">发布</ToggleGroupItem>
+              </ToggleGroup>
             </SidebarSection>
 
             {/* Date */}

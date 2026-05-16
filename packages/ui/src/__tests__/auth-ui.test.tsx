@@ -848,7 +848,7 @@ describe("OAuth UI", () => {
       </DataProviderProvider>,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: /GitHub 集成/ }));
+    await userEvent.click(screen.getByRole("tab", { name: /GitHub 集成/ }));
 
     await waitFor(() => {
       expect(screen.getByText("GitHub 仓库")).toBeInTheDocument();
@@ -877,7 +877,7 @@ describe("OAuth UI", () => {
       </DataProviderProvider>,
     );
 
-    await user.click(screen.getByRole("button", { name: /GitHub 集成/ }));
+    await user.click(screen.getByRole("tab", { name: /GitHub 集成/ }));
 
     expect(await screen.findByText("GitHub 授权")).toBeInTheDocument();
     expect(screen.getByText("Kebai")).toBeInTheDocument();
@@ -919,14 +919,12 @@ describe("OAuth UI", () => {
 
       render(
         <DataProviderProvider provider={createDataProvider()}>
-          <SettingsPage authClient={authClient} />
+          <SettingsPage authClient={authClient} initialSection="github" />
         </DataProviderProvider>,
       );
 
       await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: /GitHub 集成/ }));
-      });
-      await act(async () => {
+        await Promise.resolve();
         await Promise.resolve();
       });
       await act(async () => {

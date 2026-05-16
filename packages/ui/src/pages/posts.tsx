@@ -5,6 +5,15 @@ import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Alert } from "../components/ui/alert";
+import { Checkbox } from "../components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -27,8 +36,6 @@ import {
   RefreshCw,
   X,
   ChevronUp,
-  CheckSquare,
-  Square,
   Loader2,
 } from "lucide-react";
 
@@ -346,146 +353,134 @@ export function PostsPage() {
       )}
 
       {/* 批量删除确认对话框 */}
-      {showBatchDeleteDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
-          <Card className="w-full max-w-md mx-4">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
-                确认批量删除
-              </h3>
-              <p className="text-sm text-[var(--text-secondary)] mb-4">
-                确定要删除以下 {selectedPosts.size} 篇文章吗？此操作不可恢复。
-              </p>
-              <div className="max-h-48 overflow-y-auto mb-4 p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
-                <ul className="space-y-1 text-sm">
-                  {selectedPostsData.map((post) => (
-                    <li key={post.id} className="text-[var(--text-primary)]">
-                      • {post.title}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBatchDeleteDialog(false)}
-                  disabled={batchProcessing}
-                >
-                  取消
-                </Button>
-                <Button
-                  onClick={handleBatchDelete}
-                  disabled={batchProcessing}
-                  className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90"
-                >
-                  {batchProcessing ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      删除中...
-                    </>
-                  ) : (
-                    "确认删除"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <Dialog open={showBatchDeleteDialog} onOpenChange={setShowBatchDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认批量删除</DialogTitle>
+            <DialogDescription>
+              确定要删除以下 {selectedPosts.size} 篇文章吗？此操作不可恢复。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-48 overflow-y-auto p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+            <ul className="space-y-1 text-sm">
+              {selectedPostsData.map((post) => (
+                <li key={post.id} className="text-[var(--text-primary)]">
+                  {post.title}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowBatchDeleteDialog(false)}
+              disabled={batchProcessing}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleBatchDelete}
+              disabled={batchProcessing}
+              className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90"
+            >
+              {batchProcessing ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                "确认删除"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 批量发布确认对话框 */}
-      {showBatchPublishDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
-          <Card className="w-full max-w-md mx-4">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
-                确认批量发布
-              </h3>
-              <p className="text-sm text-[var(--text-secondary)] mb-4">
-                确定要发布以下 {selectedDrafts.length} 篇草稿文章吗？
-              </p>
-              <div className="max-h-48 overflow-y-auto mb-4 p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
-                <ul className="space-y-1 text-sm">
-                  {selectedDrafts.map((post) => (
-                    <li key={post.id} className="text-[var(--text-primary)]">
-                      • {post.title}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBatchPublishDialog(false)}
-                  disabled={batchProcessing}
-                >
-                  取消
-                </Button>
-                <Button
-                  onClick={() => handleBatchPublish(true)}
-                  disabled={batchProcessing}
-                >
-                  {batchProcessing ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      发布中...
-                    </>
-                  ) : (
-                    "确认发布"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <Dialog open={showBatchPublishDialog} onOpenChange={setShowBatchPublishDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认批量发布</DialogTitle>
+            <DialogDescription>
+              确定要发布以下 {selectedDrafts.length} 篇草稿文章吗？
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-48 overflow-y-auto p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+            <ul className="space-y-1 text-sm">
+              {selectedDrafts.map((post) => (
+                <li key={post.id} className="text-[var(--text-primary)]">
+                  {post.title}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowBatchPublishDialog(false)}
+              disabled={batchProcessing}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={() => handleBatchPublish(true)}
+              disabled={batchProcessing}
+            >
+              {batchProcessing ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  发布中...
+                </>
+              ) : (
+                "确认发布"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 批量取消发布确认对话框 */}
-      {showBatchUnpublishDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
-          <Card className="w-full max-w-md mx-4">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
-                确认批量取消发布
-              </h3>
-              <p className="text-sm text-[var(--text-secondary)] mb-4">
-                确定要取消发布以下 {selectedPublished.length} 篇文章吗？
-              </p>
-              <div className="max-h-48 overflow-y-auto mb-4 p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
-                <ul className="space-y-1 text-sm">
-                  {selectedPublished.map((post) => (
-                    <li key={post.id} className="text-[var(--text-primary)]">
-                      • {post.title}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBatchUnpublishDialog(false)}
-                  disabled={batchProcessing}
-                >
-                  取消
-                </Button>
-                <Button
-                  onClick={() => handleBatchPublish(false)}
-                  disabled={batchProcessing}
-                >
-                  {batchProcessing ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      处理中...
-                    </>
-                  ) : (
-                    "确认取消发布"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <Dialog open={showBatchUnpublishDialog} onOpenChange={setShowBatchUnpublishDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认批量取消发布</DialogTitle>
+            <DialogDescription>
+              确定要取消发布以下 {selectedPublished.length} 篇文章吗？
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-48 overflow-y-auto p-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+            <ul className="space-y-1 text-sm">
+              {selectedPublished.map((post) => (
+                <li key={post.id} className="text-[var(--text-primary)]">
+                  {post.title}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowBatchUnpublishDialog(false)}
+              disabled={batchProcessing}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={() => handleBatchPublish(false)}
+              disabled={batchProcessing}
+            >
+              {batchProcessing ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  处理中...
+                </>
+              ) : (
+                "确认取消发布"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -693,17 +688,14 @@ export function PostsPage() {
         <CardContent className="p-0 overflow-x-auto">
           {/* Table Header */}
           <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-6 py-3 border-b border-[var(--border-default)] text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider min-w-[600px]">
-            <button
-              onClick={toggleSelectAll}
-              className="flex items-center justify-center text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
-              disabled={filtered.length === 0}
-            >
-              {selectedPosts.size === filtered.length && filtered.length > 0 ? (
-                <CheckSquare size={16} />
-              ) : (
-                <Square size={16} />
-              )}
-            </button>
+            <div className="flex items-center justify-center">
+              <Checkbox
+                checked={selectedPosts.size === filtered.length && filtered.length > 0}
+                onCheckedChange={() => toggleSelectAll()}
+                disabled={filtered.length === 0}
+                aria-label="全选"
+              />
+            </div>
             <span>文章</span>
             <span className="hidden md:block">分类</span>
             <span className="hidden sm:block">日期</span>
@@ -730,16 +722,13 @@ export function PostsPage() {
                     }`}
                   >
                     {/* Checkbox */}
-                    <button
-                      onClick={() => toggleSelectPost(post.id)}
-                      className="flex items-center justify-center text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
-                    >
-                      {isSelected ? (
-                        <CheckSquare size={16} className="text-[var(--brand-primary)]" />
-                      ) : (
-                        <Square size={16} />
-                      )}
-                    </button>
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleSelectPost(post.id)}
+                        aria-label={`选择 ${post.title}`}
+                      />
+                    </div>
 
                     {/* Title + meta */}
                     <div className="min-w-0">

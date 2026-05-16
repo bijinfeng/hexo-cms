@@ -59,12 +59,12 @@ describe("MediaPage plugin boundaries", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "文档" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "文档" })).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: "停用" }));
 
-    expect(screen.queryByRole("button", { name: "文档" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "文档" })).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText("搜索文件名...")).not.toBeInTheDocument();
   });
 });

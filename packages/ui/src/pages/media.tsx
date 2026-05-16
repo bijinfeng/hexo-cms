@@ -4,6 +4,8 @@ import { ATTACHMENTS_HELPER_PLUGIN_ID } from "@hexo-cms/core";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Alert } from "../components/ui/alert";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { usePluginSystem } from "../plugin";
 import {
   Upload,
@@ -185,21 +187,15 @@ export function MediaPage() {
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
-          {filterOptions.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => setActiveFilter(opt)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                activeFilter === opt
-                  ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
+        <Tabs value={activeFilter} onValueChange={setActiveFilter}>
+          <TabsList>
+            {filterOptions.map((opt) => (
+              <TabsTrigger key={opt} value={opt}>
+                {opt}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         {attachmentsPluginEnabled && (
           <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors">
@@ -215,28 +211,14 @@ export function MediaPage() {
         )}
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
+          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "grid" | "list")}>
+            <ToggleGroupItem value="grid" size="icon" className="w-7 h-7">
               <Grid3x3 size={14} />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${
-                viewMode === "list"
-                  ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" size="icon" className="w-7 h-7">
               <List size={14} />
-            </button>
-          </div>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 

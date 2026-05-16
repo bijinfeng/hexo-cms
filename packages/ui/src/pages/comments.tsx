@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import {
   MessageSquare,
   Search,
@@ -174,26 +175,20 @@ export function CommentsPage() {
 
       {/* Filters & Search */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
-          {filterOptions.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => setActiveFilter(opt)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                activeFilter === opt
-                  ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {opt}
-              {opt === "待审核" && pendingCount > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-[var(--status-warning)] text-white">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <Tabs value={activeFilter} onValueChange={setActiveFilter}>
+          <TabsList>
+            {filterOptions.map((opt) => (
+              <TabsTrigger key={opt} value={opt}>
+                {opt}
+                {opt === "待审核" && pendingCount > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-[var(--status-warning)] text-white">
+                    {pendingCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors">
           <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />

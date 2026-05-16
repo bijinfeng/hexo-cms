@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Switch } from "../components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Textarea } from "../components/ui/textarea";
 import {
   Globe,
@@ -23,7 +24,6 @@ import {
   Save,
   ExternalLink,
   CheckCircle2,
-  ChevronRight,
   LogOut,
   RefreshCw,
   ArrowRight,
@@ -109,32 +109,23 @@ export function SettingsPage({ authClient, initialSection, onSignedOut, extraSec
         </Button>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      <Tabs value={activeSection} onValueChange={setActiveSection} orientation="vertical" className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar Nav */}
-        <div className="lg:w-52 flex-shrink-0">
-          <nav className="space-y-0.5">
-            {allSections.map((section) => {
-              const Icon = section.icon;
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer text-left ${
-                    activeSection === section.id
-                      ? "bg-[var(--brand-primary-subtle)] text-[var(--brand-primary)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]"
-                  }`}
-                >
-                  <Icon size={16} className="flex-shrink-0" />
-                  {section.label}
-                  {activeSection === section.id && (
-                    <ChevronRight size={14} className="ml-auto" />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+        <TabsList className="flex-col lg:w-52 h-auto bg-transparent p-0 space-y-0.5">
+          {allSections.map((section) => {
+            const Icon = section.icon;
+            return (
+              <TabsTrigger
+                key={section.id}
+                value={section.id}
+                className="w-full justify-start gap-3 px-3 py-2.5 data-[state=active]:bg-[var(--brand-primary-subtle)] data-[state=active]:text-[var(--brand-primary)] data-[state=active]:shadow-none data-[state=inactive]:text-[var(--text-secondary)]"
+              >
+                <Icon size={16} className="flex-shrink-0" />
+                {section.label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-4">
@@ -148,7 +139,7 @@ export function SettingsPage({ authClient, initialSection, onSignedOut, extraSec
             activeSection === section.id ? <section key={section.id}>{section.render()}</section> : null,
           )}
         </div>
-      </div>
+      </Tabs>
     </div>
   );
 }

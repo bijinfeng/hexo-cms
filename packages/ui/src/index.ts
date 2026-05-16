@@ -25,6 +25,53 @@ export {
 export { Switch } from "./components/ui/switch";
 export { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 export { Skeleton as UISkeleton } from "./components/ui/skeleton";
+export { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar";
+export { Separator } from "./components/ui/separator";
+export { Checkbox } from "./components/ui/checkbox";
+export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+export { Toggle } from "./components/ui/toggle";
+export { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/ui/tooltip";
+export { Popover, PopoverContent, PopoverTrigger } from "./components/ui/popover";
+export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from "./components/ui/dialog";
+export {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
+export {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from "./components/ui/command";
 export { SaveIndicator } from "./components/save-indicator";
 export type { SaveStatus, DeployStatus } from "./components/save-indicator";
 
