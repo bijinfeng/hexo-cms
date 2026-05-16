@@ -99,6 +99,9 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
       return provider.deleteTag(type, name);
     },
 
+    mergeTag: (type: "tag" | "category", sourceName: string, targetName: string): Promise<{ updatedCount: number }> =>
+      provider.mergeTag(type, sourceName, targetName),
+
     getMediaFiles: (): Promise<Array<{ name: string; path: string; size: number; url: string; sha: string }>> =>
       getCached("media", () => provider.getMediaFiles()),
 

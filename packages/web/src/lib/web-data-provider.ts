@@ -172,6 +172,15 @@ export class WebDataProvider implements DataProvider {
     return res.json();
   }
 
+  async mergeTag(type: "tag" | "category", sourceName: string, targetName: string): Promise<{ updatedCount: number }> {
+    const res = await apiFetch("/api/github/tags", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, sourceName, targetName }),
+    });
+    return res.json();
+  }
+
   // ==================== 媒体管理 ====================
 
   async getMediaFiles(): Promise<Array<{ name: string; path: string; size: number; url: string; sha: string }>> {

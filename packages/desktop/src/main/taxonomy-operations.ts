@@ -18,6 +18,12 @@ export interface TaxonomyDeleteInput {
   name: string;
 }
 
+export interface TaxonomyMergeInput {
+  type: TaxonomyType;
+  sourceName: string;
+  targetName: string;
+}
+
 export interface TaxonomyItem {
   id: string;
   name: string;
@@ -157,6 +163,54 @@ export function deletePostTaxonomy(post: HexoPost, { type, name }: TaxonomyDelet
   }
 
   return changed ? { ...post, frontmatter } : null;
+}
+
+export async function mergeTaxonomy(
+  repository: TaxonomyRepository,
+  input: TaxonomyMergeInput,
+): Promise<{ updatedCount: number }> {
+  const posts = await repository.getPosts();
+  let updatedCount = 0;
+
+  for (const post of posts) {
+    const next = mergePostTaxonomy(post, input);
+    if (next) {
+      await repository.savePost(next);
+      updatedCount += 1;
+    }
+  }
+
+  return { updatedCount };
+}
+
+export function mergePostTaxonomy(post: HexoPost, { type, sourceName, targetName }: TaxonomyMergeInput): HexoPost | null {
+  let changed = false;
+  const frontmatter = { ...post.frontmatter };
+
+  function mergeField(fieldName: "tags" | "category" | "categories") {
+    const value = frontmatter[fieldName];
+    if (Array.isArray(value)) {
+      const idx = value.indexOf(sourceName);
+      if (idx === -1) return;
+      changed = true;
+      const filtered: string[] = value.filter((t) => t !== sourceName);
+      if (!filtered.includes(targetName)) filtered.push(targetName);
+      (frontmatter as Record<string, unknown>)[fieldName] = filtered;
+    } else if (value === sourceName) {
+      changed = true;
+      (frontmatter as Record<string, unknown>)[fieldName] = targetName;
+    }
+  }
+
+  if (type === "tag") {
+    mergeField("tags");
+  } else {
+    mergeField("category");
+    mergeField("categories");
+  }
+
+  if (!changed) return null;
+  return { ...post, frontmatter };
 }
 
 function toTaxonomyItems(map: Map<string, number>): TaxonomyItem[] {

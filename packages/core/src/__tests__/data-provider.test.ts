@@ -21,6 +21,7 @@ function createMockDataProvider(): DataProvider {
     getTags: vi.fn().mockResolvedValue({ tags: [], categories: [], total: 0 }),
     renameTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
     deleteTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
+    mergeTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
     getMediaFiles: vi.fn().mockResolvedValue([]),
     uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
     deleteMedia: vi.fn().mockResolvedValue(undefined),

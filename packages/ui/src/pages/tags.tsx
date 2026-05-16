@@ -25,14 +25,23 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  GitMerge,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 const tagColors = [
   "#61DAFB", "#3178C6", "#FF4154", "#1572B6", "#06B6D4", "#10B981",
   "#F59E0B", "#6B7280", "#8B5CF6", "#EF4444", "#F97316", "#84CC16",
 ];
 
-type DialogType = "rename" | "delete" | null;
+type DialogType = "rename" | "delete" | "merge" | null;
 
 interface DialogState {
   type: DialogType;
@@ -52,6 +61,7 @@ export function TagsPage() {
   const [processing, setProcessing] = useState(false);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [newName, setNewName] = useState("");
+  const [mergeTarget, setMergeTarget] = useState("");
   const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,6 +90,11 @@ export function TagsPage() {
 
   function openDeleteDialog(type: "tag" | "category", name: string, id: string) {
     setDialog({ type: "delete", itemType: type, itemName: name, itemId: id });
+  }
+
+  function openMergeDialog(type: "tag" | "category", name: string, id: string) {
+    setDialog({ type: "merge", itemType: type, itemName: name, itemId: id });
+    setMergeTarget("");
   }
 
   function closeDialog() {
@@ -117,6 +132,22 @@ export function TagsPage() {
     }
   }
 
+  async function handleMerge() {
+    if (!dialog || !mergeTarget) return;
+
+    try {
+      setProcessing(true);
+      await dataProvider.mergeTag(dialog.itemType, dialog.itemName, mergeTarget);
+      closeDialog();
+      await loadTagsAndCategories();
+      setNotification(null);
+    } catch (err) {
+      setNotification(err instanceof Error ? err.message : "合并失败");
+    } finally {
+      setProcessing(false);
+    }
+  }
+
   const filteredTags = tags.filter((t) =>
     !search || t.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -149,28 +180,41 @@ export function TagsPage() {
   const renderDialog = () => {
     if (!dialog) return null;
 
+    const isRename = dialog.type === "rename";
+    const isDelete = dialog.type === "delete";
+    const isMerge = dialog.type === "merge";
+
+    const titleText = isRename ? "重命名" : isDelete ? "删除" : "合并";
+    const typeLabel = dialog.itemType === "tag" ? "标签" : "分类";
+    const itemList = dialog.itemType === "tag" ? filteredTags : filteredCategories;
+    const mergeCandidates = itemList.filter((i) => i.name !== dialog.itemName);
+
     return (
       <Dialog open={!!dialog} onOpenChange={() => closeDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {dialog.type === "rename" ? "重命名" : "删除"}
-              {dialog.itemType === "tag" ? "标签" : "分类"}
-            </DialogTitle>
+            <DialogTitle>{titleText}{typeLabel}</DialogTitle>
             <DialogDescription>
-              {dialog.type === "rename" ? (
+              {isRename && (
                 <>
                   将 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 重命名为：
                 </>
-              ) : (
+              )}
+              {isDelete && (
                 <>
                   确定要删除 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 吗？
-                  此操作将从所有文章中移除该{dialog.itemType === "tag" ? "标签" : "分类"}。
+                  此操作将从所有文章中移除该{typeLabel}。
+                </>
+              )}
+              {isMerge && (
+                <>
+                  将 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 合并到目标{typeLabel}。
+                  所有使用该{typeLabel}的文章将替换为目标{typeLabel}。
                 </>
               )}
             </DialogDescription>
           </DialogHeader>
-          {dialog.type === "rename" && (
+          {isRename && (
             <Input
               type="text"
               value={newName}
@@ -186,6 +230,22 @@ export function TagsPage() {
               }}
             />
           )}
+          {isMerge && (
+            <Select value={mergeTarget} onValueChange={setMergeTarget} disabled={processing}>
+              <SelectTrigger>
+                <SelectValue placeholder="选择目标" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {mergeCandidates.map((item) => (
+                    <SelectItem key={item.id} value={item.name}>
+                      {item.name} ({item.count} 篇)
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          )}
           <DialogFooter>
             <Button
               variant="outline"
@@ -195,17 +255,19 @@ export function TagsPage() {
               取消
             </Button>
             <Button
-              onClick={dialog.type === "rename" ? handleRename : handleDelete}
-              disabled={processing || (dialog.type === "rename" && !newName.trim())}
-              className={dialog.type === "delete" ? "bg-[var(--status-error)] hover:bg-[var(--status-error)]/90" : ""}
+              onClick={isRename ? handleRename : isMerge ? handleMerge : handleDelete}
+              disabled={processing || (isRename && !newName.trim()) || (isMerge && !mergeTarget)}
+              className={isDelete ? "bg-[var(--status-error)] hover:bg-[var(--status-error)]/90" : ""}
             >
               {processing ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
                   处理中...
                 </>
-              ) : dialog.type === "rename" ? (
+              ) : isRename ? (
                 "确认重命名"
+              ) : isMerge ? (
+                "确认合并"
               ) : (
                 "确认删除"
               )}
@@ -287,6 +349,13 @@ export function TagsPage() {
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
+                    onClick={() => openMergeDialog("tag", tag.name, tag.id)}
+                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent-subtle)] transition-colors cursor-pointer"
+                    title="合并到..."
+                  >
+                    <GitMerge size={12} />
+                  </button>
+                  <button
                     onClick={() => openRenameDialog("tag", tag.name, tag.id)}
                     className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer"
                   >
@@ -331,6 +400,13 @@ export function TagsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => openMergeDialog("category", cat.name, cat.id)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent-subtle)] transition-colors cursor-pointer"
+                        title="合并到..."
+                      >
+                        <GitMerge size={14} />
+                      </button>
                       <button
                         onClick={() => openRenameDialog("category", cat.name, cat.id)}
                         className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer"

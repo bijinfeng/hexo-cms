@@ -29,6 +29,7 @@ const mockDataProvider: DataProvider = {
   getTags: () => Promise.resolve({ tags: [], categories: [], total: 0 }),
   renameTag: () => Promise.resolve({ updatedCount: 0 }),
   deleteTag: () => Promise.resolve({ updatedCount: 0 }),
+  mergeTag: () => Promise.resolve({ updatedCount: 0 }),
   getMediaFiles: () => Promise.resolve([]),
   uploadMedia: () => Promise.resolve({ url: "" }),
   deleteMedia: () => Promise.resolve(),

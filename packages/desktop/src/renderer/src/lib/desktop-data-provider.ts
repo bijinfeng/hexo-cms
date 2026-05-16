@@ -86,6 +86,10 @@ export class DesktopDataProvider implements DataProvider {
     return requireElectronAPI().invoke("github:delete-tag", { type, name });
   }
 
+  async mergeTag(type: "tag" | "category", sourceName: string, targetName: string): Promise<{ updatedCount: number }> {
+    return requireElectronAPI().invoke("github:merge-tag", { type, sourceName, targetName });
+  }
+
   // ==================== 媒体管理 ====================
 
   async getMediaFiles(): Promise<Array<{ name: string; path: string; size: number; url: string; sha: string }>> {

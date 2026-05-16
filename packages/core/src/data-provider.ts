@@ -102,6 +102,11 @@ export interface DataProvider {
    */
   deleteTag(type: "tag" | "category", name: string): Promise<{ updatedCount: number }>;
 
+  /**
+   * 合并标签或分类（将 sourceName 合并到 targetName）
+   */
+  mergeTag(type: "tag" | "category", sourceName: string, targetName: string): Promise<{ updatedCount: number }>;
+
   // ==================== 媒体管理 ====================
 
   /**

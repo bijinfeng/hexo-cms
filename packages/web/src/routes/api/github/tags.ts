@@ -58,6 +58,22 @@ function removeValue(value: unknown, name: string): { value: unknown; changed: b
   return { value, changed: false };
 }
 
+function mergeValues(value: unknown, sourceName: string, targetName: string): { value: unknown; changed: boolean } {
+  if (Array.isArray(value)) {
+    let changed = false;
+    const filtered = value.filter((item) => {
+      if (item === sourceName) { changed = true; return false; }
+      return true;
+    });
+    if (changed && !filtered.includes(targetName)) {
+      filtered.push(targetName);
+    }
+    return { value: filtered, changed };
+  }
+  if (value === sourceName) return { value: targetName, changed: true };
+  return { value, changed: false };
+}
+
 async function updatePosts(
   posts: HexoPost[],
   type: TaxonomyType,
@@ -164,6 +180,29 @@ export const Route = createFileRoute("/api/github/tags")({
             posts,
             body.type,
             (value) => removeValue(value, body.name as string),
+            (post) => ctx.github.savePost(post),
+          );
+          return json(result);
+        } catch (error) {
+          return json({ error: getErrorMessage(error) }, 500);
+        }
+      },
+
+      PUT: async ({ request }) => {
+        const ctx = await getGitHubCtx(request);
+        if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
+
+        const body = (await request.json()) as { type?: TaxonomyType; sourceName?: string; targetName?: string };
+        if ((body.type !== "tag" && body.type !== "category") || !body.sourceName || !body.targetName) {
+          return json({ error: "INVALID_TAXONOMY_MERGE" }, 400);
+        }
+
+        try {
+          const posts = await ctx.github.getPosts(ctx.config.postsDir);
+          const result = await updatePosts(
+            posts,
+            body.type,
+            (value) => mergeValues(value, body.sourceName as string, body.targetName as string),
             (post) => ctx.github.savePost(post),
           );
           return json(result);

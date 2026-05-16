@@ -26,6 +26,7 @@ export const ELECTRON_IPC_CHANNELS = [
   "github:get-tags",
   "github:rename-tag",
   "github:delete-tag",
+  "github:merge-tag",
   "github:get-media",
   "github:upload-media",
   "github:delete-media",

@@ -7,7 +7,7 @@ import { createDesktopPersistence, type PluginSecretMutation } from "./desktop-p
 import { createGitHubServiceProvider } from "./github-service-provider";
 import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
 import { createPluginHttpProxy, type PluginFetchRequest } from "./plugin-http-proxy";
-import { deleteTaxonomy, getTaxonomySummary, renameTaxonomy, type TaxonomyDeleteInput, type TaxonomyMutation } from "./taxonomy-operations";
+import { deleteTaxonomy, getTaxonomySummary, mergeTaxonomy, renameTaxonomy, type TaxonomyDeleteInput, type TaxonomyMergeInput, type TaxonomyMutation } from "./taxonomy-operations";
 import { initUpdater, checkForUpdates as updaterCheckForUpdates, downloadUpdate, quitAndInstall, setChannel, getCurrentChannel } from "./auto-updater";
 
 const KEYTAR_SERVICE = "hexo-cms";
@@ -411,6 +411,13 @@ ipcMain.handle("github:delete-tag", async (_event, input: TaxonomyDeleteInput) =
   if (!github) return { updatedCount: 0 };
 
   return deleteTaxonomy(github, input);
+});
+
+ipcMain.handle("github:merge-tag", async (_event, input: TaxonomyMergeInput) => {
+  const github = await githubServiceProvider.getGitHubService();
+  if (!github) return { updatedCount: 0 };
+
+  return mergeTaxonomy(github, input);
 });
 
 // 媒体管理
