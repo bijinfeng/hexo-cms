@@ -100,7 +100,7 @@ export interface PluginSettingsSchema {
 export interface SidebarItemContribution {
   id: string;
   title: string;
-  target: "plugin.settings";
+  target: "plugin.settings" | "/comments";
 }
 
 export interface CommandContribution {

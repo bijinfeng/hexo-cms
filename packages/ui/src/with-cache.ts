@@ -135,5 +135,13 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
       invalidate("deployments");
       return provider.triggerDeploy(workflowFile);
     },
+
+    readConfigFile: (path: string): Promise<string> =>
+      getCached(`config-file:${path}`, () => provider.readConfigFile(path)),
+
+    writeConfigFile: (path: string, content: string): Promise<void> => {
+      invalidate(`config-file:${path}`);
+      return provider.writeConfigFile(path, content);
+    },
   };
 }

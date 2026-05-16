@@ -27,6 +27,7 @@
     "./pages/settings": "./src/pages/settings.tsx",
     "./pages/tags": "./src/pages/tags.tsx",
     "./pages/themes": "./src/pages/themes.tsx",
+    "./pages/menus": "./src/pages/menus.tsx",
     "./styles": "./src/styles.css",
     "./types/auth": "./src/types/auth.ts",
     "./types/electron-api": "./src/types/electron-api.ts",

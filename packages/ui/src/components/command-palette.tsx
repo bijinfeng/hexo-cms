@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { label: "媒体库", to: "/media" },
   { label: "标签 & 分类", to: "/tags" },
   { label: "主题管理", to: "/themes" },
+  { label: "菜单管理", to: "/menus" },
   { label: "部署管理", to: "/deploy" },
   { label: "站点设置", to: "/settings" },
 ];

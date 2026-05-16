@@ -28,6 +28,7 @@ import type { HexoPost } from "@hexo-cms/core";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
+import { useAutoSave } from "../hooks/use-autosave";
 import {
   ArrowLeft,
   Save,
@@ -42,6 +43,7 @@ import {
   Tag,
   Upload,
   Trash2,
+  Info,
 } from "lucide-react";
 
 const availableTags = ["React", "TypeScript", "TanStack", "CSS", "Tailwind", "Auth", "DevOps", "GitHub", "架构", "安全"];
@@ -63,6 +65,9 @@ export function EditPostPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [postPath, setPostPath] = useState("");
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const autosave = useAutoSave(slug, content);
 
   // Build current post for diagnostics
   const currentPost = useMemo<HexoPost>(() => {
@@ -96,7 +101,16 @@ export function EditPostPage() {
 
       const post = await dataProvider.getPost(path);
       setTitle(post.title || "");
-      setContent(post.content || "");
+
+      // Check for draft before setting content
+      const draft = autosave.restore();
+      if (draft) {
+        setContent(draft);
+        setDraftRestored(true);
+      } else {
+        setContent(post.content || "");
+      }
+
       setDate(post.date || new Date().toISOString().split("T")[0]);
       setStatus(post.frontmatter?.draft ? "draft" : "published");
 
@@ -159,6 +173,7 @@ export function EditPostPage() {
       };
 
       await dataProvider.savePost(post);
+      autosave.clear();
       navigate({ to: "/posts" });
     } catch (err) {
       console.error("Failed to save post:", err);
@@ -250,6 +265,21 @@ export function EditPostPage() {
         <Alert variant="destructive" className="mx-6 mt-3">
           {error}
         </Alert>
+      )}
+
+      {/* Draft restored banner */}
+      {draftRestored && (
+        <Alert className="mx-6 mt-3">
+          <Info size={14} />
+          检测到未保存的草稿，已恢复
+        </Alert>
+      )}
+
+      {/* Auto-save indicator */}
+      {autosave.saved && (
+        <div className="flex items-center justify-center py-1 bg-[var(--bg-muted)]">
+          <span className="text-xs text-[var(--text-tertiary)]">已自动保存</span>
+        </div>
       )}
 
       <div className="flex flex-1 overflow-hidden">

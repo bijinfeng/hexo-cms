@@ -92,6 +92,7 @@ export { EditPagePage } from "./pages/pages.$slug";
 export { DeployPage } from "./pages/deploy";
 export { SettingsPage } from "./pages/settings";
 export { LoginPage } from "./pages/login";
+export { MenusPage } from "./pages/menus";
 
 // Error Boundary
 export { ErrorBoundary } from "./components/error-boundary";
@@ -110,6 +111,7 @@ export { withCache } from "./with-cache";
 export { getElectronAPI, requireElectronAPI } from "./lib/electron-api";
 export { getAuthRedirect, isOnboardingRoute, isPublicAuthRoute } from "./lib/auth-route-guard";
 export { toGitHubConfig } from "./lib/repository-config";
+export { countWords, countChars, estimateReadingTime, countLines } from "./lib/text-stats";
 export type { ElectronAPI } from "./types/electron-api";
 export type {
   AuthClient,
@@ -133,3 +135,8 @@ export type {
 
 // Context
 export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";
+
+// Hooks
+export { useAutoSave } from "./hooks/use-autosave";
+export { useEditorPreferences, getEditorPreferencesSync } from "./hooks/use-editor-preferences";
+export type { EditorPreferences } from "./hooks/use-editor-preferences";

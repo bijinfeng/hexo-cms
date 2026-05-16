@@ -16,6 +16,7 @@ import {
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
+import { useAutoSave } from "../hooks/use-autosave";
 import {
   ArrowLeft,
   Save,
@@ -25,6 +26,7 @@ import {
   FileText,
   Loader2,
   Trash2,
+  Info,
 } from "lucide-react";
 
 export function EditPagePage() {
@@ -41,6 +43,9 @@ export function EditPagePage() {
   const [error, setError] = useState("");
   const [postPath, setPostPath] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const autosave = useAutoSave(slug, content);
 
   useEffect(() => {
     loadPage();
@@ -55,7 +60,14 @@ export function EditPagePage() {
       const page = await dataProvider.getPage(path);
 
       setTitle(page.title || "");
-      setContent(page.content || "");
+
+      const draft = autosave.restore();
+      if (draft) {
+        setContent(draft);
+        setDraftRestored(true);
+      } else {
+        setContent(page.content || "");
+      }
       setPostPath(page.path);
       setStatus(page.frontmatter.draft ? "draft" : "published");
     } catch (err) {
@@ -94,6 +106,7 @@ export function EditPagePage() {
 
       const page = { path: postPath, title, date: frontmatter.date, content, frontmatter };
       await dataProvider.savePage(page as any);
+      autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存失败");
@@ -171,6 +184,19 @@ export function EditPagePage() {
         <Alert variant="destructive" className="mx-6 mt-3">
           {error}
         </Alert>
+      )}
+
+      {draftRestored && (
+        <Alert className="mx-6 mt-3">
+          <Info size={14} />
+          检测到未保存的草稿，已恢复
+        </Alert>
+      )}
+
+      {autosave.saved && (
+        <div className="flex items-center justify-center py-1 bg-[var(--bg-muted)]">
+          <span className="text-xs text-[var(--text-tertiary)]">已自动保存</span>
+        </div>
       )}
 
       <div className="flex flex-1 overflow-hidden">

@@ -74,13 +74,21 @@ export const builtinPluginManifests: PluginManifest[] = [
     id: COMMENTS_OVERVIEW_PLUGIN_ID,
     name: "Comments Overview",
     version: "0.1.0",
-    description: "汇总评论状态，并在仪表板展示待处理评论入口。",
+    description: "基于 Giscus (GitHub Discussions) 的评论管理系统。配置 Giscus 参数后即可管理博客评论。",
     source: "builtin",
     engine: {
       hexoCms: ">=0.1.0",
     },
     activation: ["onDashboard"],
-    permissions: ["ui.contribute", "pluginConfig.write", "command.register"],
+    permissions: [
+      "ui.contribute",
+      "pluginConfig.write",
+      "command.register",
+      "network.fetch",
+    ],
+    network: {
+      allowedHosts: ["api.github.com"],
+    },
     contributes: {
       dashboardWidgets: [
         {
@@ -93,40 +101,49 @@ export const builtinPluginManifests: PluginManifest[] = [
       ],
       settingsPanels: [
         {
-          id: "comments.settings",
-          title: "评论概览",
-          schema: "comments.settings",
+          id: "comments.giscus",
+          title: "评论系统 (Giscus)",
+          schema: "comments.giscus",
         },
       ],
       settingsSchemas: {
-        "comments.settings": {
-          id: "comments.settings",
+        "comments.giscus": {
+          id: "comments.giscus",
           fields: [
             {
-              key: "provider",
-              label: "评论服务",
-              type: "select",
-              defaultValue: "giscus",
-              options: [
-                { label: "Giscus", value: "giscus" },
-                { label: "Waline", value: "waline" },
-              ],
-              description: "用于展示评论入口和后续同步策略。",
-            },
-            {
-              key: "moderationUrl",
-              label: "评论后台 URL",
-              type: "url",
+              key: "giscusRepo",
+              label: "GitHub 仓库",
+              type: "string",
               defaultValue: "",
-              placeholder: "https://comments.example.com",
-              description: "打开评论管理时跳转的后台地址。",
+              required: true,
+              placeholder: "owner/repo",
+              description: "启用 Discussions 的 GitHub 仓库，格式如 bijinfeng/blog",
             },
             {
-              key: "showPendingAlert",
-              label: "展示待审核提醒",
-              type: "boolean",
-              defaultValue: true,
-              description: "在仪表板中显示待审核评论提醒。",
+              key: "giscusRepoId",
+              label: "Repository ID",
+              type: "string",
+              defaultValue: "",
+              required: true,
+              placeholder: "R_kgDO...",
+              description: "从 Giscus 配置页面获取的 Repository ID",
+            },
+            {
+              key: "giscusCategoryId",
+              label: "Discussion Category ID",
+              type: "string",
+              defaultValue: "",
+              required: true,
+              placeholder: "DIC_kw...",
+              description: "用于存储评论的 Discussion 分类 ID",
+            },
+            {
+              key: "giscusCategory",
+              label: "Discussion 分类名称",
+              type: "string",
+              defaultValue: "General",
+              required: true,
+              description: "Giscus 使用的 Discussion 分类名称",
             },
           ],
         },
@@ -134,8 +151,8 @@ export const builtinPluginManifests: PluginManifest[] = [
       sidebarItems: [
         {
           id: "comments.entry",
-          title: "评论概览",
-          target: "plugin.settings",
+          title: "评论管理",
+          target: "/comments",
         },
       ],
       commands: [

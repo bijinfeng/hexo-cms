@@ -141,4 +141,12 @@ export class DesktopDataProvider implements DataProvider {
   async triggerDeploy(workflowFile: string): Promise<void> {
     await requireElectronAPI().invoke("github:trigger-deploy", workflowFile);
   }
+
+  async readConfigFile(path: string): Promise<string> {
+    return requireElectronAPI().invoke("github:read-config-file", path);
+  }
+
+  async writeConfigFile(path: string, content: string): Promise<void> {
+    await requireElectronAPI().invoke("github:write-config-file", path, content);
+  }
 }

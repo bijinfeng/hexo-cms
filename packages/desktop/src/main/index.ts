@@ -561,7 +561,6 @@ ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => 
   }
 });
 
-// Helper functions for YAML parsing
 function parseYamlValue(yaml: string, key: string): string | null {
   const regex = new RegExp(`^${key}:\\s*(.+)$`, "m");
   const match = yaml.match(regex);
@@ -575,3 +574,4 @@ function setYamlValue(yaml: string, key: string, value: string): string {
   }
   return yaml + `\n${key}: ${value}`;
 }
+

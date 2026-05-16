@@ -13,6 +13,7 @@ import {
   PanelLeftClose,
   Zap,
   Puzzle,
+  Menu,
 } from "lucide-react";
 import type { RegisteredSidebarItem } from "@hexo-cms/core";
 
@@ -27,15 +28,10 @@ const navItems = [
     ],
   },
   {
-    group: "互动",
-    items: [
-      { icon: MessageSquare, label: "评论管理", to: "/comments" },
-    ],
-  },
-  {
     group: "站点",
     items: [
       { icon: Palette, label: "主题管理", to: "/themes" },
+      { icon: Menu, label: "菜单管理", to: "/menus" },
       { icon: FolderOpen, label: "页面管理", to: "/pages" },
       { icon: GitBranch, label: "部署管理", to: "/deploy" },
       { icon: Settings, label: "站点设置", to: "/settings" },
@@ -113,48 +109,82 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
             </div>
           </div>
         ))}
-        {pluginItems.length > 0 && (
-          <div>
-            {!collapsed && (
-              <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-                插件
-              </div>
-            )}
-            <div className="space-y-0.5">
-              {pluginItems.map((item) => {
-                const isActive = pathname === "/settings";
-                return (
-                  <Link
-                    key={`${item.pluginId}:${item.id}`}
-                    to="/settings"
-                    search={{ section: "plugins", plugin: item.pluginId }}
+        {(() => {
+          const commentsItems = pluginItems.filter((item) => item.target === "/comments");
+          const otherItems = pluginItems.filter((item) => item.target !== "/comments");
+
+          const renderItem = (item: typeof pluginItems[0]) => {
+            const isCommentsPage = item.target === "/comments";
+            const isActive = isCommentsPage ? pathname === "/comments" : pathname === "/settings";
+            return (
+              <Link
+                key={`${item.pluginId}:${item.id}`}
+                to={isCommentsPage ? "/comments" : "/settings"}
+                search={isCommentsPage ? {} : { section: "plugins", plugin: item.pluginId }}
+                className={cn(
+                  "flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer no-underline",
+                  isActive
+                    ? "bg-[var(--sidebar-item-active-bg)] text-[var(--sidebar-item-active-text)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
+                  collapsed && "justify-center px-2"
+                )}
+                title={collapsed ? item.title : undefined}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {isCommentsPage ? (
+                  <MessageSquare
+                    size={18}
                     className={cn(
-                      "flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer no-underline",
-                      isActive
-                        ? "bg-[var(--sidebar-item-active-bg)] text-[var(--sidebar-item-active-text)]"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
-                      collapsed && "justify-center px-2"
+                      "flex-shrink-0",
+                      isActive ? "text-[var(--sidebar-item-active-icon)]" : ""
                     )}
-                    title={collapsed ? item.title : undefined}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <Puzzle
-                      size={18}
-                      className={cn(
-                        "flex-shrink-0",
-                        isActive ? "text-[var(--sidebar-item-active-icon)]" : ""
-                      )}
-                    />
-                    {!collapsed && <span className="truncate">{item.title}</span>}
-                    {isActive && !collapsed && (
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)]" />
+                  />
+                ) : (
+                  <Puzzle
+                    size={18}
+                    className={cn(
+                      "flex-shrink-0",
+                      isActive ? "text-[var(--sidebar-item-active-icon)]" : ""
                     )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                  />
+                )}
+                {!collapsed && <span className="truncate">{item.title}</span>}
+                {isActive && !collapsed && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)]" />
+                )}
+              </Link>
+            );
+          };
+
+          return (
+            <>
+              {commentsItems.length > 0 && (
+                <div>
+                  {!collapsed && (
+                    <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      互动
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    {commentsItems.map(renderItem)}
+                  </div>
+                </div>
+              )}
+              {otherItems.length > 0 && (
+                <div>
+                  {!collapsed && (
+                    <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      插件
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    {otherItems.map(renderItem)}
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </nav>
 
       {/* Footer */}

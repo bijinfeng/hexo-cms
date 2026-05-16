@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -9,6 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
+import { useAutoSave } from "../hooks/use-autosave";
 import {
   ArrowLeft,
   Save,
@@ -19,6 +20,7 @@ import {
   Globe,
   FileText,
   Loader2,
+  Info,
 } from "lucide-react";
 
 export function NewPagePage() {
@@ -31,6 +33,17 @@ export function NewPagePage() {
   const [slug, setSlug] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const autosave = useAutoSave("new-page", content);
+
+  useEffect(() => {
+    const draft = autosave.restore();
+    if (draft) {
+      setContent(draft);
+      setDraftRestored(true);
+    }
+  }, []);
 
   const onChange = useCallback((value: string) => {
     setContent(value);
@@ -63,6 +76,7 @@ export function NewPagePage() {
 
       const page = { path: filePath, title, date: frontmatter.date, content, frontmatter };
       await dataProvider.savePage(page as any);
+      autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存失败");
@@ -110,6 +124,19 @@ export function NewPagePage() {
         <Alert variant="destructive" className="mx-6 mt-3">
           {error}
         </Alert>
+      )}
+
+      {draftRestored && (
+        <Alert className="mx-6 mt-3">
+          <Info size={14} />
+          检测到未保存的草稿，已恢复
+        </Alert>
+      )}
+
+      {autosave.saved && (
+        <div className="flex items-center justify-center py-1 bg-[var(--bg-muted)]">
+          <span className="text-xs text-[var(--text-tertiary)]">已自动保存</span>
+        </div>
       )}
 
       <div className="flex flex-1 overflow-hidden">

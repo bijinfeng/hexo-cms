@@ -246,4 +246,21 @@ export class WebDataProvider implements DataProvider {
       body: JSON.stringify({ workflowFile }),
     });
   }
+
+  // ==================== 配置文件管理 ====================
+
+  async readConfigFile(path: string): Promise<string> {
+    const res = await optionalApiFetch(`/api/github/config-file?path=${encodeURIComponent(path)}`);
+    if (!res) return "";
+    const data = await res.json();
+    return data.content ?? "";
+  }
+
+  async writeConfigFile(path: string, content: string): Promise<void> {
+    await apiFetch("/api/github/config-file", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path, content }),
+    });
+  }
 }

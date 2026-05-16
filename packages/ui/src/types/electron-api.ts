@@ -34,6 +34,8 @@ export const ELECTRON_IPC_CHANNELS = [
   "github:switch-theme",
   "github:get-deployments",
   "github:trigger-deploy",
+  "github:read-config-file",
+  "github:write-config-file",
   "plugin-storage:load",
   "plugin-storage:save",
   "plugin-secret:load",

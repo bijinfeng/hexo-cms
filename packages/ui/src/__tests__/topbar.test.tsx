@@ -37,6 +37,8 @@ const mockDataProvider: DataProvider = {
   switchTheme: () => Promise.resolve(),
   getDeployments: () => Promise.resolve([]),
   triggerDeploy: () => Promise.resolve(),
+  readConfigFile: () => Promise.resolve(""),
+  writeConfigFile: () => Promise.resolve(),
 };
 
 function renderTopbar(props: Partial<Parameters<typeof Topbar>[0]> = {}) {

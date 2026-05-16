@@ -62,6 +62,8 @@ function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),
     triggerDeploy: vi.fn().mockResolvedValue(undefined),
+    readConfigFile: vi.fn().mockResolvedValue(""),
+    writeConfigFile: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

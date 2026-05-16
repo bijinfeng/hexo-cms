@@ -169,4 +169,16 @@ export interface DataProvider {
    * 手动触发部署
    */
   triggerDeploy(workflowFile: string): Promise<void>;
+
+  // ==================== 配置文件管理 ====================
+
+  /**
+   * 读取仓库中的原始文件内容
+   */
+  readConfigFile(path: string): Promise<string>;
+
+  /**
+   * 写入仓库中的原始文件
+   */
+  writeConfigFile(path: string, content: string): Promise<void>;
 }

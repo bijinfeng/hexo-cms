@@ -29,6 +29,8 @@ const STUB_PROVIDER: DataProvider = {
   switchTheme: () => Promise.resolve(),
   getDeployments: () => Promise.resolve([]),
   triggerDeploy: () => Promise.resolve(),
+  readConfigFile: () => Promise.resolve(""),
+  writeConfigFile: () => Promise.resolve(),
 };
 
 export function DataProviderProvider({ children, provider }: {

@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -17,6 +17,7 @@ import {
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
+import { useAutoSave } from "../hooks/use-autosave";
 import {
   ArrowLeft,
   Save,
@@ -30,6 +31,7 @@ import {
   Globe,
   FileText,
   Loader2,
+  Info,
 } from "lucide-react";
 import { SaveIndicator, type SaveStatus, type DeployStatus } from "../components/save-indicator";
 
@@ -42,6 +44,18 @@ export function NewPostPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState(`# 文章标题\n\n在这里开始写作...\n`);
   const [preview, setPreview] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const autosave = useAutoSave("new-post", content);
+
+  // Check for existing draft on mount
+  useEffect(() => {
+    const draft = autosave.restore();
+    if (draft) {
+      setContent(draft);
+      setDraftRestored(true);
+    }
+  }, []);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
@@ -91,6 +105,7 @@ export function NewPostPage() {
       const post = { path: filePath, title, date: frontmatter.date, content, frontmatter };
 
       await dataProvider.savePost(post);
+      autosave.clear();
       setSaveStatus("saved");
 
       if (publish) {
@@ -170,6 +185,21 @@ export function NewPostPage() {
         <Alert variant="destructive" className="mx-6 mt-3">
           {error}
         </Alert>
+      )}
+
+      {/* Draft restored banner */}
+      {draftRestored && (
+        <Alert className="mx-6 mt-3">
+          <Info size={14} />
+          检测到未保存的草稿，已恢复
+        </Alert>
+      )}
+
+      {/* Auto-save indicator */}
+      {autosave.saved && (
+        <div className="flex items-center justify-center py-1 bg-[var(--bg-muted)]">
+          <span className="text-xs text-[var(--text-tertiary)]">已自动保存</span>
+        </div>
       )}
 
       <div className="flex flex-1 overflow-hidden">
