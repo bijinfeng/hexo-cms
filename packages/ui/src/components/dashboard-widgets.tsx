@@ -12,8 +12,15 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, EyeOff, Settings2 } from "lucide-react";
+import { GripVertical, Settings2 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Button } from "./ui/button";
 
 const STORAGE_KEY = "hexo-cms:dashboard-layout";
 
@@ -83,7 +90,6 @@ interface DashboardWidgetGridProps {
 
 export function DashboardWidgetGrid({ children }: DashboardWidgetGridProps) {
   const [layout, setLayout] = useState<DashboardLayout>(() => loadLayout());
-  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     saveLayout(layout);
@@ -139,43 +145,28 @@ export function DashboardWidgetGrid({ children }: DashboardWidgetGridProps) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div />
-        <div className="relative">
-          <button
-            onClick={() => setShowPicker(!showPicker)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] rounded-lg transition-colors cursor-pointer"
-          >
-            <Settings2 size={14} />
-            自定义仪表板
-          </button>
-          {showPicker && (
-            <div className="absolute right-0 top-full mt-1 w-56 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl shadow-lg z-50 p-2">
-              {widgetDefinitions.map((w) => {
-                const isVisible = !layout.hidden.includes(w.id);
-                return (
-                  <button
-                    key={w.id}
-                    onClick={() => toggleWidget(w.id)}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--bg-muted)] transition-colors cursor-pointer text-sm text-left"
-                  >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                      isVisible ? "bg-primary-500 border-primary-500" : "border-[var(--border-default)]"
-                    }`}>
-                      {isVisible && (
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                          <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className={isVisible ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}>
-                      {w.title}
-                    </span>
-                    {!isVisible && <EyeOff size={12} className="ml-auto text-[var(--text-tertiary)]" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-[var(--text-secondary)]">
+              <Settings2 size={14} />
+              自定义仪表板
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {widgetDefinitions.map((w) => {
+              const isVisible = !layout.hidden.includes(w.id);
+              return (
+                <DropdownMenuCheckboxItem
+                  key={w.id}
+                  checked={isVisible}
+                  onCheckedChange={() => toggleWidget(w.id)}
+                >
+                  {w.title}
+                </DropdownMenuCheckboxItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

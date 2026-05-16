@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Alert } from "../components/ui/alert";
 import { Checkbox } from "../components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import {
   Dialog,
   DialogContent,
@@ -526,21 +527,13 @@ export function PostsPage() {
       {/* Search Bar */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+          <ToggleGroup type="single" value={activeFilter} onValueChange={(v) => v && setActiveFilter(v)}>
             {filterOptions.map((opt) => (
-              <button
-                key={opt}
-                onClick={() => setActiveFilter(opt)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                  activeFilter === opt
-                    ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                }`}
-              >
+              <ToggleGroupItem key={opt} value={opt} size="default">
                 {opt}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
 
           <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors">
             <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
@@ -608,21 +601,13 @@ export function PostsPage() {
                     <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
                       日期范围
                     </label>
-                    <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)]">
+                    <ToggleGroup type="single" value={dateRange} onValueChange={(v) => v && setDateRange(v)}>
                       {dateRangeOptions.map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => setDateRange(opt.value)}
-                          className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
-                            dateRange === opt.value
-                              ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm"
-                              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                          }`}
-                        >
+                        <ToggleGroupItem key={opt.value} value={opt.value} size="sm" className="flex-1 text-xs">
                           {opt.label}
-                        </button>
+                        </ToggleGroupItem>
                       ))}
-                    </div>
+                    </ToggleGroup>
                   </div>
                 </div>
 

@@ -3,6 +3,7 @@ import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import {
@@ -169,13 +170,13 @@ export function TagsPage() {
             </DialogDescription>
           </DialogHeader>
           {dialog.type === "rename" && (
-            <input
+            <Input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               disabled={processing}
               placeholder="输入新名称"
-              className="w-full h-10 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--brand-primary)] transition-colors disabled:opacity-50"
+              className="h-10 bg-[var(--bg-base)]"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newName.trim()) {
