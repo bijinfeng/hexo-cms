@@ -60,7 +60,7 @@
     "cmdk": "1.1.1",
     "dompurify": "^3.4.2",
     "marked": "^18.0.2",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.6.0"
   },
   "scripts": {
     "test": "vitest run",
