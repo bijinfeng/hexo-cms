@@ -13,7 +13,7 @@ catalogs:
 
   types:
     typescript: ^6.0.2
-    '@types/node': ^25.6.0
+    '@types/node': ^25.8.0
     '@types/react': ^19.2.0
     '@types/react-dom': ^19.2.0
 
