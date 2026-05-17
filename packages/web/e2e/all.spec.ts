@@ -1,70 +1,102 @@
-import { test, expect } from "@playwright/test";
+import { chromium, type Browser, type BrowserContext, type Locator, type Page } from "@playwright/test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setupAnonymousApp, setupAuthenticatedApp } from "./helpers";
 
-test.describe("Login", () => {
-  test("renders login page", async ({ page }) => {
+const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+const headless = process.env.E2E_HEADLESS !== "false";
+
+let browser: Browser;
+let context: BrowserContext;
+let page: Page;
+
+async function expectVisible(locator: Locator, timeout = 10_000) {
+  await locator.first().waitFor({ state: "visible", timeout });
+}
+
+beforeAll(async () => {
+  browser = await chromium.launch({ headless });
+}, 30_000);
+
+afterAll(async () => {
+  await browser.close();
+});
+
+beforeEach(async () => {
+  context = await browser.newContext({ baseURL });
+  page = await context.newPage();
+});
+
+afterEach(async () => {
+  await context.close();
+});
+
+describe("Login", () => {
+  it("renders login page", async () => {
     await setupAnonymousApp(page);
     await page.goto("/login");
-    await expect(page.locator("text=HexoCMS").first()).toBeVisible({ timeout: 15000 });
+    await expectVisible(page.locator("text=HexoCMS"), 15_000);
   });
 
-  test("redirects from / to /login", async ({ page }) => {
+  it("redirects from / to /login", async () => {
     await setupAnonymousApp(page);
     await page.goto("/");
-    await page.waitForURL("**/login");
+    await page.waitForURL("**/login", { timeout: 15_000 });
   });
 
-  test("redirects from /posts to /login", async ({ page }) => {
+  it("redirects from /posts to /login", async () => {
     await setupAnonymousApp(page);
     await page.goto("/posts");
-    await page.waitForURL("**/login");
+    await page.waitForURL("**/login", { timeout: 15_000 });
   });
 });
 
-test.describe("Navigation", () => {
-  test.beforeEach(async ({ page }) => {
+describe("Navigation", () => {
+  beforeEach(async () => {
     await setupAuthenticatedApp(page);
   });
 
-  test("dashboard shows stats", async ({ page }) => {
+  it("dashboard shows stats", async () => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "数据大盘" }).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=文章总数").first()).toBeVisible({ timeout: 5000 });
+    await expectVisible(page.getByRole("heading", { name: "数据大盘" }), 10_000);
+    await expectVisible(page.locator("text=文章总数"), 5_000);
   });
 
-  test("posts page shows post list", async ({ page }) => {
+  it("posts page shows post list", async () => {
     await page.goto("/posts");
-    await expect(page.getByRole("heading", { name: "文章管理" }).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=Hello World")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator("text=TanStack Start Guide")).toBeVisible();
+    await expectVisible(page.getByRole("heading", { name: "文章管理" }), 10_000);
+    await expectVisible(page.locator("text=Hello World"), 5_000);
+    await expectVisible(page.locator("text=TanStack Start Guide"));
   });
 
-  test("tags page shows tags", async ({ page }) => {
+  it("tags page shows tags", async () => {
     await page.goto("/tags");
-    await expect(page.getByRole("heading", { name: "标签 & 分类" }).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=react")).toBeVisible({ timeout: 5000 });
+    await expectVisible(page.getByRole("heading", { name: "标签 & 分类" }), 10_000);
+    await expectVisible(page.locator("text=react"), 5_000);
   });
 
-  test("media page loads", async ({ page }) => {
+  it("media page loads", async () => {
     await page.goto("/media");
-    await expect(page.getByRole("heading", { name: "媒体库" }).first()).toBeVisible({ timeout: 10000 });
+    await expectVisible(page.getByRole("heading", { name: "媒体库" }), 10_000);
   });
 });
 
-test.describe("Settings", () => {
-  test.beforeEach(async ({ page }) => {
+describe("Settings", () => {
+  beforeEach(async () => {
     await setupAuthenticatedApp(page);
   });
 
-  test("displays settings tabs", async ({ page }) => {
+  it("displays settings tabs", async () => {
     await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "站点设置" }).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=GitHub 集成").first()).toBeVisible();
+    await expectVisible(page.getByRole("heading", { name: "站点设置" }), 10_000);
+    await expectVisible(page.locator("text=GitHub 集成"));
   });
 
-  test("can switch to GitHub tab", async ({ page }) => {
+  it("can switch to GitHub tab", async () => {
     await page.goto("/settings");
     await page.locator("text=GitHub 集成").first().click();
-    await expect(page.locator('input[placeholder="owner"]')).toHaveValue("test-user", { timeout: 5000 });
+    const ownerInput = page.locator('input[placeholder="owner"]');
+
+    await ownerInput.waitFor({ state: "visible", timeout: 5_000 });
+    await expect.poll(async () => ownerInput.inputValue(), { timeout: 5_000 }).toBe("test-user");
   });
 });
