@@ -68,7 +68,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@tanstack/react-router": "^1.169.1",
+    "@tanstack/react-router": "^1.169.2",
     "@types/dompurify": "^3.2.0"
   },
   "peerDependencies": {
