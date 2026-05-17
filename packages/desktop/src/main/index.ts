@@ -215,6 +215,31 @@ ipcMain.handle("config:save", (_event, config: GitHubConfig) => {
   }
 });
 
+ipcMain.handle("github:read-config-file", async (_event, configPath: string) => {
+  const github = await githubServiceProvider.getGitHubService();
+  if (!github) return "";
+
+  try {
+    const configFile = await github.getRawFile(configPath);
+    return configFile?.content ?? "";
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:read-config-file failed", path: configPath, error: String(error) }));
+    throw error;
+  }
+});
+
+ipcMain.handle("github:write-config-file", async (_event, configPath: string, content: string) => {
+  const github = await githubServiceProvider.getGitHubService();
+  if (!github) throw new Error("GitHub not configured");
+
+  try {
+    await github.writeRawFile(configPath, content, `更新配置文件: ${configPath}`);
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:write-config-file failed", path: configPath, error: String(error) }));
+    throw error;
+  }
+});
+
 ipcMain.handle("plugin-storage:load", () => {
   return desktopPersistence.loadPluginStorage();
 });
@@ -581,4 +606,3 @@ function setYamlValue(yaml: string, key: string, value: string): string {
   }
   return yaml + `\n${key}: ${value}`;
 }
-

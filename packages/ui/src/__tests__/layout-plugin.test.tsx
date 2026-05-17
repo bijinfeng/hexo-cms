@@ -103,15 +103,15 @@ describe("CMSLayout plugin policy", () => {
       "href",
       "/settings?section=plugins&plugin=hexo-cms-attachments-helper",
     );
-    expect(screen.queryByRole("link", { name: "评论概览" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "评论管理" })).not.toBeInTheDocument();
 
     const commentsCard = screen.getByText("Comments Overview").closest(".rounded-xl");
     expect(commentsCard).not.toBeNull();
     await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
 
-    expect(screen.getByRole("link", { name: "评论概览" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "评论管理" })).toHaveAttribute(
       "href",
-      "/settings?section=plugins&plugin=hexo-cms-comments-overview",
+      "/comments",
     );
   });
 });

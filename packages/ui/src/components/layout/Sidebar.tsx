@@ -116,11 +116,12 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
           const renderItem = (item: typeof pluginItems[0]) => {
             const isCommentsPage = item.target === "/comments";
             const isActive = isCommentsPage ? pathname === "/comments" : pathname === "/settings";
+            const linkProps = isCommentsPage ? {} : { search: { section: "plugins", plugin: item.pluginId } };
             return (
               <Link
                 key={`${item.pluginId}:${item.id}`}
                 to={isCommentsPage ? "/comments" : "/settings"}
-                search={isCommentsPage ? {} : { section: "plugins", plugin: item.pluginId }}
+                {...linkProps}
                 className={cn(
                   "flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer no-underline",
                   isActive

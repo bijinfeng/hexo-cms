@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ATTACHMENTS_HELPER_PLUGIN_ID, COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
 import { DataProviderProvider } from "../context/data-provider-context";
@@ -64,13 +64,6 @@ function EnabledPluginDashboardWidgets() {
   const configs = Object.fromEntries(snapshot.plugins.map(({ manifest, config }) => [manifest.id, config]));
   const dashboardWidgets = DashboardExtensionOutlet({ widgets: snapshot.extensions.dashboardWidgets, configs });
   return <>{dashboardWidgets.map((widget) => widget.content)}</>;
-}
-
-async function selectComboboxOption(user: ReturnType<typeof userEvent.setup>, label: string, option: string) {
-  const trigger = screen.getByRole("combobox", { name: label });
-  trigger.focus();
-  fireEvent.keyDown(trigger, { key: "ArrowDown" });
-  await user.click(await screen.findByRole("option", { name: option }));
 }
 
 describe("plugin UI", () => {
@@ -157,19 +150,22 @@ describe("plugin UI", () => {
     expect(commentsCard).not.toBeNull();
 
     await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
-    await selectComboboxOption(user, "评论服务", "Waline");
-    await user.type(screen.getByLabelText("评论后台 URL"), "https://comments.example.com");
-    await user.click(screen.getByRole("switch", { name: "展示待审核提醒" }));
+    await user.type(screen.getByLabelText("GitHub 仓库"), "test-user/blog");
+    await user.type(screen.getByLabelText("Repository ID"), "R_kgDO123");
+    await user.type(screen.getByLabelText("Discussion Category ID"), "DIC_kw123");
+    await user.clear(screen.getByLabelText("Discussion 分类名称"));
+    await user.type(screen.getByLabelText("Discussion 分类名称"), "Announcements");
 
     unmount();
     renderWithProviders(<PluginSettingsPanel />);
 
-    expect(screen.getByRole("combobox", { name: "评论服务" })).toHaveTextContent("Waline");
-    expect(screen.getByLabelText("评论后台 URL")).toHaveValue("https://comments.example.com");
-    expect(screen.getByRole("switch", { name: "展示待审核提醒" })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByLabelText("GitHub 仓库")).toHaveValue("test-user/blog");
+    expect(screen.getByLabelText("Repository ID")).toHaveValue("R_kgDO123");
+    expect(screen.getByLabelText("Discussion Category ID")).toHaveValue("DIC_kw123");
+    expect(screen.getByLabelText("Discussion 分类名称")).toHaveValue("Announcements");
   });
 
-  it("applies comments settings to the dashboard widget", async () => {
+  it("renders enabled comments dashboard widget with the comments route", async () => {
     const user = userEvent.setup();
     renderWithProviders(
       <>
@@ -183,14 +179,9 @@ describe("plugin UI", () => {
 
     await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
     expect(screen.getByText("待审核")).toBeInTheDocument();
-
-    await user.type(screen.getByLabelText("评论后台 URL"), "https://comments.example.com");
-    await user.click(screen.getByRole("switch", { name: "展示待审核提醒" }));
-
-    expect(screen.queryByText("待审核")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "打开评论管理" })).toHaveAttribute(
       "data-plugin-href",
-      "https://comments.example.com",
+      "/comments",
     );
   });
 
