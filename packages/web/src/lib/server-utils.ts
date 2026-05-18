@@ -1,5 +1,5 @@
 import type { Octokit as OctokitType } from "octokit";
-import { GitHubService } from "@hexo-cms/core";
+import { GitHubService, GITHUB_API_VERSION } from "@hexo-cms/core";
 import type { GitHubConfig } from "@hexo-cms/core";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "./db";
@@ -130,7 +130,7 @@ export async function getGitHubCtx(request: Request) {
     octokit: new Octokit({
       auth: accessToken,
       headers: {
-        "X-GitHub-Api-Version": "2022-11-28",
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
       },
     }) as OctokitType,
     github: new GitHubService(accessToken, normalizedConfig),

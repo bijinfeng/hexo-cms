@@ -4,6 +4,7 @@ import type {
   PluginStorageJsonValue,
   PluginStorageStoreValue,
 } from "./types";
+import { assertNonEmptyString, cloneValue } from "../utils";
 
 export interface PluginStorageStore {
   load(): PluginStorageStoreValue | Promise<PluginStorageStoreValue>;
@@ -14,11 +15,11 @@ export class MemoryPluginStorageStore implements PluginStorageStore {
   constructor(private value: PluginStorageStoreValue = {}) {}
 
   load(): PluginStorageStoreValue {
-    return cloneStorageValue(this.value);
+    return cloneValue(this.value);
   }
 
   save(value: PluginStorageStoreValue): void {
-    this.value = cloneStorageValue(value);
+    this.value = cloneValue(value);
   }
 }
 
@@ -48,14 +49,14 @@ export function createPluginStorageAPI(
 ): PluginStorageAPI {
   return {
     async get<T extends PluginStorageJsonValue>(key: string): Promise<T | undefined> {
-      assertStorageKey(key);
+      assertNonEmptyString(key, "Plugin storage key");
       permissionBroker.assert(pluginId, "pluginStorage.read", "plugin.storage.get");
       const current = await store.load();
       return current[pluginId]?.[key] as T | undefined;
     },
 
     async set<T extends PluginStorageJsonValue>(key: string, value: T): Promise<void> {
-      assertStorageKey(key);
+      assertNonEmptyString(key, "Plugin storage key");
       permissionBroker.assert(pluginId, "pluginStorage.write", "plugin.storage.set");
       const current = await store.load();
       await store.save({
@@ -68,7 +69,7 @@ export function createPluginStorageAPI(
     },
 
     async delete(key: string): Promise<void> {
-      assertStorageKey(key);
+      assertNonEmptyString(key, "Plugin storage key");
       permissionBroker.assert(pluginId, "pluginStorage.write", "plugin.storage.delete");
       const current = await store.load();
       const pluginStorage = { ...(current[pluginId] ?? {}) };
@@ -85,14 +86,4 @@ export function createPluginStorageAPI(
       return Object.keys(current[pluginId] ?? {}).sort((a, b) => a.localeCompare(b));
     },
   };
-}
-
-function assertStorageKey(key: string): void {
-  if (typeof key !== "string" || key.trim() === "") {
-    throw new Error("Plugin storage key must be a non-empty string");
-  }
-}
-
-function cloneStorageValue(value: PluginStorageStoreValue): PluginStorageStoreValue {
-  return JSON.parse(JSON.stringify(value)) as PluginStorageStoreValue;
 }

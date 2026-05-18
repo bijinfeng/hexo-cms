@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Alert } from "../components/ui/alert";
 import { Input } from "../components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import { SidebarSection } from "../components/SidebarSection";
 import {
   Dialog,
   DialogContent,
@@ -435,28 +436,6 @@ export function EditPostPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function SidebarSection({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="flex items-center gap-1.5 mb-2">
-        <Icon size={13} className="text-[var(--text-tertiary)]" />
-        <span className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-          {title}
-        </span>
-      </div>
-      {children}
     </div>
   );
 }

@@ -1,20 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getErrorMessage, parseYamlScalar, setYamlScalar } from "@hexo-cms/core";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
-
-function parseYamlScalar(content: string, key: string): string {
-  const match = content.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
-  return match?.[1]?.trim().replace(/^["']|["']$/g, "") ?? "";
-}
-
-function setYamlScalar(content: string, key: string, value: string): string {
-  const pattern = new RegExp(`^(${key}:\\s*)(.+)$`, "m");
-  if (pattern.test(content)) return content.replace(pattern, `$1${value}`);
-  return `${content.trimEnd()}\n${key}: ${value}\n`;
-}
 
 export const Route = createFileRoute("/api/github/themes")({
   server: {
@@ -32,7 +18,7 @@ export const Route = createFileRoute("/api/github/themes")({
           const installedThemes = themeEntries
             .filter((entry) => entry.type === "dir")
             .map((entry) => ({ name: entry.name, path: entry.path }));
-          const currentTheme = configFile ? parseYamlScalar(configFile.content, "theme") : "";
+          const currentTheme = configFile ? (parseYamlScalar(configFile.content, "theme") ?? "") : "";
 
           return json({ currentTheme, installedThemes });
         } catch (error) {

@@ -7,6 +7,7 @@ import { Alert } from "../components/ui/alert";
 import { Input } from "../components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { MarkdownEditor } from "../components/MarkdownEditor";
+import { SidebarSection } from "../components/SidebarSection";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
 import { useAutoSave } from "../hooks/use-autosave";
@@ -198,28 +199,6 @@ export function NewPagePage() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function SidebarSection({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="flex items-center gap-1.5 mb-2">
-        <Icon size={13} className="text-[var(--text-tertiary)]" />
-        <span className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-          {title}
-        </span>
-      </div>
-      {children}
     </div>
   );
 }

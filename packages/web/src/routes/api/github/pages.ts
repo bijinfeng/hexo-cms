@@ -1,10 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { HexoPost } from "@hexo-cms/core";
+import { getErrorMessage } from "@hexo-cms/core";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
 
 function resolvePagePath(page: Partial<HexoPost>): string | null {
   if (typeof page.path === "string" && page.path.trim()) return page.path;

@@ -2,6 +2,7 @@ import { Octokit } from "octokit";
 import type { GitHubConfig, HexoPost, Frontmatter } from "./types";
 import { DataProviderError, DataProviderErrorCode } from "./types";
 import { Logger } from "./logger";
+import { GITHUB_API_VERSION } from "./utils";
 
 type OctokitStatusError = Error & { status: number };
 
@@ -18,7 +19,7 @@ export class GitHubService {
     this.octokit = new Octokit({
       auth: accessToken,
       headers: {
-        "X-GitHub-Api-Version": "2022-11-28",
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
       },
     });
     this.config = {

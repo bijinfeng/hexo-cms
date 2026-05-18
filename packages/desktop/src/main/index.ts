@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } from "ele
 import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import type { GitHubConfig, PluginConfigStoreValue, PluginLogStoreValue, PluginSecretStoreValue, PluginStateStoreValue, PluginStorageStoreValue } from "@hexo-cms/core";
+import { GITHUB_API_VERSION, parseYamlScalar, setYamlScalar } from "@hexo-cms/core";
 import { createDesktopAuthManager } from "./desktop-auth";
 import { createDesktopPersistence, type PluginSecretMutation } from "./desktop-persistence";
 import { createGitHubServiceProvider } from "./github-service-provider";
@@ -305,7 +306,7 @@ ipcMain.handle("onboarding:listRepositories", async (_event, input: { query?: st
   const { Octokit } = await import("octokit");
   return listWritableRepositories(new Octokit({
     auth: token,
-    headers: { "X-GitHub-Api-Version": "2022-11-28" },
+    headers: { "X-GitHub-Api-Version": GITHUB_API_VERSION },
   }) as OctokitLike, input);
 });
 
@@ -322,7 +323,7 @@ ipcMain.handle("onboarding:validateRepository", async (_event, input: { owner: s
   const { Octokit } = await import("octokit");
   return validateHexoRepository(new Octokit({
     auth: token,
-    headers: { "X-GitHub-Api-Version": "2022-11-28" },
+    headers: { "X-GitHub-Api-Version": GITHUB_API_VERSION },
   }) as OctokitLike, input);
 });
 
@@ -371,12 +372,21 @@ ipcMain.handle("github:delete-post", async (_event, path: string) => {
   }
 });
 
-// 页面管理（复用 posts API，路径前缀不同）
+// 页面管理（列出 source 目录下的页面和子目录）
 ipcMain.handle("github:get-pages", async () => {
   try {
     const github = await githubServiceProvider.getGitHubService();
     if (!github) return [];
-    return await github.getPosts();
+    const entries = await github.listDirectory("source");
+    const pages = await Promise.all(
+      entries
+        .filter((entry) => entry.type === "dir" || (entry.type === "file" && entry.name.endsWith(".md") && entry.name !== "index.md"))
+        .map(async (entry) => {
+          const pagePath = entry.type === "dir" ? `${entry.path}/index.md` : entry.path;
+          return github.getPost(pagePath);
+        }),
+    );
+    return pages.filter((page): page is NonNullable<typeof page> => page !== null);
   } catch (error) {
     console.error(JSON.stringify({ level: "error", message: "IPC: github:get-pages failed", error: String(error) }));
     return [];
@@ -512,7 +522,7 @@ ipcMain.handle("github:get-themes", async () => {
 
   try {
     const configFile = await github.getRawFile("_config.yml");
-    const currentTheme = configFile ? parseYamlValue(configFile.content, "theme") : null;
+    const currentTheme = configFile ? parseYamlScalar(configFile.content, "theme") : null;
 
     const themeEntries = await github.listDirectory("themes");
     const installedThemes = themeEntries
@@ -531,7 +541,7 @@ ipcMain.handle("github:switch-theme", async (_event, themeName: string) => {
   try {
     const configFile = await github.getRawFile("_config.yml");
     if (!configFile) throw new Error("_config.yml not found");
-    const updatedConfig = setYamlValue(configFile.content, "theme", themeName);
+    const updatedConfig = setYamlScalar(configFile.content, "theme", themeName);
     await github.writeRawFile("_config.yml", updatedConfig, `切换主题为: ${themeName}`);
   } catch (error) {
     console.error(JSON.stringify({ level: "error", message: "IPC: github:switch-theme failed", themeName, error: String(error) }));
@@ -552,7 +562,7 @@ ipcMain.handle("github:get-deployments", async () => {
     const { Octokit } = await import("octokit");
     const octokit = new Octokit({
       auth: token,
-      headers: { "X-GitHub-Api-Version": "2022-11-28" },
+      headers: { "X-GitHub-Api-Version": GITHUB_API_VERSION },
     });
 
     const { data } = await octokit.rest.actions.listWorkflowRunsForRepo({
@@ -582,7 +592,7 @@ ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => 
     const { Octokit } = await import("octokit");
     const octokit = new Octokit({
       auth: token,
-      headers: { "X-GitHub-Api-Version": "2022-11-28" },
+      headers: { "X-GitHub-Api-Version": GITHUB_API_VERSION },
     });
     await octokit.rest.actions.createWorkflowDispatch({
       owner: config.owner, repo: config.repo, workflow_id: workflowFile, ref: config.branch || "main",
@@ -593,16 +603,3 @@ ipcMain.handle("github:trigger-deploy", async (_event, workflowFile: string) => 
   }
 });
 
-function parseYamlValue(yaml: string, key: string): string | null {
-  const regex = new RegExp(`^${key}:\\s*(.+)$`, "m");
-  const match = yaml.match(regex);
-  return match ? match[1].trim().replace(/^["']|["']$/g, "") : null;
-}
-
-function setYamlValue(yaml: string, key: string, value: string): string {
-  const regex = new RegExp(`^(${key}:\\s*)(.+)$`, "m");
-  if (regex.test(yaml)) {
-    return yaml.replace(regex, `$1${value}`);
-  }
-  return yaml + `\n${key}: ${value}`;
-}

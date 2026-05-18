@@ -1,4 +1,5 @@
 import type { PluginPermission, PluginSecretAPI, PluginSecretStoreValue } from "./types";
+import { assertNonEmptyString, cloneValue } from "../utils";
 
 export interface PluginSecretStore {
   load(): PluginSecretStoreValue | Promise<PluginSecretStoreValue>;
@@ -12,11 +13,11 @@ export class MemoryPluginSecretStore implements PluginSecretStore {
   constructor(private value: PluginSecretStoreValue = {}) {}
 
   load(): PluginSecretStoreValue {
-    return cloneSecretValue(this.value);
+    return cloneValue(this.value);
   }
 
   save(value: PluginSecretStoreValue): void {
-    this.value = cloneSecretValue(value);
+    this.value = cloneValue(value);
   }
 }
 
@@ -27,7 +28,7 @@ export function createPluginSecretAPI(
 ): PluginSecretAPI {
   return {
     async has(key: string): Promise<boolean> {
-      assertSecretKey(key);
+      assertNonEmptyString(key, "Plugin secret key");
       permissionBroker.assert(pluginId, "pluginSecret.read", "plugin.secret.has");
       if (store.has) return store.has(pluginId, key);
       const current = await store.load();
@@ -35,8 +36,10 @@ export function createPluginSecretAPI(
     },
 
     async set(key: string, value: string): Promise<void> {
-      assertSecretKey(key);
-      assertSecretValue(value);
+      assertNonEmptyString(key, "Plugin secret key");
+      if (typeof value !== "string" || value.length === 0) {
+        throw new Error("Plugin secret value must be a non-empty string");
+      }
       permissionBroker.assert(pluginId, "pluginSecret.write", "plugin.secret.set");
       if (store.set) {
         await store.set(pluginId, key, value);
@@ -53,7 +56,7 @@ export function createPluginSecretAPI(
     },
 
     async delete(key: string): Promise<void> {
-      assertSecretKey(key);
+      assertNonEmptyString(key, "Plugin secret key");
       permissionBroker.assert(pluginId, "pluginSecret.write", "plugin.secret.delete");
       if (store.delete) {
         await store.delete(pluginId, key);
@@ -68,20 +71,4 @@ export function createPluginSecretAPI(
       });
     },
   };
-}
-
-function assertSecretKey(key: string): void {
-  if (typeof key !== "string" || key.trim() === "") {
-    throw new Error("Plugin secret key must be a non-empty string");
-  }
-}
-
-function assertSecretValue(value: string): void {
-  if (typeof value !== "string" || value.length === 0) {
-    throw new Error("Plugin secret value must be a non-empty string");
-  }
-}
-
-function cloneSecretValue(value: PluginSecretStoreValue): PluginSecretStoreValue {
-  return JSON.parse(JSON.stringify(value)) as PluginSecretStoreValue;
 }

@@ -14,14 +14,14 @@ export class WebPluginSecretStore implements PluginSecretStore {
   }
 
   async save(value: PluginSecretStoreValue): Promise<void> {
-    const plugins = Object.entries(value);
-    if (plugins.length !== 1) return;
-    const [pluginId, namespace] = plugins[0];
-    const entries = Object.entries(namespace);
-    if (entries.length !== 1) return;
-    const [key, secret] = entries[0];
-    if (typeof secret !== "string" || secret.length === 0) return;
-    await this.set(pluginId, key, secret);
+    const entries = Object.entries(value);
+    if (entries.length === 0) return;
+    for (const [pluginId, namespace] of entries) {
+      for (const [key, secret] of Object.entries(namespace)) {
+        if (typeof secret !== "string" || secret.length === 0) continue;
+        await this.set(pluginId, key, secret);
+      }
+    }
   }
 
   async set(pluginId: string, key: string, value: string): Promise<void> {
@@ -54,14 +54,14 @@ export class DesktopPluginSecretStore implements PluginSecretStore {
   }
 
   async save(value: PluginSecretStoreValue): Promise<void> {
-    const plugins = Object.entries(value);
-    if (plugins.length !== 1) return;
-    const [pluginId, namespace] = plugins[0];
-    const entries = Object.entries(namespace);
-    if (entries.length !== 1) return;
-    const [key, secret] = entries[0];
-    if (typeof secret !== "string" || secret.length === 0) return;
-    await this.set(pluginId, key, secret);
+    const entries = Object.entries(value);
+    if (entries.length === 0) return;
+    for (const [pluginId, namespace] of entries) {
+      for (const [key, secret] of Object.entries(namespace)) {
+        if (typeof secret !== "string" || secret.length === 0) continue;
+        await this.set(pluginId, key, secret);
+      }
+    }
   }
 
   async set(pluginId: string, key: string, value: string): Promise<void> {

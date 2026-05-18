@@ -1,5 +1,6 @@
 import { redactPluginRuntimeText, redactPluginRuntimeValue } from "./redaction";
 import type { PluginLogEntry, PluginLogLevel, PluginLogStoreValue, PluginLogger } from "./types";
+import { cloneValue } from "../utils";
 
 export interface PluginLogStore {
   load(): PluginLogStoreValue;
@@ -10,11 +11,11 @@ export class MemoryPluginLogStore implements PluginLogStore {
   constructor(private value: PluginLogStoreValue = {}) {}
 
   load(): PluginLogStoreValue {
-    return cloneLogStoreValue(this.value);
+    return cloneValue(this.value);
   }
 
   save(value: PluginLogStoreValue): void {
-    this.value = cloneLogStoreValue(value);
+    this.value = cloneValue(value);
   }
 }
 
@@ -89,8 +90,4 @@ export function readPluginLogs(pluginId: string, store: PluginLogStore, limit?: 
 function sanitizePluginLogMeta(meta: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
   if (!meta) return undefined;
   return redactPluginRuntimeValue(meta) as Record<string, unknown>;
-}
-
-function cloneLogStoreValue(value: PluginLogStoreValue): PluginLogStoreValue {
-  return JSON.parse(JSON.stringify(value)) as PluginLogStoreValue;
 }

@@ -1,4 +1,5 @@
 import type { AuthSession, AuthUser } from "@hexo-cms/ui/types/auth";
+import { GITHUB_API_VERSION } from "@hexo-cms/core";
 
 export interface StoredOAuthSession {
   accessToken: string;
@@ -200,7 +201,7 @@ export async function fetchGitHubUser(accessToken: string, fetcher: Fetcher = fe
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${accessToken}`,
-      "X-GitHub-Api-Version": "2022-11-28",
+      "X-GitHub-Api-Version": GITHUB_API_VERSION,
     },
   });
 

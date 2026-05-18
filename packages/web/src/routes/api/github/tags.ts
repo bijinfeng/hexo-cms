@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Frontmatter, HexoPost } from "@hexo-cms/core";
+import { getErrorMessage } from "@hexo-cms/core";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 type TaxonomyType = "tag" | "category";
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
 
 function slugify(value: string): string {
   return value.toLowerCase().trim().replace(/\s+/g, "-");

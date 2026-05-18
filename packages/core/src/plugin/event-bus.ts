@@ -7,6 +7,7 @@ import type {
   PluginEventSubscription,
   PluginPermission,
 } from "./types";
+import { assertNonEmptyString } from "../utils";
 
 interface EventSubscriptionRecord {
   id: string;
@@ -89,15 +90,9 @@ export function createPluginEventAPI(
       eventName: PluginEventName,
       handler: PluginEventHandler<TPayload>,
     ): PluginEventSubscription {
-      assertEventName(eventName);
+      assertNonEmptyString(eventName, "Plugin event name");
       permissionBroker.assert(pluginId, "event.subscribe", "plugin.events.on");
       return eventBus.subscribe(pluginId, eventName, handler as PluginEventHandler);
     },
   };
-}
-
-function assertEventName(eventName: string): void {
-  if (typeof eventName !== "string" || eventName.trim() === "") {
-    throw new Error("Plugin event name must be a non-empty string");
-  }
 }

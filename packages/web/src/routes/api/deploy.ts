@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getErrorMessage } from "@hexo-cms/core";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../lib/server-utils";
 
 type GitHubWorkflowRun = {
@@ -8,10 +9,6 @@ type GitHubWorkflowRun = {
   created_at?: string | null;
   updated_at?: string | null;
 };
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
 
 function mapWorkflowRun(run: GitHubWorkflowRun) {
   const createdAt = run.created_at ?? "";

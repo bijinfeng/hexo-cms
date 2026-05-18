@@ -1,11 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getErrorMessage } from "@hexo-cms/core";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 const MEDIA_FILE_PATTERN = /\.(png|jpg|jpeg|gif|svg|webp|ico|avif|mp4|webm|mov|mp3|wav|ogg|flac|pdf|doc|docx)$/i;
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
 
 export const Route = createFileRoute("/api/github/media")({
   server: {
