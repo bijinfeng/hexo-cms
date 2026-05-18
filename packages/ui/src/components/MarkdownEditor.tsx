@@ -25,8 +25,8 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ fontSize: `${prefs.fontSize}px` }}>
-      <div className="flex-1 overflow-hidden">
+    <div className="flex flex-col h-full min-h-0" style={{ fontSize: `${prefs.fontSize}px` }}>
+      <div className="flex-1 min-h-0 overflow-hidden">
         <Editor
           value={value}
           onChange={onChange}

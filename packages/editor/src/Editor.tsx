@@ -149,10 +149,12 @@ export function Editor({
           placeholder={placeholder}
         />
       ) : (
-        <>
+        <div className="tiptap-editor-scroll">
           <BubbleMenu editor={editor} />
-          <EditorContent editor={editor} />
-        </>
+          <div className="tiptap-editor-content">
+            <EditorContent editor={editor} />
+          </div>
+        </div>
       )}
     </div>
   );
