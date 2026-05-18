@@ -65,6 +65,7 @@ export function Editor({
     editorProps: {
       attributes: {
         class: "ProseMirror",
+        spellcheck: "false",
       },
     },
   });

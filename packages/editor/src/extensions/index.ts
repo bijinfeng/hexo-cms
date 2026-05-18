@@ -8,12 +8,21 @@ import { TaskList } from "@tiptap/extension-task-list";
 import { TaskItem } from "@tiptap/extension-task-item";
 import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
+import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
+import { common, createLowlight } from "lowlight";
 import { ImageUpload } from "./image-upload";
 
 export function getBuiltinExtensions() {
+  const lowlight = createLowlight(common);
+
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3, 4, 5, 6] },
+      codeBlock: false,
+    }),
+    CodeBlockLowlight.configure({
+      lowlight,
+      defaultLanguage: "javascript",
     }),
     Markdown.configure({
       markedOptions: { gfm: true },

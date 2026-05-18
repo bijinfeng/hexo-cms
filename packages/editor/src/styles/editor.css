@@ -102,8 +102,9 @@
 }
 
 .tiptap-editor .ProseMirror pre {
-  background: var(--bg-muted, #1e1e1e);
+  background: #1e1e1e;
   border-radius: 0.5em;
+  color: #d4d4d4;
   padding: 1em;
   margin: 0.5em 0;
   overflow-x: auto;
@@ -111,8 +112,57 @@
 
 .tiptap-editor .ProseMirror pre code {
   background: none;
+  color: inherit;
   padding: 0;
   font-size: inherit;
+}
+
+.tiptap-editor .ProseMirror pre .hljs-comment,
+.tiptap-editor .ProseMirror pre .hljs-quote {
+  color: #6a9955;
+}
+
+.tiptap-editor .ProseMirror pre .hljs-keyword,
+.tiptap-editor .ProseMirror pre .hljs-selector-tag,
+.tiptap-editor .ProseMirror pre .hljs-literal,
+.tiptap-editor .ProseMirror pre .hljs-section,
+.tiptap-editor .ProseMirror pre .hljs-link {
+  color: #569cd6;
+}
+
+.tiptap-editor .ProseMirror pre .hljs-string,
+.tiptap-editor .ProseMirror pre .hljs-title,
+.tiptap-editor .ProseMirror pre .hljs-name,
+.tiptap-editor .ProseMirror pre .hljs-type,
+.tiptap-editor .ProseMirror pre .hljs-attribute,
+.tiptap-editor .ProseMirror pre .hljs-symbol,
+.tiptap-editor .ProseMirror pre .hljs-bullet,
+.tiptap-editor .ProseMirror pre .hljs-built_in,
+.tiptap-editor .ProseMirror pre .hljs-addition,
+.tiptap-editor .ProseMirror pre .hljs-variable,
+.tiptap-editor .ProseMirror pre .hljs-template-tag,
+.tiptap-editor .ProseMirror pre .hljs-template-variable {
+  color: #ce9178;
+}
+
+.tiptap-editor .ProseMirror pre .hljs-number,
+.tiptap-editor .ProseMirror pre .hljs-deletion,
+.tiptap-editor .ProseMirror pre .hljs-selector-class,
+.tiptap-editor .ProseMirror pre .hljs-selector-id {
+  color: #b5cea8;
+}
+
+.tiptap-editor .ProseMirror pre .hljs-regexp,
+.tiptap-editor .ProseMirror pre .hljs-meta {
+  color: #d16969;
+}
+
+.tiptap-editor .ProseMirror pre .hljs-emphasis {
+  font-style: italic;
+}
+
+.tiptap-editor .ProseMirror pre .hljs-strong {
+  font-weight: 600;
 }
 
 /* Horizontal rule */

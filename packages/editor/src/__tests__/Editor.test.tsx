@@ -5,13 +5,14 @@ import { Editor } from "../Editor";
 
 const tiptapState = vi.hoisted(() => ({
   editor: null as unknown,
+  useEditor: vi.fn(),
 }));
 
 vi.mock("@tiptap/react", async () => {
   const actual = await vi.importActual("@tiptap/react");
   return {
     ...actual,
-    useEditor: vi.fn(() => tiptapState.editor),
+    useEditor: tiptapState.useEditor,
     EditorContent: ({ editor }: { editor: unknown }) =>
       editor ? <div data-testid="editor-content">Editor Content</div> : null,
     BubbleMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -30,6 +31,7 @@ describe("Editor", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    tiptapState.useEditor.mockImplementation(() => tiptapState.editor);
     tiptapState.editor = null;
   });
 
@@ -79,6 +81,13 @@ describe("Editor", () => {
     const viewport = container.querySelector(".tiptap-editor-scroll");
     expect(viewport).toBeDefined();
     expect(viewport?.querySelector("[data-testid='editor-content']")).toBeDefined();
+  });
+
+  it("disables browser spellcheck in the prose editor", () => {
+    render(<Editor {...defaultProps} />);
+
+    const options = tiptapState.useEditor.mock.calls[0]?.[0];
+    expect(options.editorProps.attributes.spellcheck).toBe("false");
   });
 
   it("toggles to source mode", async () => {
