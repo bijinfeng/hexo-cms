@@ -1,2 +1,7 @@
 playwright-report/
 test-results/
+
+# Generated icons (from @hexo-cms/ui postinstall)
+public/favicon-32.png
+public/apple-touch-icon.png
+public/icon.svg

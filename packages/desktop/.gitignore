@@ -1,1 +1,6 @@
 /out
+
+# Generated icons (from @hexo-cms/ui postinstall)
+build/icon.png
+build/tray-mac.png
+build/tray-mac@2x.png

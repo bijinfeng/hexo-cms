@@ -15,6 +15,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "type-check": "pnpm -r exec tsc --noEmit",
+    "postinstall": "pnpm --filter @hexo-cms/ui generate-icons",
     "prepare": "husky"
   },
   "dependencies": {

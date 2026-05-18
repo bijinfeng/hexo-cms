@@ -51,3 +51,4 @@ allowBuilds:
   electron-winstaller: true
   esbuild: true
   keytar: true
+  sharp: true
