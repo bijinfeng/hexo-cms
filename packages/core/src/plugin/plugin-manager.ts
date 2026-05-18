@@ -6,7 +6,7 @@ import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
 import { createPluginHttpAPI, type PluginFetch } from "./plugin-http";
-import { BrowserJsonStore } from "./stores";
+import { BrowserJsonStore, MemoryStore } from "./stores";
 import {
   appendPluginLogEntry,
   createPluginLogger,
@@ -52,17 +52,7 @@ export interface PluginConfigStore {
   save(value: PluginConfigStoreValue): void;
 }
 
-export class MemoryPluginStateStore implements PluginStateStore {
-  constructor(private value: PluginStateStoreValue = {}) {}
-
-  load(): PluginStateStoreValue {
-    return { ...this.value };
-  }
-
-  save(value: PluginStateStoreValue): void {
-    this.value = { ...value };
-  }
-}
+export class MemoryPluginStateStore extends MemoryStore<PluginStateStoreValue> {}
 
 export class BrowserPluginStateStore extends BrowserJsonStore<PluginStateStoreValue> implements PluginStateStore {
   constructor(key = "hexo-cms:plugin-state") {
@@ -70,17 +60,7 @@ export class BrowserPluginStateStore extends BrowserJsonStore<PluginStateStoreVa
   }
 }
 
-export class MemoryPluginConfigStore implements PluginConfigStore {
-  constructor(private value: PluginConfigStoreValue = {}) {}
-
-  load(): PluginConfigStoreValue {
-    return { ...this.value };
-  }
-
-  save(value: PluginConfigStoreValue): void {
-    this.value = { ...value };
-  }
-}
+export class MemoryPluginConfigStore extends MemoryStore<PluginConfigStoreValue> {}
 
 export class BrowserPluginConfigStore extends BrowserJsonStore<PluginConfigStoreValue> implements PluginConfigStore {
   constructor(key = "hexo-cms:plugin-config") {

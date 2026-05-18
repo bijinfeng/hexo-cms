@@ -1,5 +1,6 @@
 import type { PluginPermission, PluginSecretAPI, PluginSecretStoreValue } from "./types";
 import { assertNonEmptyString, cloneValue } from "../utils";
+import { MemoryStore } from "./stores";
 
 export interface PluginSecretStore {
   load(): PluginSecretStoreValue | Promise<PluginSecretStoreValue>;
@@ -9,16 +10,9 @@ export interface PluginSecretStore {
   delete?(pluginId: string, key: string): void | Promise<void>;
 }
 
-export class MemoryPluginSecretStore implements PluginSecretStore {
-  constructor(private value: PluginSecretStoreValue = {}) {}
-
-  load(): PluginSecretStoreValue {
-    return cloneValue(this.value);
-  }
-
-  save(value: PluginSecretStoreValue): void {
-    this.value = cloneValue(value);
-  }
+export class MemoryPluginSecretStore extends MemoryStore<PluginSecretStoreValue> {
+  load(): PluginSecretStoreValue { return cloneValue(super.load()); }
+  save(value: PluginSecretStoreValue): void { super.save(cloneValue(value)); }
 }
 
 export function createPluginSecretAPI(

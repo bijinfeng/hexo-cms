@@ -5,23 +5,16 @@ import type {
   PluginStorageStoreValue,
 } from "./types";
 import { assertNonEmptyString, cloneValue } from "../utils";
-import { BrowserJsonStore } from "./stores";
+import { BrowserJsonStore, MemoryStore } from "./stores";
 
 export interface PluginStorageStore {
   load(): PluginStorageStoreValue | Promise<PluginStorageStoreValue>;
   save(value: PluginStorageStoreValue): void | Promise<void>;
 }
 
-export class MemoryPluginStorageStore implements PluginStorageStore {
-  constructor(private value: PluginStorageStoreValue = {}) {}
-
-  load(): PluginStorageStoreValue {
-    return cloneValue(this.value);
-  }
-
-  save(value: PluginStorageStoreValue): void {
-    this.value = cloneValue(value);
-  }
+export class MemoryPluginStorageStore extends MemoryStore<PluginStorageStoreValue> {
+  load(): PluginStorageStoreValue { return cloneValue(super.load()); }
+  save(value: PluginStorageStoreValue): void { super.save(cloneValue(value)); }
 }
 
 export class BrowserPluginStorageStore extends BrowserJsonStore<PluginStorageStoreValue> implements PluginStorageStore {

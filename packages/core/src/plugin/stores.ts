@@ -1,3 +1,15 @@
+export class MemoryStore<T> {
+  constructor(private value: T = {} as T) {}
+
+  load(): T {
+    return { ...this.value };
+  }
+
+  save(value: T): void {
+    this.value = { ...value };
+  }
+}
+
 export class BrowserJsonStore<T> {
   constructor(private readonly key: string) {}
 

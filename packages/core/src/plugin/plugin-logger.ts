@@ -1,23 +1,16 @@
 import { redactPluginRuntimeText, redactPluginRuntimeValue } from "./redaction";
 import type { PluginLogEntry, PluginLogLevel, PluginLogStoreValue, PluginLogger } from "./types";
 import { cloneValue } from "../utils";
-import { BrowserJsonStore } from "./stores";
+import { BrowserJsonStore, MemoryStore } from "./stores";
 
 export interface PluginLogStore {
   load(): PluginLogStoreValue;
   save(value: PluginLogStoreValue): void;
 }
 
-export class MemoryPluginLogStore implements PluginLogStore {
-  constructor(private value: PluginLogStoreValue = {}) {}
-
-  load(): PluginLogStoreValue {
-    return cloneValue(this.value);
-  }
-
-  save(value: PluginLogStoreValue): void {
-    this.value = cloneValue(value);
-  }
+export class MemoryPluginLogStore extends MemoryStore<PluginLogStoreValue> {
+  load(): PluginLogStoreValue { return cloneValue(super.load()); }
+  save(value: PluginLogStoreValue): void { super.save(cloneValue(value)); }
 }
 
 export class BrowserPluginLogStore extends BrowserJsonStore<PluginLogStoreValue> implements PluginLogStore {

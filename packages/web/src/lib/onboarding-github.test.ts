@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getRepositoryValidationHttpStatus, listWritableRepositories, validateHexoRepository } from "./onboarding-github";
+import { getRepositoryValidationHttpStatus, listWritableRepositories, validateHexoRepository } from "@hexo-cms/core";
 
 type MockOctokit = Parameters<typeof listWritableRepositories>[0];
 

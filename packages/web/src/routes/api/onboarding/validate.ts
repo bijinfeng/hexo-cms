@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getRepositoryValidationHttpStatus, validateHexoRepository, type OctokitLike } from "../../../lib/onboarding-github";
+import { getRepositoryValidationHttpStatus, validateHexoRepository, type OctokitLike } from "@hexo-cms/core";
 import { getAuth, getGitHubAccessTokenFromAuth, json } from "../../../lib/server-utils";
 
 function isRepositorySelection(input: unknown): input is { owner: string; repo: string; branch?: string } {

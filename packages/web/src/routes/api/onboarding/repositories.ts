@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GITHUB_API_VERSION } from "@hexo-cms/core";
-import { getGitHubErrorStatus, listWritableRepositories, type OctokitLike } from "../../../lib/onboarding-github";
+import { getGitHubErrorStatus, listWritableRepositories, type OctokitLike } from "@hexo-cms/core";
 import { getAuth, getGitHubAccessTokenFromAuth, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/onboarding/repositories")({
