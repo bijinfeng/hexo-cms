@@ -10,6 +10,7 @@ export interface EditorProps {
   onChange: (markdown: string) => void;
   extensions?: Extension[];
   onUploadMedia?: (file: File) => Promise<string>;
+  onUploadError?: (error: Error) => void;
   placeholder?: string;
   editable?: boolean;
 }
@@ -19,6 +20,7 @@ export function Editor({
   onChange,
   extensions = [],
   onUploadMedia,
+  onUploadError,
   placeholder = "开始写作...",
   editable = true,
 }: EditorProps) {
@@ -32,7 +34,10 @@ export function Editor({
     const extensionsWithUpload = onUploadMedia
       ? builtin.map((ext) =>
           ext.name === "image"
-            ? (ext as Extension).configure({ uploadFn: onUploadMedia })
+            ? (ext as Extension).configure({
+                uploadFn: onUploadMedia,
+                onUploadError,
+              })
             : ext
         )
       : builtin;
@@ -90,8 +95,9 @@ export function Editor({
       try {
         const url = await onUploadMedia(file);
         editor.chain().focus().setImage({ src: url, alt: file.name }).run();
-      } catch {
-        // upload failed — silently ignore, caller handles error display
+      } catch (err) {
+        console.error("Editor image upload failed:", err);
+        onUploadError?.(err instanceof Error ? err : new Error("Upload failed"));
       }
 
       if (fileInputRef.current) fileInputRef.current.value = "";

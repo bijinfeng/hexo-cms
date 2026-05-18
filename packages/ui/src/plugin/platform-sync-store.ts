@@ -36,7 +36,7 @@ export class WebBackedPluginStore<T extends Record<string, unknown>> implements 
 
   private fetchFromServer(): void {
     fetch(this.options.endpoint)
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data: Record<string, unknown> | null) => {
         const value = data?.[this.options.payloadKey];
         if (hasEntries<T>(value)) {
@@ -44,7 +44,9 @@ export class WebBackedPluginStore<T extends Record<string, unknown>> implements 
           this.options.fallback.save(value);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error(`Plugin store fetch failed (${this.options.endpoint}):`, err);
+      });
   }
 
   private persistToServer(value: T): void {
@@ -52,7 +54,9 @@ export class WebBackedPluginStore<T extends Record<string, unknown>> implements 
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [this.options.payloadKey]: value }),
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error(`Plugin store persist failed (${this.options.endpoint}):`, err);
+    });
   }
 }
 
@@ -81,7 +85,9 @@ export class DesktopBackedPluginStore<T extends Record<string, unknown>> impleme
   save(value: T): void {
     this.cache = { ...value };
     this.options.fallback.save(value);
-    getElectronAPI()?.invoke(this.options.saveChannel, value).catch(() => {});
+    getElectronAPI()?.invoke(this.options.saveChannel, value).catch((err) => {
+      console.error(`Plugin store IPC save failed (${String(this.options.saveChannel)}):`, err);
+    });
   }
 
   private fetchFromIPC(): void {
@@ -93,7 +99,9 @@ export class DesktopBackedPluginStore<T extends Record<string, unknown>> impleme
           this.options.fallback.save(value);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error(`Plugin store IPC load failed (${String(this.options.loadChannel)}):`, err);
+      });
   }
 }
 

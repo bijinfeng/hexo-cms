@@ -139,6 +139,11 @@ export function NewPagePage() {
           <span className="text-xs text-[var(--text-tertiary)]">已自动保存</span>
         </div>
       )}
+      {autosave.error && (
+        <div className="flex items-center justify-center py-1 bg-[var(--status-error-bg)]">
+          <span className="text-xs text-[var(--status-error)]">{autosave.error}</span>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Editor */}

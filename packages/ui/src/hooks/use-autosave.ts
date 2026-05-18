@@ -7,10 +7,12 @@ function getStorageKey(key: string): string {
 
 export function useAutoSave(key: string, content: string, delay?: number): {
   saved: boolean;
+  error: string;
   restore: () => string | null;
   clear: () => void;
 } {
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
   const lastSavedRef = useRef<string>("");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -24,9 +26,11 @@ export function useAutoSave(key: string, content: string, delay?: number): {
       localStorage.setItem(storageKey, text);
       lastSavedRef.current = text;
       setSaved(true);
+      setError("");
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      // ignore storage errors
+      setSaved(false);
+      setError("草稿保存失败，存储空间不足");
     }
   }, [key]);
 
@@ -60,10 +64,11 @@ export function useAutoSave(key: string, content: string, delay?: number): {
       localStorage.removeItem(storageKey);
       lastSavedRef.current = "";
       setSaved(false);
+      setError("");
     } catch {
-      // ignore storage errors
+      setError("清除草稿失败");
     }
   }, [key]);
 
-  return { saved, restore, clear };
+  return { saved, error, restore, clear };
 }

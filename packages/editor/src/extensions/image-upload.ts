@@ -3,6 +3,7 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 
 export interface ImageUploadOptions {
   uploadFn?: (file: File) => Promise<string>;
+  onUploadError?: (error: Error) => void;
 }
 
 export const ImageUpload = Image.extend<ImageUploadOptions>({
@@ -12,6 +13,7 @@ export const ImageUpload = Image.extend<ImageUploadOptions>({
     return {
       ...this.parent?.(),
       uploadFn: undefined,
+      onUploadError: undefined,
     };
   },
 
@@ -25,7 +27,13 @@ export const ImageUpload = Image.extend<ImageUploadOptions>({
 
   addProseMirrorPlugins() {
     const uploadFn = this.options.uploadFn;
+    const onUploadError = this.options.onUploadError;
     if (!uploadFn) return [];
+
+    function handleUploadError(err: unknown) {
+      console.error("Image upload failed:", err);
+      onUploadError?.(err instanceof Error ? err : new Error("Upload failed"));
+    }
 
     return [
       new Plugin({
@@ -41,12 +49,14 @@ export const ImageUpload = Image.extend<ImageUploadOptions>({
                 const file = item.getAsFile();
                 if (!file) continue;
 
-                uploadFn(file).then((url) => {
-                  const { state } = view;
-                  const node = state.schema.nodes.image.create({ src: url });
-                  const tr = state.tr.replaceSelectionWith(node);
-                  view.dispatch(tr);
-                });
+                uploadFn(file)
+                  .then((url) => {
+                    const { state } = view;
+                    const node = state.schema.nodes.image.create({ src: url });
+                    const tr = state.tr.replaceSelectionWith(node);
+                    view.dispatch(tr);
+                  })
+                  .catch(handleUploadError);
 
                 return true;
               }
@@ -64,14 +74,16 @@ export const ImageUpload = Image.extend<ImageUploadOptions>({
                 const coords = { left: event.clientX, top: event.clientY };
                 const pos = view.posAtCoords(coords);
 
-                uploadFn(file).then((url) => {
-                  const node = view.state.schema.nodes.image.create({ src: url });
-                  const tr = view.state.tr.insert(
-                    pos?.pos ?? view.state.selection.from,
-                    node,
-                  );
-                  view.dispatch(tr);
-                });
+                uploadFn(file)
+                  .then((url) => {
+                    const node = view.state.schema.nodes.image.create({ src: url });
+                    const tr = view.state.tr.insert(
+                      pos?.pos ?? view.state.selection.from,
+                      node,
+                    );
+                    view.dispatch(tr);
+                  })
+                  .catch(handleUploadError);
 
                 return true;
               }

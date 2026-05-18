@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Editor } from "@hexo-cms/editor";
 import { useDataProvider } from "../context/data-provider-context";
 import { useEditorPreferences } from "../hooks/use-editor-preferences";
@@ -13,16 +13,22 @@ interface MarkdownEditorProps {
 export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
   const dataProvider = useDataProvider();
   const [prefs] = useEditorPreferences();
+  const [uploadError, setUploadError] = useState("");
 
   const wordCount = useMemo(() => countWords(value), [value]);
   const charCount = useMemo(() => countChars(value), [value]);
   const readingTime = useMemo(() => estimateReadingTime(wordCount), [wordCount]);
 
-  const handleUploadMedia = async (file: File): Promise<string> => {
+  const handleUploadMedia = useCallback(async (file: File): Promise<string> => {
+    setUploadError("");
     const path = `source/images/${file.name}`;
     const result = await dataProvider.uploadMedia(file, path);
     return result.url;
-  };
+  }, [dataProvider]);
+
+  const handleUploadError = useCallback((error: Error) => {
+    setUploadError(`图片上传失败: ${error.message}`);
+  }, []);
 
   return (
     <div className="flex flex-col h-full min-h-0" style={{ fontSize: `${prefs.fontSize}px` }}>
@@ -31,8 +37,21 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
           value={value}
           onChange={onChange}
           onUploadMedia={handleUploadMedia}
+          onUploadError={handleUploadError}
         />
       </div>
+      {uploadError && (
+        <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-[var(--status-error)] bg-[var(--status-error-bg)] flex-shrink-0">
+          <span>{uploadError}</span>
+          <button
+            type="button"
+            className="ml-auto text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            onClick={() => setUploadError("")}
+          >
+            x
+          </button>
+        </div>
+      )}
       <div
         className={cn(
           "flex items-center justify-end gap-4 px-4 py-1.5 border-t border-[var(--border-default)] bg-[var(--bg-surface)] flex-shrink-0",

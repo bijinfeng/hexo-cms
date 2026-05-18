@@ -73,18 +73,17 @@ export class GitHubService {
         return [];
       }
 
-      const posts: HexoPost[] = [];
+      const postPaths = data
+        .filter((file): file is typeof data[number] & { type: "file"; path: string } => file.type === "file" && file.name.endsWith(".md"))
+        .map((file) => file.path);
 
-      for (const file of data) {
-        if (file.type === "file" && file.name.endsWith(".md")) {
-          const post = await this.getPost(file.path);
-          if (post) {
-            posts.push(post);
-          }
-        }
-      }
+      if (postPaths.length === 0) return [];
 
-      return posts;
+      const results = await Promise.all(
+        postPaths.map((path) => this.getPost(path)),
+      );
+
+      return results.filter((post): post is HexoPost => post !== null);
     } catch (error) {
       if (DataProviderError.isNotFound(error)) {
         this.log.warn(`getPosts: directory not found`, { directory });
