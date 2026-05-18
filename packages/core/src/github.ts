@@ -214,27 +214,41 @@ export class GitHubService {
 
     const [, frontmatterStr, body] = match;
     const frontmatter: Frontmatter = {};
+    let currentKey = "";
 
     frontmatterStr.split("\n").forEach((line) => {
       const colonIndex = line.indexOf(":");
-      if (colonIndex > 0) {
+      if (colonIndex > 0 && (line[0] !== " " && line[0] !== "-")) {
         const key = line.slice(0, colonIndex).trim();
-        let value: unknown = line.slice(colonIndex + 1).trim();
+        const rawValue = line.slice(colonIndex + 1).trim();
 
-        if (typeof value === "string" && value.startsWith("[") && value.endsWith("]")) {
-          value = value
-            .slice(1, -1)
-            .split(",")
-            .map((v: string) => v.trim());
-        } else if (value === "true") {
+        if (!rawValue) {
+          currentKey = key;
+          frontmatter[key] = [];
+          return;
+        }
+
+        let value: unknown;
+        if (rawValue.startsWith("[") && rawValue.endsWith("]")) {
+          value = rawValue.slice(1, -1).split(",").map((v: string) => v.trim());
+        } else if (rawValue === "true") {
           value = true;
-        } else if (value === "false") {
+        } else if (rawValue === "false") {
           value = false;
-        } else if (typeof value === "string" && !isNaN(Number(value))) {
-          value = Number(value);
+        } else if (!isNaN(Number(rawValue)) && rawValue !== "") {
+          value = Number(rawValue);
+        } else {
+          value = rawValue;
         }
 
         frontmatter[key] = value;
+        currentKey = "";
+      } else if (currentKey && line.trim().startsWith("- ")) {
+        const item = line.trim().slice(2);
+        const arr = frontmatter[currentKey];
+        if (Array.isArray(arr)) {
+          arr.push(item);
+        }
       }
     });
 

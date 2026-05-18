@@ -72,7 +72,11 @@ function createDefaultPluginManager(options: {
       [`${ATTACHMENTS_HELPER_PLUGIN_ID}:attachments.copyLink`]: async ({ args }) => {
         const value = typeof args[0] === "string" ? args[0] : "";
         if (!value) throw new Error("Attachment link is required.");
-        await navigator.clipboard.writeText(value);
+        try {
+          await navigator.clipboard.writeText(value);
+        } catch {
+          throw new Error("Failed to copy to clipboard");
+        }
         return value;
       },
     },
