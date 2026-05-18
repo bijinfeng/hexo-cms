@@ -28,6 +28,54 @@ describe("Toolbar", () => {
     expect(screen.getByTitle("插入图片")).toBeDefined();
   });
 
+  it("renders all editor tools in the header toolbar", () => {
+    render(<Toolbar {...defaultProps} />);
+
+    [
+      "粗体",
+      "斜体",
+      "删除线",
+      "行内代码",
+      "链接",
+      "标题",
+      "无序列表",
+      "有序列表",
+      "任务列表",
+      "引用",
+      "插入图片",
+      "代码块",
+      "插入表格",
+      "分割线",
+      "切换源码",
+    ].forEach((title) => {
+      expect(screen.getByTitle(title)).toBeDefined();
+    });
+  });
+
+  it("disables editor tools in source mode except source toggle", () => {
+    render(<Toolbar {...defaultProps} sourceMode />);
+
+    [
+      "粗体",
+      "斜体",
+      "删除线",
+      "行内代码",
+      "链接",
+      "标题",
+      "无序列表",
+      "有序列表",
+      "任务列表",
+      "引用",
+      "插入图片",
+      "代码块",
+      "插入表格",
+      "分割线",
+    ].forEach((title) => {
+      expect((screen.getByTitle(title) as HTMLButtonElement).disabled).toBe(true);
+    });
+    expect((screen.getByTitle("切换源码") as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it("shows different icon when in source mode", () => {
     const { rerender } = render(<Toolbar {...defaultProps} sourceMode={false} />);
     expect(screen.getByTitle("切换源码")).toBeDefined();
