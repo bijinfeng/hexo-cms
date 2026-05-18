@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -71,6 +71,8 @@ interface PostDisplayItem {
 
 export function PostsPage() {
   const navigate = useNavigate();
+  const { location } = useRouterState();
+  const isListRoute = location.pathname === "/posts";
   const dataProvider = useDataProvider();
   const [posts, setPosts] = useState<PostDisplayItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -91,8 +93,10 @@ export function PostsPage() {
   const [deleteConfirmPost, setDeleteConfirmPost] = useState<PostDisplayItem | null>(null);
 
   useEffect(() => {
+    if (!isListRoute) return;
+
     loadPosts();
-  }, []);
+  }, [isListRoute]);
 
   async function loadPosts() {
     setLoading(true);
@@ -294,6 +298,10 @@ export function PostsPage() {
 
     return matchSearch && matchFilter && matchCategory && matchDateRange;
   });
+
+  if (!isListRoute) {
+    return <Outlet />;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

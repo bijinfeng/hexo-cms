@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -32,6 +32,8 @@ interface PageItem {
 
 export function PagesPage() {
   const navigate = useNavigate();
+  const { location } = useRouterState();
+  const isListRoute = location.pathname === "/pages";
   const dataProvider = useDataProvider();
   const [pages, setPages] = useState<PageItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +41,10 @@ export function PagesPage() {
   const [deleteConfirmPage, setDeleteConfirmPage] = useState<PageItem | null>(null);
 
   useEffect(() => {
+    if (!isListRoute) return;
+
     loadPages();
-  }, []);
+  }, [isListRoute]);
 
   async function loadPages() {
     setLoading(true);
@@ -82,6 +86,10 @@ export function PagesPage() {
     } finally {
       setDeleteConfirmPage(null);
     }
+  }
+
+  if (!isListRoute) {
+    return <Outlet />;
   }
 
   return (

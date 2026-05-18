@@ -4,9 +4,15 @@ import { PostsPage } from '../pages/posts';
 import { DataProviderProvider } from '../context/data-provider-context';
 import type { DataProvider } from '@hexo-cms/core';
 
+const routerState = vi.hoisted(() => ({
+  pathname: '/posts',
+}));
+
 // Mock TanStack Router
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
+  useRouterState: () => ({ location: { pathname: routerState.pathname } }),
+  Outlet: () => <div data-testid="nested-post-route" />,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
@@ -56,6 +62,7 @@ function renderWithProvider(provider: DataProvider) {
 describe('PostsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    routerState.pathname = '/posts';
   });
 
   it('should render the page heading', async () => {
@@ -124,5 +131,16 @@ describe('PostsPage', () => {
     const provider = createMockProvider();
     renderWithProvider(provider);
     expect(screen.getByPlaceholderText('搜索标题、标签、内容、分类...')).toBeInTheDocument();
+  });
+
+  it('should render child route content for new post route', () => {
+    const provider = createMockProvider();
+    routerState.pathname = '/posts/new';
+
+    renderWithProvider(provider);
+
+    expect(screen.getByTestId('nested-post-route')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '文章管理' })).not.toBeInTheDocument();
+    expect(provider.getPosts).not.toHaveBeenCalled();
   });
 });
