@@ -472,7 +472,8 @@ ipcMain.handle("github:get-media", async () => {
       url: `https://github.com/${config?.owner}/${config?.repo}/blob/${config?.branch || "main"}/${f.path}`,
       sha: "",
     }));
-  } catch {
+  } catch (error) {
+    console.error(JSON.stringify({ level: "error", message: "IPC: github:get-media failed", error: String(error) }));
     return [];
   }
 });

@@ -417,10 +417,6 @@ export class GitHubService {
 
       this.log.info(`Media deleted: ${path}`);
     } catch (error) {
-      if (error instanceof DataProviderError && error.code === DataProviderErrorCode.NOT_FOUND) {
-        this.log.warn(`deleteMedia: not found`, { path });
-        return;
-      }
       this.handleOctokitError(error, "deleteMedia", path);
     }
   }
