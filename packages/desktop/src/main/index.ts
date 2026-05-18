@@ -6,7 +6,7 @@ import { GITHUB_API_VERSION, parseYamlScalar, setYamlScalar } from "@hexo-cms/co
 import { createDesktopAuthManager } from "./desktop-auth";
 import { createDesktopPersistence, type PluginSecretMutation } from "./desktop-persistence";
 import { createGitHubServiceProvider } from "./github-service-provider";
-import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "./onboarding";
+import { listWritableRepositories, validateHexoRepository, type OctokitLike } from "@hexo-cms/core";
 import { createPluginHttpProxy, type PluginFetchRequest } from "./plugin-http-proxy";
 import { deleteTaxonomy, getTaxonomySummary, mergeTaxonomy, renameTaxonomy, type TaxonomyDeleteInput, type TaxonomyMergeInput, type TaxonomyMutation } from "./taxonomy-operations";
 import { initUpdater, checkForUpdates as updaterCheckForUpdates, downloadUpdate, quitAndInstall, setChannel, getCurrentChannel } from "./auto-updater";

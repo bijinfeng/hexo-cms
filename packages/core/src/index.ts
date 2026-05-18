@@ -4,3 +4,5 @@ export * from "./data-provider";
 export * from "./logger";
 export * from "./plugin";
 export * from "./utils";
+export * from "./onboarding";
+export * from "./onboarding-types";
