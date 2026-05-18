@@ -5,6 +5,7 @@ import type {
   PluginStorageStoreValue,
 } from "./types";
 import { assertNonEmptyString, cloneValue } from "../utils";
+import { BrowserJsonStore } from "./stores";
 
 export interface PluginStorageStore {
   load(): PluginStorageStoreValue | Promise<PluginStorageStoreValue>;
@@ -23,22 +24,9 @@ export class MemoryPluginStorageStore implements PluginStorageStore {
   }
 }
 
-export class BrowserPluginStorageStore implements PluginStorageStore {
-  constructor(private readonly key = "hexo-cms:plugin-storage") {}
-
-  load(): PluginStorageStoreValue {
-    if (typeof window === "undefined") return {};
-    try {
-      const raw = window.localStorage.getItem(this.key);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  }
-
-  save(value: PluginStorageStoreValue): void {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(this.key, JSON.stringify(value));
+export class BrowserPluginStorageStore extends BrowserJsonStore<PluginStorageStoreValue> implements PluginStorageStore {
+  constructor(key = "hexo-cms:plugin-storage") {
+    super(key);
   }
 }
 

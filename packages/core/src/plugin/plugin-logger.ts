@@ -1,6 +1,7 @@
 import { redactPluginRuntimeText, redactPluginRuntimeValue } from "./redaction";
 import type { PluginLogEntry, PluginLogLevel, PluginLogStoreValue, PluginLogger } from "./types";
 import { cloneValue } from "../utils";
+import { BrowserJsonStore } from "./stores";
 
 export interface PluginLogStore {
   load(): PluginLogStoreValue;
@@ -19,22 +20,9 @@ export class MemoryPluginLogStore implements PluginLogStore {
   }
 }
 
-export class BrowserPluginLogStore implements PluginLogStore {
-  constructor(private readonly key = "hexo-cms:plugin-logs") {}
-
-  load(): PluginLogStoreValue {
-    if (typeof window === "undefined") return {};
-    try {
-      const raw = window.localStorage.getItem(this.key);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  }
-
-  save(value: PluginLogStoreValue): void {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(this.key, JSON.stringify(value));
+export class BrowserPluginLogStore extends BrowserJsonStore<PluginLogStoreValue> implements PluginLogStore {
+  constructor(key = "hexo-cms:plugin-logs") {
+    super(key);
   }
 }
 

@@ -6,6 +6,7 @@ import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
 import { createPluginHttpAPI, type PluginFetch } from "./plugin-http";
+import { BrowserJsonStore } from "./stores";
 import {
   appendPluginLogEntry,
   createPluginLogger,
@@ -63,22 +64,9 @@ export class MemoryPluginStateStore implements PluginStateStore {
   }
 }
 
-export class BrowserPluginStateStore implements PluginStateStore {
-  constructor(private readonly key = "hexo-cms:plugin-state") {}
-
-  load(): PluginStateStoreValue {
-    if (typeof window === "undefined") return {};
-    try {
-      const raw = window.localStorage.getItem(this.key);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  }
-
-  save(value: PluginStateStoreValue): void {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(this.key, JSON.stringify(value));
+export class BrowserPluginStateStore extends BrowserJsonStore<PluginStateStoreValue> implements PluginStateStore {
+  constructor(key = "hexo-cms:plugin-state") {
+    super(key);
   }
 }
 
@@ -94,22 +82,9 @@ export class MemoryPluginConfigStore implements PluginConfigStore {
   }
 }
 
-export class BrowserPluginConfigStore implements PluginConfigStore {
-  constructor(private readonly key = "hexo-cms:plugin-config") {}
-
-  load(): PluginConfigStoreValue {
-    if (typeof window === "undefined") return {};
-    try {
-      const raw = window.localStorage.getItem(this.key);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  }
-
-  save(value: PluginConfigStoreValue): void {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(this.key, JSON.stringify(value));
+export class BrowserPluginConfigStore extends BrowserJsonStore<PluginConfigStoreValue> implements PluginConfigStore {
+  constructor(key = "hexo-cms:plugin-config") {
+    super(key);
   }
 }
 

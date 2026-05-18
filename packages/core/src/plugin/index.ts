@@ -12,4 +12,5 @@ export * from "./plugin-manager";
 export * from "./plugin-http";
 export * from "./plugin-secret";
 export * from "./plugin-storage";
+export * from "./stores";
 export * from "./types";
