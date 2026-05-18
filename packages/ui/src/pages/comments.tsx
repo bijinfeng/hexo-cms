@@ -370,7 +370,7 @@ export function CommentsPage() {
       )}
 
       {error && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-[var(--status-error-border)] bg-[var(--status-error-bg)]">
           <CardContent className="py-4 flex items-center gap-3">
             <AlertTriangle size={18} className="text-red-500" />
             <div>

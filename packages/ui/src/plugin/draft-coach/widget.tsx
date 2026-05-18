@@ -118,16 +118,16 @@ export function DraftCoachWidget() {
                   {item.issues.map((issue) => (
                     <li key={issue.id} className="flex items-start gap-2 text-xs">
                       {issue.type === "overdue" && (
-                        <Calendar className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <Calendar className="h-3.5 w-3.5 text-[var(--status-warning)] flex-shrink-0 mt-0.5" />
                       )}
                       {issue.type === "word-count" && (
-                        <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <FileText className="h-3.5 w-3.5 text-[var(--status-info)] flex-shrink-0 mt-0.5" />
                       )}
                       {issue.type === "cover" && (
-                        <ImageIcon className="h-3.5 w-3.5 text-purple-500 flex-shrink-0 mt-0.5" />
+                        <ImageIcon className="h-3.5 w-3.5 text-[var(--status-info)] flex-shrink-0 mt-0.5" />
                       )}
                       {issue.type === "info" && (
-                        <AlertCircle className="h-3.5 w-3.5 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <AlertCircle className="h-3.5 w-3.5 text-[var(--text-tertiary)] flex-shrink-0 mt-0.5" />
                       )}
                       <div className="flex-1">
                         <p className="text-[var(--text-primary)]">{issue.message}</p>

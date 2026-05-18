@@ -109,11 +109,11 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-2 flex-1 min-w-0">
             {entry.error ? (
-              <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+              <XCircle className="h-4 w-4 text-[var(--status-error)] shrink-0 mt-0.5" />
             ) : entry.responseStatus && entry.responseStatus >= 200 && entry.responseStatus < 300 ? (
-              <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+              <CheckCircle className="h-4 w-4 text-[var(--status-success)] shrink-0 mt-0.5" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <AlertCircle className="h-4 w-4 text-[var(--status-warning)] shrink-0 mt-0.5" />
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -168,7 +168,7 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
                 href={entry.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-600"
+                className="text-[var(--status-info)] hover:underline"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
@@ -198,8 +198,8 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
 
           {entry.error && (
             <div>
-              <h4 className="text-xs font-medium text-red-500 mb-1">错误</h4>
-              <p className="text-xs text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded border border-red-200 dark:border-red-800">
+              <h4 className="text-xs font-medium text-[var(--status-error)] mb-1">错误</h4>
+              <p className="text-xs text-[var(--status-error)] bg-[var(--status-error-bg)] px-2 py-1 rounded border border-[var(--status-error-border)]">
                 {entry.error}
               </p>
             </div>

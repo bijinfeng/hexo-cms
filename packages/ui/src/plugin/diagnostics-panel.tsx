@@ -8,12 +8,12 @@ import { Card, CardContent } from "../components/ui/card";
 function severityIcon(severity: DiagnosticsIssue["severity"]) {
   switch (severity) {
     case "error":
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
+      return <AlertCircle className="h-4 w-4 text-[var(--status-error)]" />;
     case "warn":
-      return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      return <AlertTriangle className="h-4 w-4 text-[var(--status-warning)]" />;
     case "info":
     default:
-      return <Info className="h-4 w-4 text-blue-500" />;
+      return <Info className="h-4 w-4 text-[var(--status-info)]" />;
   }
 }
 
