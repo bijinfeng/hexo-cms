@@ -7,6 +7,8 @@ import { json, getAuth } from "../../../lib/server-utils";
 function toBoolean(value: unknown, fallback: boolean): boolean {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value === 1;
+  if (value === "true") return true;
+  if (value === "false") return false;
   return fallback;
 }
 

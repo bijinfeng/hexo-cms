@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { usePluginSystem } from "../plugin";
 import { COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
@@ -124,22 +124,19 @@ export function CommentsPage() {
   const [loadingComments, setLoadingComments] = useState<Set<string>>(new Set());
   const [moderatingIds, setModeratingIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (!isPluginEnabled || !isConfigured) return;
+  const loadDiscussions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await dataProvider.getToken();
+      if (!token) {
+        setError("未获取到 GitHub Token，请重新授权");
+        setLoading(false);
+        return;
+      }
 
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = await dataProvider.getToken();
-        if (!token) {
-          setError("未获取到 GitHub Token，请重新授权");
-          setLoading(false);
-          return;
-        }
-
-        const [owner, repo] = (pluginConfig.giscusRepo as string).split("/");
-        const query = `
+      const [owner, repo] = (pluginConfig.giscusRepo as string).split("/");
+      const query = `
           query($owner: String!, $repo: String!, $categoryId: ID) {
             repository(owner: $owner, name: $repo) {
               discussions(first: 50, categoryId: $categoryId, orderBy: { field: UPDATED_AT, direction: DESC }) {
@@ -153,39 +150,42 @@ export function CommentsPage() {
           }
         `;
 
-        const data = await fetchGitHubGraphQL(token, query, {
-          owner,
-          repo,
-          categoryId: pluginConfig.giscusCategoryId || null,
-        });
+      const data = await fetchGitHubGraphQL(token, query, {
+        owner,
+        repo,
+        categoryId: pluginConfig.giscusCategoryId || null,
+      });
 
-        const nodes = data.repository.discussions.nodes.map((n: Record<string, unknown>) => {
-          let state: DiscussionThread["state"] = "OPEN";
-          if (n.locked) state = "LOCKED";
-          const isAnswered = (n as { isAnswered?: boolean }).isAnswered;
-          if (isAnswered) state = "ANSWERED";
-          return {
-            id: n.id as string,
-            number: n.number as number,
-            title: n.title as string,
-            body: n.body as string,
-            createdAt: n.createdAt as string,
-            updatedAt: n.updatedAt as string,
-            state,
-            category: ((n.category as { name: string })?.name) ?? "",
-            author: (n.author as DiscussionAuthor) ?? { login: "unknown", avatarUrl: "" },
-            comments: [],
-          };
-        });
-        setDiscussions(nodes);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "加载讨论失败");
-      } finally {
-        setLoading(false);
-      }
+      const nodes = data.repository.discussions.nodes.map((n: Record<string, unknown>) => {
+        let state: DiscussionThread["state"] = "OPEN";
+        if (n.locked) state = "LOCKED";
+        const isAnswered = (n as { isAnswered?: boolean }).isAnswered;
+        if (isAnswered) state = "ANSWERED";
+        return {
+          id: n.id as string,
+          number: n.number as number,
+          title: n.title as string,
+          body: n.body as string,
+          createdAt: n.createdAt as string,
+          updatedAt: n.updatedAt as string,
+          state,
+          category: ((n.category as { name: string })?.name) ?? "",
+          author: (n.author as DiscussionAuthor) ?? { login: "unknown", avatarUrl: "" },
+          comments: [],
+        };
+      });
+      setDiscussions(nodes);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载讨论失败");
+    } finally {
+      setLoading(false);
     }
-    load();
-  }, [isPluginEnabled, isConfigured]);
+  }, [dataProvider, pluginConfig.giscusRepo, pluginConfig.giscusCategoryId]);
+
+  useEffect(() => {
+    if (!isPluginEnabled || !isConfigured) return;
+    loadDiscussions();
+  }, [isPluginEnabled, isConfigured, loadDiscussions]);
 
   async function loadComments(discussionId: string) {
     if (commentCache[discussionId]) return;
@@ -338,7 +338,7 @@ export function CommentsPage() {
             共 {discussions.length} 个 Discussion
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
+        <Button variant="ghost" size="sm" onClick={() => loadDiscussions()}>
           <RefreshCw size={14} />
           刷新
         </Button>

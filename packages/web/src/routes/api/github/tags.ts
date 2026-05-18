@@ -129,8 +129,7 @@ export const Route = createFileRoute("/api/github/tags")({
 
           posts.forEach((post) => {
             addValues(tagMap, post.frontmatter.tags);
-            addValues(categoryMap, post.frontmatter.category);
-            addValues(categoryMap, post.frontmatter.categories);
+            addValues(categoryMap, post.frontmatter.categories || post.frontmatter.category);
           });
 
           return json({ tags: toItems(tagMap), categories: toItems(categoryMap), total: posts.length });

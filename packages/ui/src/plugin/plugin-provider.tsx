@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useCallback } from "react";
 import {
   ATTACHMENTS_HELPER_PLUGIN_ID,
   COMMENTS_OVERVIEW_PLUGIN_ID,
@@ -133,23 +133,23 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
     [dataProvider, manager],
   );
 
-  function enablePlugin(pluginId: string) {
+  const enablePlugin = useCallback((pluginId: string) => {
     setSnapshot(manager.enable(pluginId));
-  }
+  }, [manager]);
 
-  function disablePlugin(pluginId: string) {
+  const disablePlugin = useCallback((pluginId: string) => {
     setSnapshot(manager.disable(pluginId));
-  }
+  }, [manager]);
 
-  function updatePluginConfig(pluginId: string, config: PluginConfigValue) {
+  const updatePluginConfig = useCallback((pluginId: string, config: PluginConfigValue) => {
     setSnapshot(manager.updatePluginConfig(pluginId, config));
-  }
+  }, [manager]);
 
-  function recordPluginError(pluginId: string, error: PluginRuntimeErrorInput) {
+  const recordPluginError = useCallback((pluginId: string, error: PluginRuntimeErrorInput) => {
     setSnapshot(manager.recordPluginError(pluginId, error));
-  }
+  }, [manager]);
 
-  async function executePluginCommand(pluginId: string, commandId: string, args: unknown[] = []) {
+  const executePluginCommand = useCallback(async (pluginId: string, commandId: string, args: unknown[] = []) => {
     const result = await manager.executeCommand(pluginId, commandId, args);
     if (!result.ok && result.error) {
       setSnapshot(
@@ -162,27 +162,27 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
       );
     }
     return result;
-  }
+  }, [manager]);
 
-  async function runDiagnostics(target: DiagnosticsTarget): Promise<DiagnosticsReport[]> {
+  const runDiagnostics = useCallback(async (target: DiagnosticsTarget): Promise<DiagnosticsReport[]> => {
     const reports = await manager.runDiagnostics(target);
     setSnapshot(manager.snapshot());
     return reports;
-  }
+  }, [manager]);
+
+  const contextValue = useMemo(() => ({
+    manager,
+    snapshot,
+    enablePlugin,
+    disablePlugin,
+    updatePluginConfig,
+    recordPluginError,
+    executePluginCommand,
+    runDiagnostics,
+  }), [manager, snapshot, enablePlugin, disablePlugin, updatePluginConfig, recordPluginError, executePluginCommand, runDiagnostics]);
 
   return (
-    <PluginContext.Provider
-      value={{
-        manager,
-        snapshot,
-        enablePlugin,
-        disablePlugin,
-        updatePluginConfig,
-        recordPluginError,
-        executePluginCommand,
-        runDiagnostics,
-      }}
-    >
+    <PluginContext.Provider value={contextValue}>
       <DataProviderProvider provider={eventDataProvider}>{children}</DataProviderProvider>
     </PluginContext.Provider>
   );

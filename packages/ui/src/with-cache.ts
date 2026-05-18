@@ -6,21 +6,50 @@ interface CacheEntry<T> {
 }
 
 const CACHE_TTL = 60_000;
+const MAX_CACHE_SIZE = 200;
 
 type CacheKey = string;
 
 export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): DataProvider {
   const cache = new Map<CacheKey, CacheEntry<unknown>>();
+  const inFlight = new Map<CacheKey, Promise<unknown>>();
+
+  function evictOldest(): void {
+    if (cache.size <= MAX_CACHE_SIZE) return;
+    let oldestKey: CacheKey | null = null;
+    let oldestTime = Infinity;
+    for (const [k, entry] of cache) {
+      if (entry.timestamp < oldestTime) {
+        oldestTime = entry.timestamp;
+        oldestKey = k;
+      }
+    }
+    if (oldestKey) cache.delete(oldestKey);
+  }
 
   function getCached<T>(key: CacheKey, fetcher: () => Promise<T>): Promise<T> {
     const cached = cache.get(key) as CacheEntry<T> | undefined;
     if (cached && Date.now() - cached.timestamp < ttl) {
       return Promise.resolve(cached.data);
     }
-    return fetcher().then((data) => {
-      cache.set(key, { data, timestamp: Date.now() });
-      return data;
-    });
+
+    const inFlightPromise = inFlight.get(key) as Promise<T> | undefined;
+    if (inFlightPromise) return inFlightPromise;
+
+    const promise = fetcher()
+      .then((data) => {
+        cache.set(key, { data, timestamp: Date.now() });
+        inFlight.delete(key);
+        evictOldest();
+        return data;
+      })
+      .catch((err) => {
+        inFlight.delete(key);
+        throw err;
+      });
+
+    inFlight.set(key, promise);
+    return promise;
   }
 
   function invalidate(...keys: CacheKey[]): void {

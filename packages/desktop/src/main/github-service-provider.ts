@@ -58,6 +58,9 @@ function isSameServiceConfig(left: GitHubConfig | null, right: GitHubConfig): bo
     left?.repo === right.repo &&
     left?.branch === right.branch &&
     left?.postsDir === right.postsDir &&
-    left?.mediaDir === right.mediaDir
+    left?.mediaDir === right.mediaDir &&
+    left?.workflowFile === right.workflowFile &&
+    left?.autoDeploy === right.autoDeploy &&
+    left?.deployNotifications === right.deployNotifications
   );
 }
