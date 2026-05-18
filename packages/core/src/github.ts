@@ -250,10 +250,22 @@ export class GitHubService {
       if (Array.isArray(value)) {
         return `${key}: [${value.join(", ")}]`;
       }
-      return `${key}: ${value}`;
+      return `${key}: ${this.formatYamlValue(value)}`;
     });
 
     return `---\n${frontmatterLines.join("\n")}\n---\n${post.content}`;
+  }
+
+  private formatYamlValue(value: unknown): string {
+    if (value === null || value === undefined) return "null";
+    if (typeof value === "boolean") return value ? "true" : "false";
+    if (typeof value === "number") return String(value);
+    const str = String(value);
+    if (str.length === 0) return '""';
+    if (/[#:"'{}[\],&*?|<>`=!%@\\\n]/.test(str) || str.trim() !== str) {
+      return JSON.stringify(str);
+    }
+    return str;
   }
 
   /**
