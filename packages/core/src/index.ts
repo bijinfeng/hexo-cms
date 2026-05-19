@@ -7,3 +7,4 @@ export * from "./utils";
 export * from "./onboarding";
 export * from "./onboarding-types";
 export * from "./taxonomy";
+export * from "./i18n";
