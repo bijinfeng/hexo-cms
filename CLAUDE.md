@@ -2,6 +2,9 @@
 
 Read `docs/ai/project-context.md` for the full project context.
 
+When working on or creating plugins, read:
+- `docs/plugin/DEVELOPER_GUIDE.md` — complete plugin development manual (manifest, definition, runtime context, contributions, permissions)
+
 ## Coding Preference
 
 - `es-toolkit` is available in this workspace.

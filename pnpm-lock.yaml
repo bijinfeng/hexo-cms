@@ -210,6 +210,9 @@ importers:
       '@hexo-cms/core':
         specifier: workspace:*
         version: link:../core
+      '@hexo-cms/plugins':
+        specifier: workspace:*
+        version: link:../plugins
       '@hexo-cms/ui':
         specifier: workspace:*
         version: link:../ui
@@ -311,6 +314,103 @@ importers:
         specifier: ^3.5.0
         version: 3.5.0
 
+  packages/plugins:
+    dependencies:
+      '@hexo-cms/core':
+        specifier: workspace:*
+        version: link:../core
+      '@hexo-cms/plugin-attachments-helper':
+        specifier: workspace:*
+        version: link:attachments-helper
+      '@hexo-cms/plugin-comments-overview':
+        specifier: workspace:*
+        version: link:comments-overview
+      '@hexo-cms/plugin-draft-coach':
+        specifier: workspace:*
+        version: link:draft-coach
+      '@hexo-cms/plugin-seo-inspector':
+        specifier: workspace:*
+        version: link:seo-inspector
+    devDependencies:
+      '@testing-library/jest-dom':
+        specifier: catalog:test
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: catalog:test
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@vitejs/plugin-react':
+        specifier: catalog:build
+        version: 6.0.1(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.3))
+      jsdom:
+        specifier: catalog:test
+        version: 29.1.1(@noble/hashes@2.2.0)
+      vitest:
+        specifier: catalog:test
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/plugins/attachments-helper:
+    dependencies:
+      '@hexo-cms/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@hexo-cms/ui':
+        specifier: workspace:*
+        version: link:../../ui
+      lucide-react:
+        specifier: catalog:libs
+        version: 1.14.0(react@19.2.5)
+      react:
+        specifier: catalog:react
+        version: 19.2.5
+      react-dom:
+        specifier: catalog:react
+        version: 19.2.5(react@19.2.5)
+
+  packages/plugins/comments-overview:
+    dependencies:
+      '@hexo-cms/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@hexo-cms/ui':
+        specifier: workspace:*
+        version: link:../../ui
+      '@tanstack/react-router':
+        specifier: ^1.169.1
+        version: 1.169.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      lucide-react:
+        specifier: catalog:libs
+        version: 1.14.0(react@19.2.5)
+      react:
+        specifier: catalog:react
+        version: 19.2.5
+      react-dom:
+        specifier: catalog:react
+        version: 19.2.5(react@19.2.5)
+
+  packages/plugins/draft-coach:
+    dependencies:
+      '@hexo-cms/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@hexo-cms/ui':
+        specifier: workspace:*
+        version: link:../../ui
+      lucide-react:
+        specifier: catalog:libs
+        version: 1.14.0(react@19.2.5)
+      react:
+        specifier: catalog:react
+        version: 19.2.5
+      react-dom:
+        specifier: catalog:react
+        version: 19.2.5(react@19.2.5)
+
+  packages/plugins/seo-inspector:
+    dependencies:
+      '@hexo-cms/core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/ui:
     dependencies:
       '@dnd-kit/core':
@@ -410,6 +510,9 @@ importers:
       '@hexo-cms/core':
         specifier: workspace:*
         version: link:../core
+      '@hexo-cms/plugins':
+        specifier: workspace:*
+        version: link:../plugins
       '@hexo-cms/ui':
         specifier: workspace:*
         version: link:../ui

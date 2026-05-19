@@ -466,6 +466,7 @@ export const Route = createFileRoute("/xxx")({ component: XxxPage });
 | DataProvider 架构（Web/Desktop 100% UI 共享） | ✅ 已完成 |
 | 插件系统（Manifest/权限/Storage/Secrets/HTTP/Events/Log） | ✅ 已完成 |
 | 内置插件（Attachments Helper + Comments Overview） | ✅ 已完成 |
+| 插件开发手册 | ✅ 已完成，详见 `docs/plugin/DEVELOPER_GUIDE.md` |
 | 桌面端自动更新（electron-updater + Stable/Beta 通道） | ✅ 已完成 |
 | Command Palette（Cmd+K 全局搜索/导航） | ✅ 已完成 |
 | UserMenu（头像下拉菜单） | ✅ 已完成 |
