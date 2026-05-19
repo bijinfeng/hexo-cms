@@ -58,6 +58,12 @@ export interface PluginContributions {
   diagnostics?: DiagnosticsContribution[];
   events?: EventContribution[];
   uiFlags?: UiFlagContribution[];
+  /**
+   * 插件提供的翻译资源。
+   * key 为 Locale（如 "zh", "en"），value 为扁平翻译映射。
+   * 所有 key 应以插件 ID 前缀命名空间。
+   */
+  translations?: Partial<Record<string, Record<string, string>>>;
 }
 
 export interface DashboardWidgetContribution {
