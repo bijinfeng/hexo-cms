@@ -11,8 +11,8 @@
   "dependencies": {
     "@hexo-cms/core": "workspace:*",
     "@hexo-cms/ui": "workspace:*",
-    "@tanstack/react-query": "^5.100.10",
-    "@tanstack/react-router": "^1.169.1",
+    "@tanstack/react-query": "catalog:tanstack",
+    "@tanstack/react-router": "catalog:tanstack",
     "lucide-react": "catalog:libs"
   },
   "peerDependencies": {

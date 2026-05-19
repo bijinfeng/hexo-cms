@@ -17,7 +17,7 @@
     "@hexo-cms/plugin-seo-inspector": "workspace:*"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.100.10",
+    "@tanstack/react-query": "catalog:tanstack",
     "@testing-library/jest-dom": "catalog:test",
     "@testing-library/react": "catalog:test",
     "@vitejs/plugin-react": "catalog:build",

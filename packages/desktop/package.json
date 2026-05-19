@@ -20,8 +20,8 @@
     "@hexo-cms/core": "workspace:*",
     "@hexo-cms/plugins": "workspace:*",
     "@hexo-cms/ui": "workspace:*",
-    "@tanstack/react-router": "^1.169.1",
-    "@tanstack/router-plugin": "^1.167.32",
+    "@tanstack/react-router": "catalog:tanstack",
+    "@tanstack/router-plugin": "catalog:tanstack",
     "better-sqlite3": "^12.9.0",
     "electron-updater": "^6.3.9",
     "keytar": "^7.9.0"
