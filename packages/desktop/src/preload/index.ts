@@ -29,6 +29,9 @@ const electronAPI: ElectronAPI = {
   quitAndInstall: () => ipcRenderer.invoke("update:install"),
   setUpdateChannel: (channel: UpdateChannel) => ipcRenderer.invoke("update:set-channel", channel),
   getVersion: () => ipcRenderer.invoke("update:get-version"),
+  getLocale: () => ipcRenderer.invoke("locale:get"),
+  setLocale: (locale) => ipcRenderer.invoke("locale:set", locale),
+  getSystemLocale: () => ipcRenderer.invoke("locale:get-system"),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

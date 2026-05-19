@@ -1,10 +1,11 @@
 import { createRootRoute, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import type { PluginConfigValue, PluginHost } from "@hexo-cms/core";
 import {
   CMSLayout,
   DataProviderProvider,
   ErrorBoundary,
+  I18nProvider,
   PluginProvider,
   getAuthRedirect,
   isOnboardingRoute,
@@ -16,6 +17,7 @@ import { desktopDataProvider } from "../lib/desktop-data-provider-instance";
 import { createDesktopPluginHost } from "../lib/plugin-host";
 import { UpdateBanner } from "../components/UpdateBanner";
 import { useUpdater } from "../hooks/useUpdater";
+import { getElectronAPI } from "@hexo-cms/ui";
 
 function RootComponent() {
   const routerState = useRouterState();
@@ -29,6 +31,29 @@ function RootComponent() {
   const [pluginHost, setPluginHost] = useState<PluginHost<ComponentType<{ config?: PluginConfigValue }>> | null>(null);
   const loadingRef = useRef(false);
   const updater = useUpdater();
+  const [locale, setLocale] = useState<"zh" | "en" | null>(null);
+
+  useEffect(() => {
+    const api = getElectronAPI();
+    if (!api) {
+      setLocale("zh");
+      return;
+    }
+    api.getLocale().then((stored) => {
+      if (stored === "zh" || stored === "en") {
+        setLocale(stored);
+        return;
+      }
+      api.getSystemLocale().then((sys) => {
+        const lang = sys?.split("-")[0];
+        if (lang === "zh" || lang === "en") {
+          setLocale(lang as "zh" | "en");
+        } else {
+          setLocale("zh");
+        }
+      });
+    });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -85,13 +110,22 @@ function RootComponent() {
     (session?.state === "authenticated" && hasConfig === null && !isSetupRoute) ||
     (session?.state === "authenticated" && !isPublicRoute && !isSetupRoute && !pluginHost);
 
+  const i18nConfig = useMemo(() => ({
+    locales: ["zh", "en"],
+    defaultLocale: "zh",
+    resources: {
+      zh: {},
+      en: {},
+    },
+  }), []);
+
   useEffect(() => {
     if (loadingRef.current) return;
     const redirect = getAuthRedirect({ pathname, session, hasConfig, isPending: guardPending });
     if (redirect) navigate({ to: redirect, replace: true });
   }, [session, hasConfig, guardPending, pathname, navigate]);
 
-  if (guardPending) {
+  if (guardPending || locale === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--bg-base)]">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--brand-primary)] border-t-transparent" />
@@ -106,22 +140,30 @@ function RootComponent() {
   if (!pluginHost) return null;
 
   return (
-    <DataProviderProvider provider={desktopDataProvider}>
-      <PluginProvider host={pluginHost}>
-        <ErrorBoundary>
-          {updater && <UpdateBanner updater={updater} />}
-          <CMSLayout
-            isElectron
-            authClient={desktopAuthClient}
-            onSignedOut={() => navigate({ to: "/login", replace: true })}
-          >
-            <ErrorBoundary>
-              <Outlet />
-            </ErrorBoundary>
-          </CMSLayout>
-        </ErrorBoundary>
-      </PluginProvider>
-    </DataProviderProvider>
+    <I18nProvider
+      config={i18nConfig}
+      initialLocale={locale}
+      onLocaleChange={(newLocale) => {
+        getElectronAPI()?.setLocale(newLocale);
+      }}
+    >
+      <DataProviderProvider provider={desktopDataProvider}>
+        <PluginProvider host={pluginHost}>
+          <ErrorBoundary>
+            {updater && <UpdateBanner updater={updater} />}
+            <CMSLayout
+              isElectron
+              authClient={desktopAuthClient}
+              onSignedOut={() => navigate({ to: "/login", replace: true })}
+            >
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
+            </CMSLayout>
+          </ErrorBoundary>
+        </PluginProvider>
+      </DataProviderProvider>
+    </I18nProvider>
   );
 }
 

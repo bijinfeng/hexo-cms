@@ -44,6 +44,17 @@ registerIpcHandlers({
   pluginHttpProxy,
 });
 
+// ==================== Locale IPC ====================
+ipcMain.handle("locale:get", () => {
+  return desktopPersistence.loadLocale();
+});
+ipcMain.handle("locale:set", (_event, locale: string) => {
+  desktopPersistence.saveLocale(locale);
+});
+ipcMain.handle("locale:get-system", () => {
+  return app.getLocale();
+});
+
 // ==================== 更新 IPC ====================
 ipcMain.handle("update:check", async () => { updaterCheckForUpdates(); });
 ipcMain.handle("update:download", async () => { downloadUpdate(); });

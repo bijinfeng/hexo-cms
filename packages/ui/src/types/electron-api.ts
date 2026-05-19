@@ -61,6 +61,9 @@ export const ELECTRON_IPC_CHANNELS = [
   "update:install",
   "update:set-channel",
   "update:get-version",
+  "locale:get",
+  "locale:set",
+  "locale:get-system",
 ] as const;
 
 export type ElectronIpcChannel = (typeof ELECTRON_IPC_CHANNELS)[number];
@@ -105,4 +108,7 @@ export interface ElectronAPI {
   quitAndInstall: () => Promise<void>;
   setUpdateChannel: (channel: UpdateChannel) => Promise<void>;
   getVersion: () => Promise<{ version: string; channel: UpdateChannel }>;
+  getLocale: () => Promise<string | null>;
+  setLocale: (locale: string) => Promise<void>;
+  getSystemLocale: () => Promise<string>;
 }

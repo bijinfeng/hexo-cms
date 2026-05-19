@@ -51,6 +51,8 @@ export interface DesktopPersistence {
   savePluginLogs(value: PluginLogStoreValue): void;
   appendPluginNetworkAudit(entry: PluginNetworkAuditEntryInput): void;
   listPluginNetworkAudit(limit?: number): PluginNetworkAuditEntry[];
+  loadLocale(): string | null;
+  saveLocale(locale: string): void;
 }
 
 export interface DesktopPersistenceOptions {
@@ -73,6 +75,10 @@ export function createDesktopPersistence({
 
   const configStore = createJsonFileStore<GitHubConfig | null>(
     () => getUserDataFilePath("github-config.json"),
+    () => null,
+  );
+  const localeStore = createJsonFileStore<string | null>(
+    () => getUserDataFilePath("locale.json"),
     () => null,
   );
   const pluginStorageStore = createJsonFileStore<PluginStorageStoreValue>(
@@ -154,6 +160,8 @@ export function createDesktopPersistence({
       const safeLimit = typeof limit === "number" && limit > 0 ? limit : 50;
       return pluginNetworkAuditStore.load().slice(0, safeLimit);
     },
+    loadLocale: () => localeStore.load(),
+    saveLocale: (locale) => localeStore.save(locale),
   };
 }
 
