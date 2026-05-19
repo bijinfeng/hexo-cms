@@ -1,9 +1,9 @@
 # Hexo CMS 代码审查报告 v3（插件架构重构后）
 
-> **优化进度：** 34 项已完成 / 43 项总计  
+> **优化进度：** 36 项已完成 / 43 项总计  
 > **最近更新：** 2026-05-19  
-> **代码质量评分：** 8.0/10  
-> **测试状态：** 205/205 全部通过 ✅
+> **代码质量评分：** 8.5/10  
+> **测试状态：** 242/242 全部通过 ✅
 
 ## 📊 总体状态
 
@@ -15,7 +15,7 @@
 - ✅ 创建 4 个官方插件包（`attachments-helper`、`comments-overview`、`seo-inspector`、`draft-coach`）
 - ✅ 建立 `PluginCatalog` → `PluginHost` → `PluginManager` 三层架构
 - ✅ 添加插件生命周期钩子（`onDisable`）和错误边界
-- ✅ 测试覆盖：205 个测试通过（97 core + 3 plugins + 71 ui + 34 desktop）
+- ✅ 测试覆盖：242 个测试通过（97 core + 3 plugins + 71 ui + 34 desktop + 37 web）
 
 ### 架构评估
 
