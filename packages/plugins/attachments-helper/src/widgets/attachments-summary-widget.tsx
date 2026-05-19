@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ATTACHMENTS_HELPER_PLUGIN_ID } from "@hexo-cms/core";
+import { ATTACHMENTS_HELPER_PLUGIN_ID } from "../manifest";
 import { Copy, FileArchive, FileText, Loader2, Paperclip } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { usePluginDataProvider, usePluginSystem } from "../plugin-provider";
+import { Button, usePluginDataProvider, usePluginSystem } from "@hexo-cms/ui";
 
 const ATTACHMENT_EXTS = new Set([
   "pdf",

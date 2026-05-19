@@ -1,0 +1,29 @@
+{
+  "name": "@hexo-cms/plugins",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./official": "./src/official.ts",
+    "./local-dev": "./src/local-dev.ts"
+  },
+  "dependencies": {
+    "@hexo-cms/core": "workspace:*",
+    "@hexo-cms/plugin-attachments-helper": "workspace:*",
+    "@hexo-cms/plugin-comments-overview": "workspace:*",
+    "@hexo-cms/plugin-draft-coach": "workspace:*",
+    "@hexo-cms/plugin-seo-inspector": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "catalog:test",
+    "@testing-library/react": "catalog:test",
+    "@vitejs/plugin-react": "catalog:build",
+    "jsdom": "catalog:test",
+    "vitest": "catalog:test"
+  },
+  "scripts": {
+    "test": "vitest run"
+  }
+}

@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, Calendar, FileText, Image as ImageIcon, Loader2, RefreshCw } from "lucide-react";
-import { usePluginSystem } from "../plugin-provider";
-import { useDataProvider } from "../../context/data-provider-context";
-import { DRAFT_COACH_PLUGIN_ID } from "@hexo-cms/core";
+import { DRAFT_COACH_PLUGIN_ID } from "./manifest";
 import { checkDraft, type DraftIssue } from "./draft-checker";
 import type { HexoPost } from "@hexo-cms/core";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, useDataProvider, usePluginSystem } from "@hexo-cms/ui";
 
 interface DraftWithIssues {
   post: HexoPost;

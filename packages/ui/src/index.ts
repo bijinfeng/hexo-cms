@@ -84,7 +84,6 @@ export { NewPostPage } from "./pages/posts.new";
 export { EditPostPage } from "./pages/posts.$slug";
 export { TagsPage } from "./pages/tags";
 export { MediaPage } from "./pages/media";
-export { CommentsPage } from "./pages/comments";
 export { ThemesPage } from "./pages/themes";
 export { PagesPage } from "./pages/pages";
 export { NewPagePage } from "./pages/pages.new";
@@ -102,7 +101,7 @@ export { ListPage } from "./components/list-page";
 export { DashboardWidgetGrid } from "./components/dashboard-widgets";
 export { CommandPalette } from "./components/command-palette";
 export { Skeleton, SkeletonCard } from "./components/skeleton";
-export { DashboardExtensionOutlet, PluginProvider, PluginSettingsPanel, usePluginSystem } from "./plugin";
+export { DashboardExtensionOutlet, PluginProvider, PluginSettingsPanel, usePluginDataProvider, usePluginSystem } from "./plugin";
 
 // Utils
 export { cn } from "./utils";

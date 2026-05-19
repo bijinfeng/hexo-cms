@@ -20,7 +20,6 @@ import {
   type PluginStorageStore,
 } from "@hexo-cms/core";
 import { DataProviderProvider, useDataProvider } from "../context/data-provider-context";
-import { createSeoPostDiagnosticsHandler, createSeoSiteDiagnosticsHandler } from "./diagnostics/seo-inspector";
 import { createPlatformPluginConfigStore } from "./platform-plugin-config";
 import { createPlatformPluginFetch } from "./platform-plugin-http";
 import { createPlatformPluginLogStore } from "./platform-plugin-log";
@@ -94,7 +93,6 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
 
   const manager = useMemo(() => {
     const configsRef = { current: {} as Record<string, PluginConfigValue> };
-    const getSeoConfig = () => configsRef.current[SEO_INSPECTOR_PLUGIN_ID] ?? {};
 
     const mgr = createDefaultPluginManager({
       stateStore,
@@ -105,8 +103,8 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
       fetchImpl,
       dataProvider,
       diagnosticsHandlers: {
-        [`${SEO_INSPECTOR_PLUGIN_ID}:seo.post-checks`]: createSeoPostDiagnosticsHandler(getSeoConfig),
-        [`${SEO_INSPECTOR_PLUGIN_ID}:seo.site-checks`]: createSeoSiteDiagnosticsHandler(getSeoConfig),
+        [`${SEO_INSPECTOR_PLUGIN_ID}:seo.post-checks`]: async () => [],
+        [`${SEO_INSPECTOR_PLUGIN_ID}:seo.site-checks`]: async () => [],
       },
     });
 

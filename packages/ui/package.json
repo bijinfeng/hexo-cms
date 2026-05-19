@@ -12,7 +12,6 @@
     "./lib/*": "./src/lib/*.ts",
     "./lib/electron-api": "./src/lib/electron-api.ts",
     "./lib/repository-config": "./src/lib/repository-config.ts",
-    "./pages/comments": "./src/pages/comments.tsx",
     "./pages/dashboard": "./src/pages/index.tsx",
     "./pages/deploy": "./src/pages/deploy.tsx",
     "./pages/login": "./src/pages/login.tsx",

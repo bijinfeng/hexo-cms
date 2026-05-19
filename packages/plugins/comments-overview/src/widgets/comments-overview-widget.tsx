@@ -1,8 +1,8 @@
 import type { ComponentType } from "react";
-import { COMMENTS_OVERVIEW_PLUGIN_ID, type PluginConfigValue } from "@hexo-cms/core";
+import { COMMENTS_OVERVIEW_PLUGIN_ID } from "../manifest";
+import type { PluginConfigValue } from "@hexo-cms/core";
 import { AlertTriangle, CheckCircle2, MessageSquare, ShieldAlert } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { usePluginSystem } from "../plugin-provider";
+import { Button, usePluginSystem } from "@hexo-cms/ui";
 
 const summary = {
   total: 6,

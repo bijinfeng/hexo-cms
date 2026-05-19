@@ -1,16 +1,6 @@
 export { AuditLogPanel } from "./audit-log-panel";
 export { DashboardExtensionOutlet } from "./extension-outlet";
 export { DiagnosticsPanel } from "./diagnostics-panel";
-export { DraftCoachWidget } from "./draft-coach/widget";
-export {
-  checkPostSeo,
-  createSeoPostDiagnosticsHandler,
-  createSeoSiteDiagnosticsHandler,
-} from "./diagnostics/seo-inspector";
-export {
-  checkDraft,
-  calculateDraftStats,
-} from "./draft-coach/draft-checker";
 export {
   DesktopPluginConfigStore,
   WebPluginConfigStore,
@@ -44,5 +34,5 @@ export {
 } from "./platform-plugin-storage";
 export { PluginErrorBoundary } from "./plugin-error-boundary";
 export { withPluginEvents, type PluginEventEmitter } from "./plugin-event-data-provider";
-export { PluginProvider, usePluginSystem } from "./plugin-provider";
+export { PluginProvider, usePluginDataProvider, usePluginSystem } from "./plugin-provider";
 export { PluginSettingsPanel } from "./plugin-settings";

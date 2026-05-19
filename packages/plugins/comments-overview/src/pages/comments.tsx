@@ -1,12 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
-import { useDataProvider } from "../context/data-provider-context";
-import { usePluginSystem } from "../plugin";
-import { COMMENTS_OVERVIEW_PLUGIN_ID } from "@hexo-cms/core";
-import { Card, CardContent } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
+import { COMMENTS_OVERVIEW_PLUGIN_ID } from "../manifest";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  useDataProvider,
+  usePluginSystem,
+} from "@hexo-cms/ui";
 import {
   MessageSquare,
   Search,
