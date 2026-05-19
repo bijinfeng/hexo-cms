@@ -30,11 +30,12 @@ hexo-cms/                      ← pnpm workspace 根目录
 
 | 包 | 技术 | 职责 |
 |---|---|---|---|
-| `@hexo-cms/core` | TypeScript | GitHubService、类型定义、插件系统，无 UI 依赖 |
+| `@hexo-cms/core` | TypeScript | GitHubService, shared types, DataProvider, plugin platform contracts and runtime APIs; no official plugin business code |
 | `@hexo-cms/editor` | TipTap + React | 富文本编辑器，WYSIWYG + 源码切换，独立包 |
 | `@hexo-cms/ui` | React + Tailwind | 共享页面组件（纯 React，无路由） |
 | `@hexo-cms/web` | TanStack Start | Web 应用，薄路由壳 + API 路由 |
 | `@hexo-cms/desktop` | Electron + TanStack Router | 桌面应用，IPC 替代 HTTP API |
+| `@hexo-cms/plugins` and `packages/plugins/*` | TypeScript + React | Official plugin packages and official plugin registry loaded through PluginCatalog |
 
 ## 运行
 
