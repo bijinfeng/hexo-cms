@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useDataProvider } from "../context/data-provider-context";
-import { ATTACHMENTS_HELPER_PLUGIN_ID } from "@hexo-cms/core";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Alert } from "../components/ui/alert";
@@ -54,10 +53,13 @@ function formatSize(bytes: number): string {
 export function MediaPage() {
   const dataProvider = useDataProvider();
   const { snapshot } = usePluginSystem();
-  const attachmentsPluginEnabled = snapshot.plugins.some(
-    ({ manifest, record }) => manifest.id === ATTACHMENTS_HELPER_PLUGIN_ID && record.state === "enabled",
+  const hasDocumentFilter = snapshot.extensions.uiFlags.some(
+    (flag) => flag.flag === "media.documentFilter",
   );
-  const filterOptions = attachmentsPluginEnabled
+  const hasMediaSearch = snapshot.extensions.uiFlags.some(
+    (flag) => flag.flag === "media.search",
+  );
+  const filterOptions = hasDocumentFilter
     ? [...CORE_FILTER_OPTIONS, ATTACHMENT_FILTER_OPTION]
     : CORE_FILTER_OPTIONS;
   const [search, setSearch] = useState("");
@@ -77,13 +79,13 @@ export function MediaPage() {
   }, []);
 
   useEffect(() => {
-    if (!attachmentsPluginEnabled && activeFilter === ATTACHMENT_FILTER_OPTION) {
+    if (!hasDocumentFilter && activeFilter === ATTACHMENT_FILTER_OPTION) {
       setActiveFilter("全部");
     }
-    if (!attachmentsPluginEnabled && search) {
+    if (!hasMediaSearch && search) {
       setSearch("");
     }
-  }, [activeFilter, attachmentsPluginEnabled, search]);
+  }, [activeFilter, hasDocumentFilter, hasMediaSearch, search]);
 
   async function loadMedia() {
     setLoading(true);
@@ -188,7 +190,7 @@ export function MediaPage() {
       (activeFilter === "图片" && type === "image") ||
       (activeFilter === "视频" && type === "video") ||
       (activeFilter === "音频" && type === "audio") ||
-      (attachmentsPluginEnabled && activeFilter === ATTACHMENT_FILTER_OPTION && type === "document");
+      (hasDocumentFilter && activeFilter === ATTACHMENT_FILTER_OPTION && type === "document");
     return matchSearch && matchFilter;
   });
 
@@ -265,7 +267,7 @@ export function MediaPage() {
           </TabsList>
         </Tabs>
 
-        {attachmentsPluginEnabled && (
+        {hasMediaSearch && (
           <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors">
             <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
             <input

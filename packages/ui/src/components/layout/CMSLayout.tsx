@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import { ATTACHMENTS_HELPER_PLUGIN_ID } from "@hexo-cms/core";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { cn } from "../../utils";
@@ -37,10 +36,9 @@ export function CMSLayout({
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
   const title = routeTitles[pathname] ?? "";
-  const attachmentsPluginEnabled = snapshot.plugins.some(
-    ({ manifest, record }) => manifest.id === ATTACHMENTS_HELPER_PLUGIN_ID && record.state === "enabled",
+  const showTopbarSearch = pathname !== "/media" || snapshot.extensions.uiFlags.some(
+    (flag) => flag.flag === "media.search",
   );
-  const showTopbarSearch = pathname !== "/media" || attachmentsPluginEnabled;
   const isMac = /Mac|Darwin/i.test(navigator.userAgent || navigator.platform);
 
   return (

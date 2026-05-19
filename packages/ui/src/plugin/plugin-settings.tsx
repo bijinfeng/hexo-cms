@@ -45,7 +45,7 @@ export function PluginSettingsPanel() {
       <Card>
         <CardHeader>
           <CardTitle>插件管理</CardTitle>
-          <CardDescription>管理可信内置插件和声明式扩展能力</CardDescription>
+          <CardDescription>Manage plugins, permissions, settings, and runtime status</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {snapshot.plugins.map(({ manifest, record, config, logs }) => {
@@ -65,7 +65,7 @@ export function PluginSettingsPanel() {
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-[var(--text-primary)]">{manifest.name}</h3>
-                        <p className="text-xs text-[var(--text-tertiary)]">{manifest.id} · v{manifest.version}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">{manifest.id} / v{manifest.version} / {manifest.origin} / {manifest.runtime}</p>
                       </div>
                       <Badge variant={enabled ? "success" : record.state === "error" ? "error" : "default"}>
                         {stateLabel}
@@ -142,7 +142,7 @@ export function PluginSettingsPanel() {
       <Card>
         <CardHeader>
           <CardTitle>运行策略</CardTitle>
-          <CardDescription>当前版本只运行随应用发布的可信内置插件</CardDescription>
+          <CardDescription>Plugins run through the host capability model</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-[var(--text-secondary)]">
           <div className="flex items-center gap-2">

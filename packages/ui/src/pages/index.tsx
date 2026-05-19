@@ -36,7 +36,7 @@ const statColorMap: Record<string, string> = {
 export function DashboardPage() {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
-  const { snapshot } = usePluginSystem();
+  const { snapshot, getDashboardWidgetRenderer } = usePluginSystem();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [stats, setStats] = useState({
@@ -94,6 +94,7 @@ export function DashboardPage() {
   const pluginWidgets = DashboardExtensionOutlet({
     widgets: snapshot.extensions.dashboardWidgets,
     configs: Object.fromEntries(snapshot.plugins.map(({ manifest, config }) => [manifest.id, config])),
+    getRenderer: getDashboardWidgetRenderer,
   });
 
   if (loading) {
