@@ -6,7 +6,7 @@ import { PluginProvider } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import { MediaPage } from "../pages/media";
 import type { DataProvider } from "@hexo-cms/core";
-import { createMockPluginHost } from "./test-utils";
+import { createTestPluginHost } from "./test-utils";
 
 function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider {
   return {
@@ -53,10 +53,11 @@ function PluginHarness() {
 describe("MediaPage plugin boundaries", () => {
   it("hides document attachment filtering when Attachments Helper is disabled", async () => {
     const user = userEvent.setup();
+    const host = await createTestPluginHost();
 
     render(
       <DataProviderProvider provider={createDataProvider()}>
-        <PluginProvider host={createMockPluginHost()}>
+        <PluginProvider host={host}>
           <PluginHarness />
         </PluginProvider>
       </DataProviderProvider>,

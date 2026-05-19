@@ -1,9 +1,78 @@
-import { vi } from "vitest";
+import {
+  PluginCatalog,
+  PluginHost,
+  StaticPluginSourceResolver,
+  MemoryStore,
+  type DataProvider,
+  type PluginConfigValue,
+  type PluginConfigStoreValue,
+  type PluginStateStoreValue,
+  type PluginStorageStoreValue,
+  type PluginSecretStoreValue,
+  type PluginLogStoreValue,
+} from "@hexo-cms/core";
 import type { ComponentType } from "react";
-import type { PluginHost, PluginConfigValue } from "@hexo-cms/core";
+import { officialPlugins } from "@hexo-cms/plugins";
+import { vi } from "vitest";
+
+function createMockDataProvider(overrides: Partial<DataProvider> = {}): DataProvider {
+  return {
+    getConfig: vi.fn().mockResolvedValue(null),
+    saveConfig: vi.fn().mockResolvedValue(undefined),
+    getToken: vi.fn().mockResolvedValue(null),
+    saveToken: vi.fn().mockResolvedValue(undefined),
+    deleteToken: vi.fn().mockResolvedValue(undefined),
+    getPosts: vi.fn().mockResolvedValue([]),
+    getPost: vi.fn().mockResolvedValue(null),
+    savePost: vi.fn().mockResolvedValue(undefined),
+    deletePost: vi.fn().mockResolvedValue(undefined),
+    getPages: vi.fn().mockResolvedValue([]),
+    getPage: vi.fn().mockResolvedValue(null),
+    savePage: vi.fn().mockResolvedValue(undefined),
+    deletePage: vi.fn().mockResolvedValue(undefined),
+    getTags: vi.fn().mockResolvedValue({ tags: [], categories: [], total: 0 }),
+    renameTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
+    deleteTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
+    mergeTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
+    getMediaFiles: vi.fn().mockResolvedValue([]),
+    uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
+    deleteMedia: vi.fn().mockResolvedValue(undefined),
+    getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+    getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
+    switchTheme: vi.fn().mockResolvedValue(undefined),
+    getDeployments: vi.fn().mockResolvedValue([]),
+    triggerDeploy: vi.fn().mockResolvedValue(undefined),
+    readConfigFile: vi.fn().mockResolvedValue(""),
+    writeConfigFile: vi.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
+}
 
 /**
- * Creates a mock PluginHost for testing
+ * Creates a real PluginHost with official plugins for testing.
+ * This provides realistic plugin data so UI tests work properly.
+ */
+export async function createTestPluginHost(
+  dataProviderOverrides: Partial<DataProvider> = {},
+): Promise<PluginHost<ComponentType<{ config?: PluginConfigValue }>>> {
+  const catalog = await PluginCatalog.discover<ComponentType<{ config?: PluginConfigValue }>>([
+    new StaticPluginSourceResolver("official", officialPlugins),
+  ]);
+
+  return new PluginHost<ComponentType<{ config?: PluginConfigValue }>>({
+    catalog,
+    stateStore: new MemoryStore<PluginStateStoreValue>({}),
+    configStore: new MemoryStore<PluginConfigStoreValue>({}),
+    storageStore: new MemoryStore<PluginStorageStoreValue>({}),
+    secretStore: new MemoryStore<PluginSecretStoreValue>({}),
+    logStore: new MemoryStore<PluginLogStoreValue>({}),
+    fetchImpl: vi.fn().mockResolvedValue(new Response("{}")),
+    dataProvider: createMockDataProvider(dataProviderOverrides),
+  });
+}
+
+/**
+ * Creates a minimal mock PluginHost with no plugins (for tests that don't need plugin behavior).
  */
 export function createMockPluginHost(): PluginHost<ComponentType<{ config?: PluginConfigValue }>> {
   return {
@@ -14,6 +83,9 @@ export function createMockPluginHost(): PluginHost<ComponentType<{ config?: Plug
         diagnostics: [],
         dashboardWidgets: [],
         events: [],
+        sidebarItems: [],
+        settingsPanels: [],
+        uiFlags: [],
       },
     })),
     manifests: vi.fn(() => []),
@@ -25,6 +97,9 @@ export function createMockPluginHost(): PluginHost<ComponentType<{ config?: Plug
         diagnostics: [],
         dashboardWidgets: [],
         events: [],
+        sidebarItems: [],
+        settingsPanels: [],
+        uiFlags: [],
       },
     })),
     disablePlugin: vi.fn(async () => ({
@@ -34,6 +109,9 @@ export function createMockPluginHost(): PluginHost<ComponentType<{ config?: Plug
         diagnostics: [],
         dashboardWidgets: [],
         events: [],
+        sidebarItems: [],
+        settingsPanels: [],
+        uiFlags: [],
       },
     })),
     updatePluginConfig: vi.fn(() => ({
@@ -43,6 +121,9 @@ export function createMockPluginHost(): PluginHost<ComponentType<{ config?: Plug
         diagnostics: [],
         dashboardWidgets: [],
         events: [],
+        sidebarItems: [],
+        settingsPanels: [],
+        uiFlags: [],
       },
     })),
     recordPluginError: vi.fn(async () => ({
@@ -52,6 +133,9 @@ export function createMockPluginHost(): PluginHost<ComponentType<{ config?: Plug
         diagnostics: [],
         dashboardWidgets: [],
         events: [],
+        sidebarItems: [],
+        settingsPanels: [],
+        uiFlags: [],
       },
     })),
     executePluginCommand: vi.fn(async () => ({ ok: true, result: undefined })),

@@ -53,7 +53,7 @@ export const attachmentsHelperManifest: PluginManifest = {
     sidebarItems: [
       {
         id: "attachments.media-entry",
-        title: "Attachments Helper",
+        title: "附件助手",
         target: "plugin.settings",
       },
     ],

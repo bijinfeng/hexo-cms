@@ -45,7 +45,7 @@ export function PluginSettingsPanel() {
       <Card>
         <CardHeader>
           <CardTitle>插件管理</CardTitle>
-          <CardDescription>Manage plugins, permissions, settings, and runtime status</CardDescription>
+          <CardDescription>管理可信内置插件和声明式扩展能力</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {snapshot.plugins.map(({ manifest, record, config, logs }) => {

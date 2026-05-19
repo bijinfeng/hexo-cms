@@ -44,14 +44,14 @@ export const commentsOverviewManifest: PluginManifest = {
     sidebarItems: [
       {
         id: "comments.entry",
-        title: "Comments",
+        title: "评论管理",
         target: "/comments",
       },
     ],
     commands: [
       {
         id: "comments.openModeration",
-        title: "Open comment management",
+        title: "打开评论管理",
       },
     ],
   },

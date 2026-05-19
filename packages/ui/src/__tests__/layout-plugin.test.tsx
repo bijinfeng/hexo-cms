@@ -6,7 +6,7 @@ import { CMSLayout } from "../components/layout/CMSLayout";
 import { PluginProvider } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import type { DataProvider } from "@hexo-cms/core";
-import { createMockPluginHost } from "./test-utils";
+import { createTestPluginHost } from "./test-utils";
 
 vi.mock("@tanstack/react-router", () => ({
   useRouterState: () => ({ location: { pathname: "/media" } }),
@@ -67,10 +67,11 @@ describe("CMSLayout plugin policy", () => {
 
   it("hides media topbar search when Attachments Helper is disabled", async () => {
     const user = userEvent.setup();
+    const host = await createTestPluginHost();
 
     render(
       <DataProviderProvider provider={createDataProvider()}>
-        <PluginProvider host={createMockPluginHost()}>
+        <PluginProvider host={host}>
           <PluginSettingsPanel />
           <CMSLayout>
             <div>媒体内容</div>
@@ -88,10 +89,11 @@ describe("CMSLayout plugin policy", () => {
 
   it("mounts enabled plugin sidebar entries and removes them when disabled", async () => {
     const user = userEvent.setup();
+    const host = await createTestPluginHost();
 
     render(
       <DataProviderProvider provider={createDataProvider()}>
-        <PluginProvider host={createMockPluginHost()}>
+        <PluginProvider host={host}>
           <PluginSettingsPanel />
           <CMSLayout>
             <div>媒体内容</div>
