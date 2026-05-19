@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { useMediaFiles, useDeleteMedia } from "../hooks/use-media-query";
+import { useI18n } from "../i18n/I18nProvider";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Alert } from "../components/ui/alert";
@@ -24,10 +25,10 @@ import {
 import { Checkbox } from "../components/ui/checkbox";
 
 const typeConfig = {
-  image: { icon: ImageIcon, color: "var(--brand-primary)", label: "图片" },
-  video: { icon: Film, color: "var(--brand-accent)", label: "视频" },
-  audio: { icon: Music, color: "var(--orange-500)", label: "音频" },
-  document: { icon: FileText, color: "var(--text-secondary)", label: "文档" },
+  image: { icon: ImageIcon, color: "var(--brand-primary)" },
+  video: { icon: Film, color: "var(--brand-accent)" },
+  audio: { icon: Music, color: "var(--orange-500)" },
+  document: { icon: FileText, color: "var(--text-secondary)" },
 };
 
 const CORE_FILTER_OPTIONS = ["全部", "图片", "视频", "音频"];
@@ -52,6 +53,7 @@ function formatSize(bytes: number): string {
 }
 
 export function MediaPage() {
+  const { t } = useI18n();
   const dataProvider = useDataProvider();
   const { snapshot } = usePluginSystem();
   const hasDocumentFilter = snapshot.extensions.uiFlags.some(
@@ -72,6 +74,21 @@ export function MediaPage() {
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filterLabels = useMemo<Record<string, string>>(() => ({
+    "全部": t("media.all"),
+    "图片": t("media.typeImage"),
+    "视频": t("media.typeVideo"),
+    "音频": t("media.typeAudio"),
+    "文档": t("media.typeDocument"),
+  }), [t]);
+
+  const typeLabels = useMemo<Record<keyof typeof typeConfig, string>>(() => ({
+    image: t("media.typeImage"),
+    video: t("media.typeVideo"),
+    audio: t("media.typeAudio"),
+    document: t("media.typeDocument"),
+  }), [t]);
 
   const mediaQuery = useMediaFiles();
   const deleteMediaMutation = useDeleteMedia();
@@ -97,7 +114,7 @@ export function MediaPage() {
     try {
       const config = await dataProvider.getConfig();
       if (!config) {
-        setActionError("请先在设置页面配置 GitHub 仓库");
+        setActionError(t("media.noConfig"));
         return;
       }
 
@@ -108,7 +125,7 @@ export function MediaPage() {
       }
       await mediaQuery.refetch();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "上传失败");
+      setActionError(err instanceof Error ? err.message : t("media.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -123,7 +140,7 @@ export function MediaPage() {
         return next;
       });
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "删除失败");
+      setActionError(err instanceof Error ? err.message : t("common.deleteFailed"));
     }
   }
 
@@ -156,7 +173,7 @@ export function MediaPage() {
       setSelectedPaths(new Set());
       await mediaQuery.refetch();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "批量删除失败");
+      setActionError(err instanceof Error ? err.message : t("media.batchDeleteFailed"));
     } finally {
       setBatchDeleting(false);
     }
@@ -198,14 +215,14 @@ export function MediaPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">媒体库</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("media.title")}</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            {mediaItems.length} 个文件，共 {formatSize(totalSize)}
+            {t("media.subtitle", { count: mediaItems.length, size: formatSize(totalSize) })}
           </p>
         </div>
         <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-          {uploading ? "上传中..." : "上传文件"}
+          {uploading ? t("media.uploading") : t("media.uploadFile")}
         </Button>
       </div>
 
@@ -221,7 +238,7 @@ export function MediaPage() {
       {selectedPaths.size > 0 && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[var(--brand-primary-subtle)] border border-[var(--brand-primary-muted)]">
           <span className="text-sm font-medium text-[var(--brand-primary)]">
-            已选择 {selectedPaths.size} 个文件
+            {t("media.selected", { count: selectedPaths.size })}
           </span>
           <Button
             size="sm"
@@ -231,13 +248,13 @@ export function MediaPage() {
             disabled={batchDeleting}
           >
             {batchDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            批量删除
+            {t("media.batchDelete")}
           </Button>
           <button
             className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
             onClick={() => setSelectedPaths(new Set())}
           >
-            取消选择
+            {t("media.deselect")}
           </button>
         </div>
       )}
@@ -248,7 +265,7 @@ export function MediaPage() {
           <TabsList>
             {filterOptions.map((opt) => (
               <TabsTrigger key={opt} value={opt}>
-                {opt}
+                {filterLabels[opt] ?? opt}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -259,7 +276,7 @@ export function MediaPage() {
             <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
             <input
               type="text"
-              placeholder="搜索文件名..."
+              placeholder={t("media.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
@@ -283,7 +300,7 @@ export function MediaPage() {
       {loading ? (
         <div className="flex items-center justify-center py-16 text-[var(--text-tertiary)]">
           <Loader2 size={24} className="animate-spin mr-2" />
-          <span className="text-sm">加载中...</span>
+          <span className="text-sm">{t("common.loading")}</span>
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -314,14 +331,14 @@ export function MediaPage() {
                     <button
                       onClick={() => copyPath(item)}
                       className="w-6 h-6 rounded bg-[var(--bg-surface)] shadow-sm flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
-                      title="复制 Markdown 路径"
+                          title={t("media.copyMarkdown")}
                     >
                       {copiedPath === item.path ? <CheckCircle2 size={12} className="text-[var(--status-success)]" /> : <Copy size={12} />}
                     </button>
                     <button
                       onClick={() => handleDelete(item.path)}
                       className="w-6 h-6 rounded bg-[var(--bg-surface)] shadow-sm flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--status-error)] transition-colors cursor-pointer"
-                      title="删除"
+                      title={t("media.delete")}
                     >
                       <Trash2 size={12} />
                     </button>
@@ -345,7 +362,7 @@ export function MediaPage() {
             className="aspect-video rounded-xl border-2 border-dashed border-[var(--border-default)] flex flex-col items-center justify-center gap-2 text-[var(--text-tertiary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-all cursor-pointer"
           >
             <Upload size={24} />
-            <span className="text-xs font-medium">上传文件</span>
+            <span className="text-xs font-medium">{t("media.uploadFile")}</span>
           </button>
         </div>
       ) : (
@@ -358,16 +375,16 @@ export function MediaPage() {
                   onCheckedChange={toggleSelectAll}
                 />
               </div>
-              <span>文件名</span>
-              <span className="hidden md:block">类型</span>
-              <span className="hidden sm:block">大小</span>
-              <span>操作</span>
+              <span>{t("media.columnName")}</span>
+              <span className="hidden md:block">{t("media.columnType")}</span>
+              <span className="hidden sm:block">{t("media.columnSize")}</span>
+              <span>{t("media.columnActions")}</span>
             </div>
             <div className="divide-y divide-[var(--border-default)]">
               {filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
                   <ImageIcon size={40} className="mb-3 opacity-30" />
-                  <p className="text-sm">暂无媒体文件</p>
+                  <p className="text-sm">{t("media.empty")}</p>
                 </div>
               ) : (
                 filtered.map((item) => {
@@ -395,7 +412,7 @@ export function MediaPage() {
                         <div className="text-xs text-[var(--text-tertiary)] font-mono truncate">{item.path}</div>
                       </div>
                       <span className="hidden md:block text-xs text-[var(--text-secondary)] whitespace-nowrap">
-                        {config.label}
+                        {typeLabels[type]}
                       </span>
                       <span className="hidden sm:block text-xs text-[var(--text-tertiary)] whitespace-nowrap">
                         {formatSize(item.size || 0)}
@@ -404,7 +421,7 @@ export function MediaPage() {
                         <button
                           onClick={() => copyPath(item)}
                           className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
-                          title="复制 Markdown 路径"
+                      title={t("media.copyMarkdown")}
                         >
                           {copiedPath === item.path ? <CheckCircle2 size={14} className="text-[var(--status-success)]" /> : <Copy size={14} />}
                         </button>

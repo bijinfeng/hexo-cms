@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { usePage, useSavePage, useDeletePage } from "../hooks/use-pages-query";
+import { useI18n } from "../i18n/I18nProvider";
 import type { Frontmatter, HexoPost } from "@hexo-cms/core";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -32,6 +33,7 @@ import {
 } from "lucide-react";
 
 export function EditPagePage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { slug } = useParams({ strict: false }) as { slug: string };
 
@@ -86,7 +88,7 @@ export function EditPagePage() {
 
   async function handleSave() {
     if (!title.trim()) {
-      setSaveError("请输入页面标题");
+      setSaveError(t("pages.editor.titleRequired"));
       return;
     }
 
@@ -103,7 +105,7 @@ export function EditPagePage() {
       autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "保存失败");
+      setSaveError(err instanceof Error ? err.message : t("common.saveFailed"));
     }
   }
 
@@ -116,7 +118,7 @@ export function EditPagePage() {
       await deletePageMutation.mutateAsync(postPath);
       navigate({ to: "/pages" });
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "删除失败");
+      setSaveError(err instanceof Error ? err.message : t("common.deleteFailed"));
     }
   }
 
@@ -132,7 +134,7 @@ export function EditPagePage() {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4">
         <p className="text-[var(--text-secondary)]">{error}</p>
-        <Button onClick={() => navigate({ to: "/pages" })}>返回页面列表</Button>
+        <Button onClick={() => navigate({ to: "/pages" })}>{t("pages.editor.backToList")}</Button>
       </div>
     );
   }
@@ -146,12 +148,12 @@ export function EditPagePage() {
           className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           <ArrowLeft size={16} />
-          返回
+            {t("common.back")}
         </button>
         <div className="w-px h-4 bg-[var(--border-default)]" />
-        <span className="text-sm font-medium text-[var(--text-primary)]">编辑页面</span>
+        <span className="text-sm font-medium text-[var(--text-primary)]">{t("pages.editor.editTitle")}</span>
         <Badge variant={status === "published" ? "success" : "default"}>
-          {status === "published" ? "已发布" : "草稿"}
+          {status === "published" ? t("pages.list.published") : t("pages.list.draft")}
         </Badge>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -159,15 +161,15 @@ export function EditPagePage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
           >
             {preview ? <EyeOff size={14} /> : <Eye size={14} />}
-            {preview ? "编辑" : "预览"}
+            {preview ? t("pages.editor.editTab") : t("pages.editor.previewTab")}
           </button>
           <Button variant="outline" size="sm" onClick={handleDelete}>
             <Trash2 size={14} />
-            删除
+            {t("pages.editor.deletePage")}
           </Button>
           <Button size="sm" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            保存
+            {t("common.save")}
           </Button>
         </div>
       </div>
@@ -181,13 +183,13 @@ export function EditPagePage() {
       {draftRestored && (
         <Alert className="mx-6 mt-3">
           <Info size={14} />
-          检测到未保存的草稿，已恢复
+          {t("pages.editor.draftRestored")}
         </Alert>
       )}
 
       {autosave.saved && (
         <div className="flex items-center justify-center py-1 bg-[var(--bg-muted)]">
-          <span className="text-xs text-[var(--text-tertiary)]">已自动保存</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{t("pages.editor.autoSaveNotice")}</span>
         </div>
       )}
       {autosave.error && (
@@ -202,7 +204,7 @@ export function EditPagePage() {
           <div className="px-8 pt-6 pb-3 flex-shrink-0">
             <input
               type="text"
-              placeholder="页面标题..."
+              placeholder={t("pages.editor.titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full text-3xl font-bold text-[var(--text-primary)] bg-transparent outline-none placeholder:text-[var(--text-tertiary)] border-none"
@@ -226,14 +228,14 @@ export function EditPagePage() {
         {/* Sidebar */}
         <div className="w-64 flex-shrink-0 border-l border-[var(--border-default)] overflow-y-auto bg-[var(--bg-surface)]">
           <div className="p-4 space-y-5">
-            <SidebarSection title="发布状态" icon={Globe}>
+            <SidebarSection title={t("pages.editor.statusLabel")} icon={Globe}>
               <ToggleGroup type="single" value={status} onValueChange={(v) => v && setStatus(v as "draft" | "published")} className="w-full">
-                <ToggleGroupItem value="draft" className="flex-1 text-xs">草稿</ToggleGroupItem>
-                <ToggleGroupItem value="published" className="flex-1 text-xs">发布</ToggleGroupItem>
+                <ToggleGroupItem value="draft" className="flex-1 text-xs">{t("pages.list.draft")}</ToggleGroupItem>
+                <ToggleGroupItem value="published" className="flex-1 text-xs">{t("pages.editor.publishBtn")}</ToggleGroupItem>
               </ToggleGroup>
             </SidebarSection>
 
-            <SidebarSection title="页面路径" icon={FileText}>
+            <SidebarSection title={t("pages.editor.urlLabel")} icon={FileText}>
               <p className="text-xs text-[var(--text-tertiary)] font-mono">
                 {postPath}
               </p>
@@ -245,20 +247,20 @@ export function EditPagePage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
+            <DialogTitle>{t("pages.confirm.deleteTitle")}</DialogTitle>
             <DialogDescription>
-              确定要删除页面「{title}」吗？此操作不可恢复。
+              {t("pages.confirm.deleteMessage", { title })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              取消
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={confirmDelete}
               className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90"
             >
-              确认删除
+              {t("common.confirmDelete")}
             </Button>
           </DialogFooter>
         </DialogContent>

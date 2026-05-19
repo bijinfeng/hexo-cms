@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import { useTags, useRenameTag, useDeleteTag, useMergeTag } from "../hooks/use-tags-query";
+import { useI18n } from "../i18n/I18nProvider";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -51,6 +52,7 @@ interface DialogState {
 }
 
 export function TagsPage() {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("tags");
   const [dialog, setDialog] = useState<DialogState | null>(null);
@@ -99,7 +101,7 @@ export function TagsPage() {
       });
       closeDialog();
     } catch (err) {
-      setNotification(err instanceof Error ? err.message : "重命名失败");
+      setNotification(err instanceof Error ? err.message : t("common.renameFailed"));
     }
   }
 
@@ -113,7 +115,7 @@ export function TagsPage() {
       });
       closeDialog();
     } catch (err) {
-      setNotification(err instanceof Error ? err.message : "删除失败");
+      setNotification(err instanceof Error ? err.message : t("common.deleteFailed"));
     }
   }
 
@@ -129,7 +131,7 @@ export function TagsPage() {
       closeDialog();
       setNotification(null);
     } catch (err) {
-      setNotification(err instanceof Error ? err.message : "合并失败");
+      setNotification(err instanceof Error ? err.message : t("common.mergeFailed"));
     }
   }
 
@@ -169,8 +171,8 @@ export function TagsPage() {
     const isDelete = dialog.type === "delete";
     const isMerge = dialog.type === "merge";
 
-    const titleText = isRename ? "重命名" : isDelete ? "删除" : "合并";
-    const typeLabel = dialog.itemType === "tag" ? "标签" : "分类";
+    const titleText = isRename ? t("tags.renameDialogTitle") : isDelete ? t("tags.deleteDialogTitle") : t("tags.mergeDialogTitle");
+    const typeLabel = dialog.itemType === "tag" ? t("tags.tagItem") : t("tags.categoryItem");
     const itemList = dialog.itemType === "tag" ? filteredTags : filteredCategories;
     const mergeCandidates = itemList.filter((i) => i.name !== dialog.itemName);
 
@@ -182,19 +184,19 @@ export function TagsPage() {
             <DialogDescription>
               {isRename && (
                 <>
-                  将 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 重命名为：
+                  {t("tags.renameHint", { name: dialog.itemName })}
                 </>
               )}
               {isDelete && (
                 <>
-                  确定要删除 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 吗？
-                  此操作将从所有文章中移除该{typeLabel}。
+                  {t("tags.deleteHint", { name: dialog.itemName })}
+                  {t("tags.deleteWarning", { typeLabel })}
                 </>
               )}
               {isMerge && (
                 <>
-                  将 <span className="font-medium text-[var(--text-primary)]">{dialog.itemName}</span> 合并到目标{typeLabel}。
-                  所有使用该{typeLabel}的文章将替换为目标{typeLabel}。
+                  {t("tags.mergeHint", { name: dialog.itemName, typeLabel })}
+                  {t("tags.mergeWarning", { typeLabel })}
                 </>
               )}
             </DialogDescription>
@@ -205,7 +207,7 @@ export function TagsPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               disabled={processing}
-              placeholder="输入新名称"
+              placeholder={t("tags.inputNewName")}
               className="h-10 bg-[var(--bg-base)]"
               autoFocus
               onKeyDown={(e) => {
@@ -218,13 +220,13 @@ export function TagsPage() {
           {isMerge && (
             <Select value={mergeTarget} onValueChange={setMergeTarget} disabled={processing}>
               <SelectTrigger>
-                <SelectValue placeholder="选择目标" />
+                <SelectValue placeholder={t("tags.selectTarget")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {mergeCandidates.map((item) => (
                     <SelectItem key={item.id} value={item.name}>
-                      {item.name} ({item.count} 篇)
+                      {item.name} ({t("tags.postsCountShort", { count: item.count })})
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -237,7 +239,7 @@ export function TagsPage() {
               onClick={closeDialog}
               disabled={processing}
             >
-              取消
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={isRename ? handleRename : isMerge ? handleMerge : handleDelete}
@@ -247,14 +249,14 @@ export function TagsPage() {
               {processing ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
-                  处理中...
+                  {t("common.processing")}
                 </>
               ) : isRename ? (
-                "确认重命名"
+                t("common.confirmRename")
               ) : isMerge ? (
-                "确认合并"
+                t("common.confirmMerge")
               ) : (
-                "确认删除"
+                t("common.confirmDelete")
               )}
             </Button>
           </DialogFooter>
@@ -270,14 +272,14 @@ export function TagsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">标签 & 分类</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("tags.title")}</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            {tags.length} 个标签，{categories.length} 个分类
+            {t("tags.subtitle", { tagCount: tags.length, catCount: categories.length })}
           </p>
         </div>
         <Button>
           <Plus size={16} />
-          {activeTab === "tags" ? "新建标签" : "新建分类"}
+          {activeTab === "tags" ? t("tags.newTag") : t("tags.newCategory")}
         </Button>
       </div>
 
@@ -286,12 +288,12 @@ export function TagsPage() {
         <TabsList>
           <TabsTrigger value="tags">
             <Tag size={14} />
-            标签
+            {t("tags.tabTags")}
             <span className="text-xs text-[var(--text-tertiary)] ml-1">{tags.length}</span>
           </TabsTrigger>
           <TabsTrigger value="categories">
             <FolderOpen size={14} />
-            分类
+            {t("tags.tabCategories")}
             <span className="text-xs text-[var(--text-tertiary)] ml-1">{categories.length}</span>
           </TabsTrigger>
         </TabsList>
@@ -302,7 +304,7 @@ export function TagsPage() {
         <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
         <input
           type="text"
-          placeholder={activeTab === "tags" ? "搜索标签..." : "搜索分类..."}
+          placeholder={activeTab === "tags" ? t("tags.searchTags") : t("tags.searchCategories")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
@@ -314,7 +316,7 @@ export function TagsPage() {
           {filteredTags.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
               <Hash size={40} className="mb-3 opacity-30" />
-              <p className="text-sm">暂无标签</p>
+              <p className="text-sm">{t("tags.emptyTags")}</p>
             </div>
           ) : (
             filteredTags.map((tag) => (
@@ -330,13 +332,13 @@ export function TagsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-[var(--text-primary)] truncate">{tag.name}</div>
-                  <div className="text-xs text-[var(--text-tertiary)]">{tag.count} 篇文章</div>
+                  <div className="text-xs text-[var(--text-tertiary)]">{t("tags.postsCount", { count: tag.count })}</div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => openMergeDialog("tag", tag.name, tag.id)}
                     className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent-subtle)] transition-colors cursor-pointer"
-                    title="合并到..."
+                        title={t("tags.mergeTo")}
                   >
                     <GitMerge size={12} />
                   </button>
@@ -360,7 +362,7 @@ export function TagsPage() {
           {/* Add new tag card */}
           <button className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-[var(--border-default)] text-[var(--text-tertiary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-all cursor-pointer">
             <Plus size={16} />
-            <span className="text-sm font-medium">新建标签</span>
+            <span className="text-sm font-medium">{t("tags.newTag")}</span>
           </button>
         </div>
       ) : (
@@ -368,7 +370,7 @@ export function TagsPage() {
           {filteredCategories.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
               <FolderOpen size={40} className="mb-3 opacity-30" />
-              <p className="text-sm">暂无分类</p>
+              <p className="text-sm">{t("tags.emptyCategories")}</p>
             </div>
           ) : (
             filteredCategories.map((cat) => (
@@ -381,14 +383,14 @@ export function TagsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-semibold text-[var(--text-primary)]">{cat.name}</span>
-                        <Badge variant="default">{cat.count} 篇</Badge>
+                        <Badge variant="default">{t("tags.postsCountShort", { count: cat.count })}</Badge>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => openMergeDialog("category", cat.name, cat.id)}
                         className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent-subtle)] transition-colors cursor-pointer"
-                        title="合并到..."
+                    title={t("tags.mergeTo")}
                       >
                         <GitMerge size={14} />
                       </button>
@@ -416,7 +418,7 @@ export function TagsPage() {
 
           <button className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-[var(--border-default)] text-[var(--text-tertiary)] hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent-subtle)] transition-all cursor-pointer">
             <Plus size={16} />
-            <span className="text-sm font-medium">新建分类</span>
+            <span className="text-sm font-medium">{t("tags.newCategory")}</span>
           </button>
         </div>
       )}
@@ -424,11 +426,11 @@ export function TagsPage() {
       <Dialog open={!!notification} onOpenChange={() => setNotification(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>提示</DialogTitle>
+            <DialogTitle>{t("common.tip")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-[var(--text-secondary)]">{notification}</p>
           <DialogFooter>
-            <Button onClick={() => setNotification(null)}>确定</Button>
+            <Button onClick={() => setNotification(null)}>{t("common.ok")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

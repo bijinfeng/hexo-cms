@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Frontmatter, HexoPost } from "@hexo-cms/core";
 import { useSavePage } from "../hooks/use-pages-query";
+import { useI18n } from "../i18n/I18nProvider";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Alert } from "../components/ui/alert";
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 
 export function NewPagePage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const savePageMutation = useSavePage();
   const [title, setTitle] = useState("");
@@ -61,7 +63,7 @@ export function NewPagePage() {
 
   async function handleSave(publish = false) {
     if (!title.trim()) {
-      setError("请输入页面标题");
+      setError(t("pages.editor.titleRequired"));
       return;
     }
     setError("");
@@ -80,7 +82,7 @@ export function NewPagePage() {
       autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存失败");
+      setError(err instanceof Error ? err.message : t("common.saveFailed"));
     }
   }
 
@@ -93,12 +95,12 @@ export function NewPagePage() {
           className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           <ArrowLeft size={16} />
-          返回
+            {t("common.back")}
         </button>
         <div className="w-px h-4 bg-[var(--border-default)]" />
-        <span className="text-sm font-medium text-[var(--text-primary)]">新建页面</span>
+        <span className="text-sm font-medium text-[var(--text-primary)]">{t("pages.editor.newTitle")}</span>
         <Badge variant={status === "published" ? "success" : "default"}>
-          {status === "published" ? "已发布" : "草稿"}
+          {status === "published" ? t("pages.list.published") : t("pages.list.draft")}
         </Badge>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -106,15 +108,15 @@ export function NewPagePage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
           >
             {preview ? <EyeOff size={14} /> : <Eye size={14} />}
-            {preview ? "编辑" : "预览"}
+            {preview ? t("pages.editor.editTab") : t("pages.editor.previewTab")}
           </button>
           <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            保存草稿
+            {t("pages.editor.saveDraft")}
           </Button>
           <Button size="sm" onClick={() => handleSave(true)} disabled={saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
-            发布
+            {t("pages.editor.publishBtn")}
           </Button>
         </div>
       </div>
@@ -128,13 +130,13 @@ export function NewPagePage() {
       {draftRestored && (
         <Alert className="mx-6 mt-3">
           <Info size={14} />
-          检测到未保存的草稿，已恢复
+          {t("pages.editor.draftRestored")}
         </Alert>
       )}
 
       {autosave.saved && (
         <div className="flex items-center justify-center py-1 bg-[var(--bg-muted)]">
-          <span className="text-xs text-[var(--text-tertiary)]">已自动保存</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{t("pages.editor.autoSaveNotice")}</span>
         </div>
       )}
       {autosave.error && (
@@ -149,7 +151,7 @@ export function NewPagePage() {
           <div className="px-8 pt-6 pb-3 flex-shrink-0">
             <input
               type="text"
-              placeholder="页面标题..."
+              placeholder={t("pages.editor.titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full text-3xl font-bold text-[var(--text-primary)] bg-transparent outline-none placeholder:text-[var(--text-tertiary)] border-none"
@@ -173,14 +175,14 @@ export function NewPagePage() {
         {/* Sidebar */}
         <div className="w-64 flex-shrink-0 border-l border-[var(--border-default)] overflow-y-auto bg-[var(--bg-surface)]">
           <div className="p-4 space-y-5">
-            <SidebarSection title="发布状态" icon={Globe}>
+            <SidebarSection title={t("pages.editor.statusLabel")} icon={Globe}>
               <ToggleGroup type="single" value={status} onValueChange={(v) => v && setStatus(v as "draft" | "published")} className="w-full">
-                <ToggleGroupItem value="draft" className="flex-1 text-xs">草稿</ToggleGroupItem>
-                <ToggleGroupItem value="published" className="flex-1 text-xs">发布</ToggleGroupItem>
+                <ToggleGroupItem value="draft" className="flex-1 text-xs">{t("pages.list.draft")}</ToggleGroupItem>
+                <ToggleGroupItem value="published" className="flex-1 text-xs">{t("pages.editor.publishBtn")}</ToggleGroupItem>
               </ToggleGroup>
             </SidebarSection>
 
-            <SidebarSection title="URL 路径" icon={FileText}>
+            <SidebarSection title={t("pages.editor.urlLabel")} icon={FileText}>
               <Input
                 type="text"
                 placeholder="page-url-slug"
@@ -189,14 +191,14 @@ export function NewPagePage() {
                 className="font-mono text-xs"
               />
               <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                留空则自动从标题生成
+                {t("pages.editor.urlHint")}
               </p>
             </SidebarSection>
 
-            <SidebarSection title="封面图片" icon={Image}>
+            <SidebarSection title={t("pages.editor.coverLabel")} icon={Image}>
               <button className="w-full h-20 rounded-lg border-2 border-dashed border-[var(--border-default)] flex flex-col items-center justify-center gap-1.5 text-[var(--text-tertiary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-all cursor-pointer">
                 <Upload size={16} />
-                <span className="text-xs">上传封面</span>
+                <span className="text-xs">{t("pages.editor.uploadCover")}</span>
               </button>
             </SidebarSection>
           </div>
