@@ -332,6 +332,9 @@ importers:
         specifier: workspace:*
         version: link:seo-inspector
     devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.100.10
+        version: 5.100.10(react@19.2.5)
       '@testing-library/jest-dom':
         specifier: catalog:test
         version: 6.9.1
@@ -374,6 +377,9 @@ importers:
       '@hexo-cms/ui':
         specifier: workspace:*
         version: link:../../ui
+      '@tanstack/react-query':
+        specifier: ^5.100.10
+        version: 5.100.10(react@19.2.5)
       '@tanstack/react-router':
         specifier: ^1.169.1
         version: 1.169.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)

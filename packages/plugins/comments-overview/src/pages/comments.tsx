@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { COMMENTS_OVERVIEW_PLUGIN_ID } from "../manifest";
 import {
   Badge,
@@ -121,25 +122,18 @@ export function CommentsPage() {
     pluginConfig.giscusCategoryId
   );
 
-  const [discussions, setDiscussions] = useState<DiscussionThread[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [commentCache, setCommentCache] = useState<Record<string, DiscussionComment[]>>({});
-  const [loadingComments, setLoadingComments] = useState<Set<string>>(new Set());
-  const [moderatingIds, setModeratingIds] = useState<Set<string>>(new Set());
 
-  const loadDiscussions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const queryClient = useQueryClient();
+
+  const discussionsQuery = useQuery({
+    queryKey: ["comments-overview", "discussions", pluginConfig.giscusRepo, pluginConfig.giscusCategoryId],
+    queryFn: async (): Promise<DiscussionThread[]> => {
       const token = await dataProvider.getToken();
       if (!token) {
-        setError("未获取到 GitHub Token，请重新授权");
-        setLoading(false);
-        return;
+        throw new Error("未获取到 GitHub Token，请重新授权");
       }
 
       const [owner, repo] = (pluginConfig.giscusRepo as string).split("/");
@@ -163,7 +157,7 @@ export function CommentsPage() {
         categoryId: pluginConfig.giscusCategoryId || null,
       });
 
-      const nodes = data.repository.discussions.nodes.map((n: Record<string, unknown>) => {
+      return data.repository.discussions.nodes.map((n: Record<string, unknown>) => {
         let state: DiscussionThread["state"] = "OPEN";
         if (n.locked) state = "LOCKED";
         const isAnswered = (n as { isAnswered?: boolean }).isAnswered;
@@ -181,59 +175,58 @@ export function CommentsPage() {
           comments: [],
         };
       });
-      setDiscussions(nodes);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "加载讨论失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [dataProvider, pluginConfig.giscusRepo, pluginConfig.giscusCategoryId]);
+    },
+    enabled: isPluginEnabled && isConfigured,
+  });
 
-  useEffect(() => {
-    if (!isPluginEnabled || !isConfigured) return;
-    loadDiscussions();
-  }, [isPluginEnabled, isConfigured, loadDiscussions]);
+  const discussions = discussionsQuery.data ?? [];
+  const loading = discussionsQuery.isPending;
+  const error = discussionsQuery.error?.message ?? null;
+  const loadDiscussions = discussionsQuery.refetch;
 
   async function loadComments(discussionId: string) {
-    if (commentCache[discussionId]) return;
-    setLoadingComments((prev) => new Set(prev).add(discussionId));
-    try {
-      const token = await dataProvider.getToken();
-      if (!token) return;
-      const query = `
-        query($discussionId: ID!) {
-          node(id: $discussionId) {
-            ... on Discussion {
-              comments(first: 100) {
-                nodes {
-                  id body createdAt isAnswer isHidden
-                  author { login avatarUrl }
+    const cacheKey = ["comments-overview", "comments", discussionId];
+    const existing = queryClient.getQueryData<DiscussionComment[]>(cacheKey);
+    if (existing) return;
+    await queryClient.fetchQuery({
+      queryKey: cacheKey,
+      queryFn: async (): Promise<DiscussionComment[]> => {
+        const token = await dataProvider.getToken();
+        if (!token) return [];
+        const query = `
+          query($discussionId: ID!) {
+            node(id: $discussionId) {
+              ... on Discussion {
+                comments(first: 100) {
+                  nodes {
+                    id body createdAt isAnswer isHidden
+                    author { login avatarUrl }
+                  }
                 }
               }
             }
           }
-        }
-      `;
-      const data = await fetchGitHubGraphQL(token, query, { discussionId });
-      const comments = data.node.comments.nodes.map((n: Record<string, unknown>) => ({
-        id: n.id as string,
-        discussionId,
-        body: n.body as string,
-        createdAt: n.createdAt as string,
-        isAnswer: (n.isAnswer as boolean) ?? false,
-        isHidden: (n.isHidden as boolean) ?? false,
-        author: (n.author as DiscussionAuthor) ?? { login: "unknown", avatarUrl: "" },
-      }));
-      setCommentCache((prev) => ({ ...prev, [discussionId]: comments }));
-    } catch (err) {
-      console.error("Failed to load comments:", err);
-    } finally {
-      setLoadingComments((prev) => {
-        const next = new Set(prev);
-        next.delete(discussionId);
-        return next;
-      });
-    }
+        `;
+        const data = await fetchGitHubGraphQL(token, query, { discussionId });
+        return data.node.comments.nodes.map((n: Record<string, unknown>) => ({
+          id: n.id as string,
+          discussionId,
+          body: n.body as string,
+          createdAt: n.createdAt as string,
+          isAnswer: (n.isAnswer as boolean) ?? false,
+          isHidden: (n.isHidden as boolean) ?? false,
+          author: (n.author as DiscussionAuthor) ?? { login: "unknown", avatarUrl: "" },
+        }));
+      },
+    });
+  }
+
+  function getCommentCache(discussionId: string): DiscussionComment[] | undefined {
+    return queryClient.getQueryData<DiscussionComment[]>(["comments-overview", "comments", discussionId]);
+  }
+
+  function isLoadingComments(discussionId: string): boolean {
+    return queryClient.getQueryState(["comments-overview", "comments", discussionId])?.fetchStatus === "fetching";
   }
 
   async function handleToggleExpand(discussionId: string) {
@@ -249,33 +242,38 @@ export function CommentsPage() {
     });
   }
 
-  async function handleModerateComment(commentId: string, action: "hide" | "unhide") {
-    setModeratingIds((prev) => new Set(prev).add(commentId));
-    try {
+  const moderateMutation = useMutation({
+    mutationFn: async ({ commentId, action }: { commentId: string; action: "hide" | "unhide" }) => {
       const token = await dataProvider.getToken();
-      if (!token) return;
+      if (!token) throw new Error("Missing GitHub token");
       const mutation = action === "hide"
         ? `mutation($id: ID!) { hideDiscussionComment(input: { commentId: $id }) { clientMutationId } }`
         : `mutation($id: ID!) { unhideDiscussionComment(input: { commentId: $id }) { clientMutationId } }`;
       await fetchGitHubGraphQL(token, mutation, { id: commentId });
-      setCommentCache((prev) => {
-        const next = { ...prev };
-        for (const key of Object.keys(next)) {
-          next[key] = next[key].map((c) =>
+      return { commentId, action };
+    },
+    onSuccess: ({ commentId, action }) => {
+      const queries = queryClient.getQueriesData<DiscussionComment[]>({
+        queryKey: ["comments-overview", "comments"],
+      });
+      for (const [key, comments] of queries) {
+        if (!comments) continue;
+        queryClient.setQueryData(
+          key,
+          comments.map((c) =>
             c.id === commentId ? { ...c, isHidden: action === "hide" } : c
-          );
-        }
-        return next;
-      });
-    } catch (err) {
-      console.error("Failed to moderate comment:", err);
-    } finally {
-      setModeratingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(commentId);
-        return next;
-      });
-    }
+          ),
+        );
+      }
+    },
+  });
+
+  function handleModerateComment(commentId: string, action: "hide" | "unhide") {
+    moderateMutation.mutate({ commentId, action });
+  }
+
+  function isModerating(commentId: string): boolean {
+    return moderateMutation.isPending && moderateMutation.variables?.commentId === commentId;
   }
 
   const filtered = discussions.filter((d) => {
@@ -389,10 +387,10 @@ export function CommentsPage() {
       )}
 
       <div className="space-y-3">
-        {filtered.map((discussion) => {
+        {filtered.map((discussion: DiscussionThread) => {
           const isExpanded = expandedIds.has(discussion.id);
-          const comments = commentCache[discussion.id] ?? [];
-          const isLoadingComments = loadingComments.has(discussion.id);
+          const comments = getCommentCache(discussion.id) ?? [];
+          const loadingDiscussionComments = isLoadingComments(discussion.id);
 
           return (
             <Card key={discussion.id}>
@@ -451,13 +449,13 @@ export function CommentsPage() {
                 </CardContent>
                 <CollapsibleContent>
                   <div className="border-t border-[var(--border-secondary)] px-4 py-2">
-                    {isLoadingComments && (
+                    {loadingDiscussionComments && (
                       <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">加载评论中...</div>
                     )}
-                    {!isLoadingComments && comments.length === 0 && (
+                    {!loadingDiscussionComments && comments.length === 0 && (
                       <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">暂无评论</div>
                     )}
-                    {comments.map((comment) => (
+                    {comments.map((comment: DiscussionComment) => (
                       <div key={comment.id} className="py-2.5 border-b border-[var(--border-secondary)] last:border-0">
                         <div className="flex items-start gap-2.5">
                           <img src={comment.author.avatarUrl} alt="" className="w-5 h-5 rounded-full mt-0.5" />
@@ -477,7 +475,7 @@ export function CommentsPage() {
                           <div className="flex items-center gap-0.5 shrink-0">
                             <button
                               onClick={() => handleModerateComment(comment.id, comment.isHidden ? "unhide" : "hide")}
-                              disabled={moderatingIds.has(comment.id)}
+                              disabled={isModerating(comment.id)}
                               className="p-1 rounded hover:bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
                               title={comment.isHidden ? "取消隐藏" : "隐藏"}
                             >
