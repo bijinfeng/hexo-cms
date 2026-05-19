@@ -144,6 +144,9 @@ export type {
   RepositoryValidationError,
 } from "./types/onboarding";
 
+// I18n
+export { I18nProvider, useI18n } from "./i18n";
+
 // Context
 export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";
 
