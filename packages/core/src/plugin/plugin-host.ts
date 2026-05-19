@@ -107,6 +107,20 @@ export class PluginHost<TRenderer = unknown> {
     return this.renderers.get(`${widget.pluginId}:${widget.renderer}`);
   }
 
+  collectPluginTranslations(): Record<string, Record<string, string>> {
+    const translations: Record<string, Record<string, string>> = {};
+    for (const { manifest, record } of this.snapshot().plugins) {
+      if (record.state !== "enabled") continue;
+      const pluginTranslations = manifest.contributes?.translations;
+      if (!pluginTranslations) continue;
+      for (const [locale, map] of Object.entries(pluginTranslations)) {
+        if (!map) continue;
+        translations[locale] = { ...(translations[locale] ?? {}), ...map };
+      }
+    }
+    return translations;
+  }
+
   private syncRuntimeContributions(): void {
     const enabled = new Set(
       this.snapshot().plugins
