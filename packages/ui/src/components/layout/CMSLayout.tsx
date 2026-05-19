@@ -1,23 +1,11 @@
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { cn } from "../../utils";
 import { usePluginSystem } from "../../plugin";
+import { useI18n } from "../../i18n/I18nProvider";
 import type { AuthClient } from "../../types/auth";
-
-const routeTitles: Record<string, string> = {
-  "/": "数据大盘",
-  "/posts": "文章管理",
-  "/posts/new": "新建文章",
-  "/tags": "标签 & 分类",
-  "/media": "媒体库",
-  "/comments": "评论管理",
-  "/themes": "主题管理",
-  "/pages": "页面管理",
-  "/deploy": "部署管理",
-  "/settings": "站点设置",
-};
 
 export function CMSLayout({
   children,
@@ -33,9 +21,25 @@ export function CMSLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { snapshot } = usePluginSystem();
+  const { t } = useI18n();
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
-  const title = routeTitles[pathname] ?? "";
+  const title = useMemo(() => {
+    const titles: Record<string, string> = {
+      "/": t("sidebar.dashboard"),
+      "/posts": t("sidebar.posts"),
+      "/posts/new": t("posts.editor.newTitle"),
+      "/pages": t("sidebar.pages"),
+      "/pages/new": t("pages.editor.newTitle"),
+      "/tags": t("sidebar.tags"),
+      "/media": t("sidebar.media"),
+      "/comments": t("sidebar.comments"),
+      "/themes": t("sidebar.themes"),
+      "/deploy": t("sidebar.deploy"),
+      "/settings": t("sidebar.settings"),
+    };
+    return titles[pathname] ?? "";
+  }, [pathname, t]);
   const showTopbarSearch = pathname !== "/media" || snapshot.extensions.uiFlags.some(
     (flag) => flag.flag === "media.search",
   );

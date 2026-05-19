@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { AuthClient, AuthSession } from "../types/auth";
+import { useI18n } from "../i18n/I18nProvider";
 import { Settings, LogOut } from "lucide-react";
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ authClient, onSignedOut }: UserMenuProps) {
+  const { t } = useI18n();
   const [session, setSession] = useState<AuthSession | null>(null);
   const navigate = useNavigate();
 
@@ -26,7 +28,7 @@ export function UserMenu({ authClient, onSignedOut }: UserMenuProps) {
   }, [authClient]);
 
   const user = session?.user;
-  const displayName = user?.name || user?.login || "用户";
+  const displayName = user?.name || user?.login || t("common.user");
   const email = user?.email;
   const initial = displayName[0]?.toUpperCase() || "U";
 
@@ -43,7 +45,7 @@ export function UserMenu({ authClient, onSignedOut }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity ml-1" aria-label="用户菜单">
+        <button className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity ml-1" aria-label={t("components.userMenu.menuLabel")}>
           <Avatar className="w-8 h-8">
             <AvatarImage src={user?.avatarUrl ?? undefined} alt={displayName} />
             <AvatarFallback>{initial}</AvatarFallback>
@@ -72,11 +74,11 @@ export function UserMenu({ authClient, onSignedOut }: UserMenuProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={handleSettings}>
           <Settings size={15} className="text-[var(--text-secondary)]" />
-          系统设置
+          {t("components.userMenu.systemSettings")}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={handleSignOut}>
           <LogOut size={15} className="text-[var(--text-secondary)]" />
-          退出登录
+          {t("components.userMenu.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

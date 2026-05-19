@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { FilePlus, Rocket, Search } from "lucide-react";
+import { useI18n } from "../i18n/I18nProvider";
 import { useDataProvider } from "../context/data-provider-context";
 import type { HexoPost } from "@hexo-cms/core";
 import {
@@ -17,30 +18,31 @@ interface CommandPaletteProps {
   onClose: () => void;
 }
 
-const NAV_ITEMS = [
-  { label: "数据大盘", to: "/" },
-  { label: "文章管理", to: "/posts" },
-  { label: "页面管理", to: "/pages" },
-  { label: "媒体库", to: "/media" },
-  { label: "标签 & 分类", to: "/tags" },
-  { label: "主题管理", to: "/themes" },
-  { label: "菜单管理", to: "/menus" },
-  { label: "部署管理", to: "/deploy" },
-  { label: "站点设置", to: "/settings" },
-];
-
-const ACTIONS = [
-  { id: "new-post", label: "新建文章", to: "/posts/new", icon: FilePlus },
-  { id: "new-page", label: "新建页面", to: "/pages/new", icon: FilePlus },
-  { id: "deploy", label: "触发部署", to: "/deploy", icon: Rocket },
-];
-
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [recentPosts, setRecentPosts] = useState<HexoPost[]>([]);
+
+  const NAV_ITEMS = useMemo(() => [
+    { label: t("sidebar.dashboard"), to: "/" },
+    { label: t("sidebar.posts"), to: "/posts" },
+    { label: t("sidebar.pages"), to: "/pages" },
+    { label: t("sidebar.media"), to: "/media" },
+    { label: t("sidebar.tags"), to: "/tags" },
+    { label: t("sidebar.themes"), to: "/themes" },
+    { label: t("sidebar.menus"), to: "/menus" },
+    { label: t("sidebar.deploy"), to: "/deploy" },
+    { label: t("sidebar.settings"), to: "/settings" },
+  ], [t]);
+
+  const ACTIONS = useMemo(() => [
+    { id: "new-post", label: t("posts.editor.newTitle"), to: "/posts/new", icon: FilePlus },
+    { id: "new-page", label: t("pages.editor.newTitle"), to: "/pages/new", icon: FilePlus },
+    { id: "deploy", label: t("deploy.triggerDeploy"), to: "/deploy", icon: Rocket },
+  ], [t]);
 
   useEffect(() => {
     if (isOpen) {
@@ -110,13 +112,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             ref={inputRef}
             value={query}
             onValueChange={setQuery}
-            placeholder="搜索命令或文章..."
+            placeholder={t("components.commandPalette.searchPlaceholder")}
           />
           <CommandList>
-            <CommandEmpty>无匹配结果</CommandEmpty>
+            <CommandEmpty>{t("components.commandPalette.noResults")}</CommandEmpty>
 
             {filteredActions.length > 0 && (
-              <CommandGroup heading="快捷操作">
+              <CommandGroup heading={t("components.commandPalette.quickActions")}>
                 {filteredActions.map((a) => (
                   <CommandItem
                     key={a.id}
@@ -131,7 +133,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             )}
 
             {filteredNav.length > 0 && (
-              <CommandGroup heading="页面导航">
+              <CommandGroup heading={t("components.commandPalette.pageNav")}>
                 {filteredNav.map((item) => (
                   <CommandItem
                     key={item.to}
@@ -146,7 +148,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             )}
 
             {filteredPosts.length > 0 && (
-              <CommandGroup heading="最近文章">
+              <CommandGroup heading={t("components.commandPalette.recentPosts")}>
                 {filteredPosts.map((p) => (
                   <CommandItem
                     key={p.path}
@@ -154,7 +156,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     onSelect={() => handleSelectPost(p.path)}
                   >
                     <Search size={15} className="text-[var(--text-tertiary)]" />
-                    {p.title || "无标题"}
+                    {p.title || t("components.commandPalette.untitled")}
                   </CommandItem>
                 ))}
               </CommandGroup>

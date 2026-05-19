@@ -77,7 +77,7 @@ export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, aut
           style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : undefined}
         >
           <Search size={14} />
-          <span>搜索...</span>
+          <span>{t("common.search")}</span>
           <kbd className="ml-auto text-[10px] font-mono bg-[var(--bg-surface)] border border-[var(--border-default)] rounded px-1.5 py-0.5 text-[var(--text-tertiary)]">
             ⌘K
           </kbd>

@@ -1,5 +1,6 @@
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import { useI18n } from "../i18n/I18nProvider";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
@@ -42,18 +43,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 function DefaultFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
       <AlertCircle className="w-12 h-12 text-[var(--status-error)] mb-4" />
       <Alert variant="destructive" className="mb-6 max-w-md">
-        <AlertTitle>出错了</AlertTitle>
+        <AlertTitle>{t("components.errorBoundary.title")}</AlertTitle>
         <AlertDescription>
-          页面遇到了一个意外错误。你的数据是安全的。
+          {t("components.errorBoundary.message")}
         </AlertDescription>
         {error && (
           <Collapsible>
             <CollapsibleTrigger className="text-xs cursor-pointer hover:opacity-80 block mt-3">
-              错误详情
+              {t("components.errorBoundary.details")}
             </CollapsibleTrigger>
             <CollapsibleContent>
               <pre className="mt-2 p-3 bg-[var(--bg-muted)] rounded text-xs text-left overflow-auto max-h-32">
@@ -64,7 +66,7 @@ function DefaultFallback({ error, onRetry }: { error: Error; onRetry: () => void
         )}
       </Alert>
       <Button variant="outline" onClick={onRetry}>
-        重试
+        {t("common.retry")}
       </Button>
     </div>
   );

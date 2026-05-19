@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n/I18nProvider";
 import { CheckCircle2, Clock, Loader2, Rocket, XCircle } from "lucide-react";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -10,6 +11,7 @@ interface SaveIndicatorProps {
 }
 
 export function SaveIndicator({ status, deployStatus = "idle", onDeploy }: SaveIndicatorProps) {
+  const { t } = useI18n();
   const isActive = status !== "idle" || deployStatus !== "idle";
   if (!isActive) return null;
 
@@ -17,17 +19,17 @@ export function SaveIndicator({ status, deployStatus = "idle", onDeploy }: SaveI
     idle: { icon: Clock, text: "", className: "" },
     saving: {
       icon: Loader2,
-      text: "保存中...",
+      text: t("components.saveIndicator.saving"),
       className: "text-[var(--status-info)]",
     },
     saved: {
       icon: CheckCircle2,
-      text: "已保存",
+      text: t("components.saveIndicator.saved"),
       className: "text-[var(--status-success)]",
     },
     error: {
       icon: XCircle,
-      text: "保存失败",
+      text: t("components.saveIndicator.failed"),
       className: "text-[var(--status-error)]",
     },
   };
@@ -36,17 +38,17 @@ export function SaveIndicator({ status, deployStatus = "idle", onDeploy }: SaveI
     idle: { icon: Rocket, text: "", className: "" },
     deploying: {
       icon: Loader2,
-      text: "部署中...",
+      text: t("components.saveIndicator.deploying"),
       className: "text-[var(--status-info)]",
     },
     deployed: {
       icon: CheckCircle2,
-      text: "部署成功",
+      text: t("components.saveIndicator.deployed"),
       className: "text-[var(--status-success)]",
     },
     failed: {
       icon: XCircle,
-      text: "部署失败",
+      text: t("components.saveIndicator.deployFailed"),
       className: "text-[var(--status-error)]",
     },
   };
@@ -74,7 +76,7 @@ export function SaveIndicator({ status, deployStatus = "idle", onDeploy }: SaveI
           className="flex items-center gap-1 px-2 py-1 rounded bg-primary-500 text-white hover:bg-primary-600 transition-colors cursor-pointer"
         >
           <Rocket size={12} />
-          部署站点
+          {t("components.saveIndicator.deploySite")}
         </button>
       )}
     </div>

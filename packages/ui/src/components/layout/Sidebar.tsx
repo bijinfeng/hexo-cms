@@ -166,7 +166,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                 <div>
                   {!collapsed && (
                     <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-                      互动
+                      {t("sidebar.interact")}
                     </div>
                   )}
                   <div className="space-y-0.5">
@@ -178,7 +178,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                 <div>
                   {!collapsed && (
                     <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-                      插件
+                      {t("sidebar.plugins")}
                     </div>
                   )}
                   <div className="space-y-0.5">
@@ -207,7 +207,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
           <span className={cn(
             "text-xs text-[var(--text-secondary)] whitespace-nowrap transition-all duration-200",
             collapsed ? "w-0 opacity-0 overflow-hidden" : "flex-1 text-left opacity-100"
-          )}>已连接 GitHub 仓库</span>
+          )}>{t("sidebar.connected")}</span>
           <PanelLeftClose
             size={14}
             className={cn(

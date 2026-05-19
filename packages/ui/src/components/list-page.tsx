@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useState, useMemo } from "react";
 import { Search, Loader2, AlertCircle, Inbox } from "lucide-react";
+import { useI18n } from "../i18n/I18nProvider";
 import { Alert } from "./ui/alert";
 import { Input } from "./ui/input";
 
@@ -28,16 +29,20 @@ export function ListPage<T>({
   error,
   items,
   searchFields,
-  searchPlaceholder = "搜索...",
+  searchPlaceholder,
   renderSearch,
   onRetry,
   headerExtra,
-  emptyMessage = "暂无数据",
+  emptyMessage,
   emptyIcon,
   renderItem,
   renderFilters,
 }: ListPageProps<T>) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
+
+  const placeholder = searchPlaceholder ?? t("components.listPage.searchPlaceholder");
+  const emptyMsg = emptyMessage ?? t("components.listPage.empty");
 
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return items;
@@ -68,7 +73,7 @@ export function ListPage<T>({
             onClick={onRetry}
             className="px-4 py-2 text-sm bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors cursor-pointer"
           >
-            重试
+            {t("common.retry")}
           </button>
         )}
       </div>
@@ -97,7 +102,7 @@ export function ListPage<T>({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={placeholder}
               className="pl-9"
             />
           </div>
@@ -115,7 +120,7 @@ export function ListPage<T>({
         <div className="flex flex-col items-center justify-center min-h-[300px] gap-2">
           {emptyIcon || <Inbox className="w-10 h-10 text-[var(--text-tertiary)]" />}
           <p className="text-sm text-[var(--text-tertiary)]">
-            {searchQuery ? "没有匹配的结果" : emptyMessage}
+            {searchQuery ? t("components.listPage.noMatch") : emptyMsg}
           </p>
         </div>
       ) : (
