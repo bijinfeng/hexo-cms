@@ -1,5 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { cn } from "../../utils";
+import { useI18n } from "../../i18n/I18nProvider";
 import {
   LayoutDashboard,
   FileText,
@@ -17,28 +19,6 @@ import {
 } from "lucide-react";
 import type { RegisteredSidebarItem } from "@hexo-cms/core";
 
-const navItems = [
-  {
-    group: "内容",
-    items: [
-      { icon: LayoutDashboard, label: "数据大盘", to: "/" },
-      { icon: FileText, label: "文章管理", to: "/posts" },
-      { icon: Tags, label: "标签 & 分类", to: "/tags" },
-      { icon: Image, label: "媒体管理", to: "/media" },
-    ],
-  },
-  {
-    group: "站点",
-    items: [
-      { icon: Palette, label: "主题管理", to: "/themes" },
-      { icon: Menu, label: "菜单管理", to: "/menus" },
-      { icon: FolderOpen, label: "页面管理", to: "/pages" },
-      { icon: GitBranch, label: "部署管理", to: "/deploy" },
-      { icon: Settings, label: "站点设置", to: "/settings" },
-    ],
-  },
-];
-
 interface SidebarProps {
   collapsed?: boolean;
   onToggle?: () => void;
@@ -46,8 +26,31 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: SidebarProps) {
+  const { t } = useI18n();
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
+
+  const navItems = useMemo(() => [
+    {
+      group: t("sidebar.content"),
+      items: [
+        { icon: LayoutDashboard, label: t("sidebar.dashboard"), to: "/" },
+        { icon: FileText, label: t("sidebar.posts"), to: "/posts" },
+        { icon: Tags, label: t("sidebar.tags"), to: "/tags" },
+        { icon: Image, label: t("sidebar.media"), to: "/media" },
+      ],
+    },
+    {
+      group: t("sidebar.site"),
+      items: [
+        { icon: Palette, label: t("sidebar.themes"), to: "/themes" },
+        { icon: Menu, label: t("sidebar.menus"), to: "/menus" },
+        { icon: FolderOpen, label: t("sidebar.pages"), to: "/pages" },
+        { icon: GitBranch, label: t("sidebar.deploy"), to: "/deploy" },
+        { icon: Settings, label: t("sidebar.settings"), to: "/settings" },
+      ],
+    },
+  ], [t]);
 
   return (
     <aside
