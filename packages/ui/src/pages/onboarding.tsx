@@ -6,6 +6,7 @@ import { Button } from "../components/ui/button";
 import { GithubIcon } from "../components/ui/github-icon";
 import { Input } from "../components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
+import { useI18n } from "../i18n/I18nProvider";
 import type { AuthSession } from "../types/auth";
 import type {
   OnboardingClient,
@@ -19,13 +20,13 @@ import type {
 
 type OnboardingPageProps = { onboardingClient: OnboardingClient };
 
-const VALIDATION_ERROR_MESSAGES: Record<RepositoryValidationError, string> = {
-  REPO_NOT_FOUND: "未找到这个仓库，请确认已授权访问",
-  PERMISSION_REQUIRED: "当前授权缺少仓库读写权限，请重新授权",
-  BRANCH_NOT_FOUND: "未找到目标分支",
-  NOT_HEXO_REPO: "未检测到 Hexo 配置，请选择已有 Hexo 博客仓库",
-  NETWORK_ERROR: "验证失败，请重试",
-  REAUTH_REQUIRED: "当前授权缺少仓库读写权限，请重新授权",
+const VALIDATION_ERROR_KEYS: Record<RepositoryValidationError, string> = {
+  REPO_NOT_FOUND: "onboarding.errors.repoNotFound",
+  PERMISSION_REQUIRED: "onboarding.errors.missingScope",
+  BRANCH_NOT_FOUND: "onboarding.errors.branchNotFound",
+  NOT_HEXO_REPO: "onboarding.errors.notHexo",
+  NETWORK_ERROR: "onboarding.errors.verifyFailed",
+  REAUTH_REQUIRED: "onboarding.errors.missingScope",
 };
 
 const FALLBACK_CONFIG = {
@@ -36,42 +37,6 @@ const FALLBACK_CONFIG = {
   deployNotifications: true,
 };
 const SEARCH_DEBOUNCE_MS = 250;
-
-function getValidationErrorMessage(validation: RepositoryValidation | null) {
-  if (!validation || validation.ok) return "";
-  if (validation.error) return VALIDATION_ERROR_MESSAGES[validation.error];
-  return validation.checks.find((check) => check.status === "error")?.message ?? "验证失败，请重试";
-}
-
-function getAuthErrorMessage(error?: string) {
-  switch (error) {
-    case "AUTH_TIMEOUT":
-      return "授权已过期，请重新授权";
-    case "AUTH_REJECTED":
-      return "GitHub 授权已取消，请重试";
-    case "AUTH_DEVICE_FLOW_DISABLED":
-      return "GitHub 设备授权未启用，请检查 OAuth App 配置";
-    case "AUTH_NOT_CONFIGURED":
-      return "GitHub 授权暂不可用，请检查配置";
-    case "AUTH_SCOPE_INSUFFICIENT":
-      return "当前授权缺少仓库权限，请重新授权";
-    default:
-      return "重新授权失败，请重试";
-  }
-}
-
-function getUpdatedText(pushedAt?: string | null) {
-  if (!pushedAt) return "最近更新未知";
-
-  const date = new Date(pushedAt);
-  if (Number.isNaN(date.getTime())) return "最近更新未知";
-
-  return `更新于 ${date.toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })}`;
-}
 
 function createConfigFromSelection(
   selection: RepositorySelection,
@@ -87,6 +52,7 @@ function createConfigFromSelection(
 }
 
 export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
+  const { t, locale } = useI18n();
   const navigate = useNavigate();
   const hasLoadedRepositoriesRef = useRef(false);
   const loadedRepositoryQueryRef = useRef("");
@@ -114,6 +80,44 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   const [manualRepo, setManualRepo] = useState("");
   const [manualBranch, setManualBranch] = useState("main");
   const reauthorizationDeviceFlow = reauthorizationSession?.deviceFlow;
+
+  function getValidationErrorMessage(validation: RepositoryValidation | null) {
+    if (!validation || validation.ok) return "";
+    if (validation.error) return t(VALIDATION_ERROR_KEYS[validation.error]);
+    return validation.checks.find((check) => check.status === "error")?.message ?? t("onboarding.errors.verifyFailed");
+  }
+
+  function getAuthErrorMessage(error?: string) {
+    switch (error) {
+      case "AUTH_TIMEOUT":
+        return t("onboarding.errors.expired");
+      case "AUTH_REJECTED":
+        return t("onboarding.errors.cancelled");
+      case "AUTH_DEVICE_FLOW_DISABLED":
+        return t("onboarding.errors.notEnabled");
+      case "AUTH_NOT_CONFIGURED":
+        return t("onboarding.errors.unavailable");
+      case "AUTH_SCOPE_INSUFFICIENT":
+        return t("onboarding.errors.missingScope");
+      default:
+        return t("onboarding.errors.reauthFailed");
+    }
+  }
+
+  function getUpdatedText(pushedAt?: string | null) {
+    if (!pushedAt) return t("onboarding.updatedUnknown");
+
+    const date = new Date(pushedAt);
+    if (Number.isNaN(date.getTime())) return t("onboarding.updatedUnknown");
+
+    return t("onboarding.updatedAt", {
+      date: date.toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    });
+  }
 
   const clearSelectedRepository = useCallback(() => {
     validationRequestIdRef.current += 1;
@@ -151,7 +155,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
       setRepositories(repoList);
     } catch {
       if (repositoryRequestIdRef.current !== requestId) return;
-      setRepoError("仓库加载失败，请重试");
+      setRepoError(t("onboarding.repoLoadFailed"));
       if (isInitialLoad) {
         setRepositories([]);
       }
@@ -164,7 +168,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
         }
       }
     }
-  }, [clearSelectedRepository, onboardingClient]);
+  }, [clearSelectedRepository, onboardingClient, t]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -217,7 +221,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
         if (active) {
           window.clearInterval(timer);
           setReauthorizing(false);
-          setReauthorizeError("GitHub 授权状态检查失败，请重试");
+          setReauthorizeError(t("login.errors.checkFailed"));
         }
       }
     }, Math.max(reauthorizationDeviceFlow.interval, 1) * 1000);
@@ -226,7 +230,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
       active = false;
       window.clearInterval(timer);
     };
-  }, [activeQuery, loadRepositories, onboardingClient, reauthorizationDeviceFlow]);
+  }, [activeQuery, loadRepositories, onboardingClient, reauthorizationDeviceFlow, t]);
 
   const config = useMemo(() => {
     if (!validation?.ok || !selectedSelection) return null;
@@ -302,7 +306,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
 
       await loadRepositories(activeQuery);
     } catch {
-      setReauthorizeError("重新授权失败，请重试");
+      setReauthorizeError(t("onboarding.errors.reauthFailed"));
     } finally {
       if (!waitingForDeviceFlow) setReauthorizing(false);
     }
@@ -316,7 +320,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
       await onboardingClient.saveRepositoryConfig(config);
       navigate({ to: "/" });
     } catch {
-      setSaveError("保存失败，请重试");
+      setSaveError(t("onboarding.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -336,9 +340,9 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-primary-subtle)] text-[var(--brand-primary)]">
               <GithubIcon className="h-6 w-6" />
             </div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)]">导入 Hexo 仓库</h1>
+            <h1 className="text-3xl font-bold text-[var(--text-primary)]">{t("onboarding.title")}</h1>
             <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-              HexoCMS 会在开始管理前验证所选 GitHub 仓库的访问权限、默认分支和 Hexo 结构。
+              {t("onboarding.description")}
             </p>
           </div>
 
@@ -359,7 +363,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 {currentUser?.name || currentUser?.login || "GitHub"}
               </p>
               <p className="truncate text-xs text-[var(--text-tertiary)]">
-                {currentUser?.login ? `@${currentUser.login}` : "正在读取账号"}
+                {currentUser?.login ? `@${currentUser.login}` : t("onboarding.readingAccount")}
               </p>
             </div>
             <div className="flex flex-col items-end gap-1">
@@ -371,14 +375,14 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 disabled={reauthorizing}
               >
                 <RefreshCw className={`h-4 w-4 ${reauthorizing ? "animate-spin" : ""}`} />
-                {reauthorizationDeviceFlow ? "等待授权" : "重新授权"}
+                {reauthorizationDeviceFlow ? t("onboarding.waitingAuth") : t("settings.auth.reauthorize")}
               </Button>
               {reauthorizeError && (
                 <p className="text-xs text-[var(--status-error)]">{reauthorizeError}</p>
               )}
               {reauthorizationDeviceFlow && (
                 <div className="w-56 rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3 text-center">
-                  <p className="text-xs text-[var(--text-secondary)]">在 GitHub 页面输入授权码</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{t("settings.auth.enterCode")}</p>
                   <div className="mt-2 rounded-md bg-[var(--bg-card)] px-3 py-2 font-mono text-xl font-bold tracking-widest text-[var(--text-primary)]">
                     {reauthorizationDeviceFlow.userCode}
                   </div>
@@ -388,7 +392,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                     rel="noopener noreferrer"
                     className="mt-3 inline-flex items-center justify-center gap-2 text-xs font-medium text-[var(--brand-primary)] hover:underline"
                   >
-                    打开 GitHub 授权页面
+                    {t("settings.auth.openGitHub")}
                     <ArrowRight size={12} />
                   </a>
                 </div>
@@ -411,12 +415,12 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                     event.preventDefault();
                     handleSearchSubmit();
                   }}
-                  placeholder="搜索仓库"
+                  placeholder={t("onboarding.searchRepo")}
                   className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
                 />
                 {searchingRepos ? (
                   <Loader2
-                    aria-label="正在搜索仓库"
+                    aria-label={t("onboarding.searchingRepo")}
                     className="h-4 w-4 flex-shrink-0 animate-spin text-[var(--text-tertiary)]"
                   />
                 ) : null}
@@ -431,19 +435,19 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                     className="h-auto px-0 text-xs"
                     onClick={() => void loadRepositories(activeQuery)}
                     disabled={searchingRepos}
-                    aria-label="重试搜索"
+                    aria-label={t("common.retry")}
                   >
-                    重试
+                    {t("common.retry")}
                   </Button>
                 </div>
               ) : null}
             </div>
 
-            <div className="min-h-72 max-h-96 overflow-y-auto divide-y divide-[var(--border-default)]"> 
+            <div className="min-h-72 max-h-96 overflow-y-auto divide-y divide-[var(--border-default)]">
               {loadingRepos ? (
                 <div className="flex min-h-72 items-center justify-center gap-2 text-sm text-[var(--text-secondary)]">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  正在读取仓库
+                  {t("onboarding.readingRepo")}
                 </div>
               ) : repositories.length > 0 ? (
                 repositories.map((repository) => (
@@ -459,12 +463,12 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-[var(--text-primary)]">{repository.fullName}</p>
                         <Badge variant={repository.private ? "warning" : "green"}>
-                          {repository.private ? "私有" : "公开"}
+                          {repository.private ? t("onboarding.privateRepo") : t("onboarding.publicRepo")}
                         </Badge>
-                        {repository.permissions.push && <Badge variant="success">可写</Badge>}
+                        {repository.permissions.push && <Badge variant="success">{t("onboarding.writable")}</Badge>}
                       </div>
                       <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                        默认分支 {repository.defaultBranch} · {getUpdatedText(repository.pushedAt)}
+                        {t("onboarding.defaultBranch", { branch: repository.defaultBranch, updated: getUpdatedText(repository.pushedAt) })}
                       </p>
                     </div>
                     {selectedRepoId === repository.id && validating ? (
@@ -484,12 +488,12 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 <div className="flex min-h-72 flex-col items-center justify-center gap-3 p-6 text-center">
                   <AlertCircle className="h-8 w-8 text-[var(--text-tertiary)]" />
                   <p className="text-sm font-medium text-[var(--text-primary)]">
-                    {hasSearchQuery ? "未找到匹配的仓库" : "未找到可写仓库，请检查 GitHub 授权权限"}
+                    {hasSearchQuery ? t("onboarding.noMatch") : t("onboarding.noWritable")}
                   </p>
                   {repoError && <p className="text-xs text-[var(--status-error)]">{repoError}</p>}
                   <Button type="button" variant="outline" size="sm" onClick={() => void loadRepositories(activeQuery)}>
                     <RefreshCw className="h-4 w-4" />
-                    重试
+                    {t("common.retry")}
                   </Button>
                 </div>
               )}
@@ -501,7 +505,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 variant="link"
                 onClick={() => setShowManual((current) => !current)}
               >
-                找不到仓库？手动输入
+                {t("onboarding.manualInput")}
               </Button>
               {showManual && (
                 <div className="mt-4 grid gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-4 sm:grid-cols-[1fr_1fr_120px_auto]">
@@ -533,7 +537,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                     disabled={!manualOwner.trim() || !manualRepo.trim() || validating}
                   >
                     {validating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                    验证
+                    {t("onboarding.verify")}
                   </Button>
                 </div>
               )}
@@ -543,7 +547,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
           <aside className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] p-5">
             <div className="flex items-center gap-2">
               <Settings2 className="h-5 w-5 text-[var(--brand-primary)]" />
-              <h2 className="font-semibold text-[var(--text-primary)]">仓库检查</h2>
+              <h2 className="font-semibold text-[var(--text-primary)]">{t("onboarding.repoCheck")}</h2>
             </div>
 
             {selectedSelection ? (
@@ -553,14 +557,14 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                     {selectedRepository?.fullName ?? `${selectedSelection.owner}/${selectedSelection.repo}`}
                   </p>
                   <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                    分支 {selectedSelection.branch || "main"}
+                    {t("onboarding.branchLabel", { branch: selectedSelection.branch || "main" })}
                   </p>
                 </div>
 
                 {validating && (
                   <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    正在验证仓库
+                    {t("onboarding.verifying")}
                   </div>
                 )}
 
@@ -589,7 +593,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                       <div className="space-y-4">
                         <Collapsible>
                           <CollapsibleTrigger className="w-full flex items-center justify-between rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-3 cursor-pointer text-sm font-medium text-[var(--text-primary)]">
-                            高级配置
+                            {t("onboarding.advancedConfig")}
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="rounded-b-lg border border-t-0 border-[var(--border-default)] bg-[var(--bg-surface)] px-3 pb-3 pt-1">
@@ -624,7 +628,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                           disabled={saving}
                         >
                           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                          开始管理
+                          {t("onboarding.startManaging")}
                         </Button>
                         {saveError && (
                           <p className="text-sm text-[var(--status-error)]">{saveError}</p>
@@ -636,7 +640,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
               </div>
             ) : (
               <p className="mt-5 text-sm leading-6 text-[var(--text-secondary)]">
-                选择一个有写权限的仓库后，HexoCMS 会自动检查它是否可以作为博客项目导入。
+                {t("onboarding.selectHint")}
               </p>
             )}
           </aside>

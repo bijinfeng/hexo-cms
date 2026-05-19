@@ -36,6 +36,7 @@ export const en = {
     uploading: "Uploading...",
     tip: "Tip",
     ok: "OK",
+    user: "User",
   },
   sidebar: {
     content: "Content",
@@ -50,6 +51,9 @@ export const en = {
     deploy: "Deploy",
     settings: "Settings",
     comments: "Comments",
+    plugins: "Plugins",
+    interact: "Interactions",
+    connected: "Connected to GitHub",
   },
   topbar: {
     search: "Search commands...",
@@ -413,6 +417,7 @@ export const en = {
     consent: "By signing in, you agree to our terms of service.",
     dataNote:
       "Your data is stored exclusively in your own GitHub repository.",
+    autoContinue: "The app will continue automatically once authorized.",
     errors: {
       expired: "Authorization expired. Please sign in again.",
       cancelled:

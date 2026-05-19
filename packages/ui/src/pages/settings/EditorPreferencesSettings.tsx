@@ -1,16 +1,18 @@
+import { useI18n } from "../../i18n/I18nProvider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useEditorPreferences } from "../../hooks/use-editor-preferences";
 import { FormField } from "./FormField";
 
 export function EditorPreferencesSettings() {
+  const { t } = useI18n();
   const [prefs, updatePrefs] = useEditorPreferences();
 
   return (
     <Card>
-      <CardHeader><CardTitle>编辑器偏好</CardTitle><CardDescription>自定义编辑器体验</CardDescription></CardHeader>
+      <CardHeader><CardTitle>{t("settings.editor.title")}</CardTitle><CardDescription>{t("settings.editor.description")}</CardDescription></CardHeader>
       <CardContent className="space-y-6">
-        <FormField label="字体大小" description="编辑器的字体大小">
+        <FormField label={t("settings.editor.fontSize")} description={t("settings.editor.fontSizeHint")}>
           <Select value={String(prefs.fontSize)} onValueChange={(v) => updatePrefs({ fontSize: Number(v) })}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent><SelectGroup>
@@ -18,19 +20,19 @@ export function EditorPreferencesSettings() {
             </SelectGroup></SelectContent>
           </Select>
         </FormField>
-        <FormField label="编辑器主题" description="选择编辑器的外观主题">
+        <FormField label={t("settings.editor.editorTheme")} description={t("settings.editor.editorThemeHint")}>
           <Select value={prefs.editorTheme} onValueChange={(v) => updatePrefs({ editorTheme: v as "system" | "light" | "dark" })}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent><SelectGroup>
-              <SelectItem value="system">跟随系统</SelectItem><SelectItem value="light">亮色</SelectItem><SelectItem value="dark">暗色</SelectItem>
+              <SelectItem value="system">{t("settings.editor.themeSystem")}</SelectItem><SelectItem value="light">{t("settings.editor.themeLight")}</SelectItem><SelectItem value="dark">{t("settings.editor.themeDark")}</SelectItem>
             </SelectGroup></SelectContent>
           </Select>
         </FormField>
-        <FormField label="自动保存间隔" description="编辑器自动保存草稿的时间间隔">
+        <FormField label={t("settings.editor.autoSaveInterval")} description={t("settings.editor.autoSaveHint")}>
           <Select value={String(prefs.autoSaveInterval)} onValueChange={(v) => updatePrefs({ autoSaveInterval: Number(v) })}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent><SelectGroup>
-              <SelectItem value="0">关</SelectItem><SelectItem value="15000">15秒</SelectItem><SelectItem value="30000">30秒</SelectItem><SelectItem value="60000">60秒</SelectItem><SelectItem value="120000">120秒</SelectItem>
+              <SelectItem value="0">{t("settings.editor.intervalOff")}</SelectItem><SelectItem value="15000">{t("settings.editor.interval15s")}</SelectItem><SelectItem value="30000">{t("settings.editor.interval30s")}</SelectItem><SelectItem value="60000">{t("settings.editor.interval60s")}</SelectItem><SelectItem value="120000">{t("settings.editor.interval120s")}</SelectItem>
             </SelectGroup></SelectContent>
           </Select>
         </FormField>

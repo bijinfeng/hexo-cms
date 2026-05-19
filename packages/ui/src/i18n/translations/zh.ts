@@ -36,6 +36,7 @@ export const zh = {
     uploading: "上传中...",
     tip: "提示",
     ok: "确定",
+    user: "用户",
   },
   sidebar: {
     dashboard: "数据大盘",
@@ -407,6 +408,7 @@ export const zh = {
     redirecting: "正在跳转...",
     consent: "登录即表示你同意我们的服务条款。",
     dataNote: "你的数据仅存储在你自己的 GitHub 仓库中。",
+    autoContinue: "授权完成后应用会自动继续。",
     errors: {} as const,
   },
   onboarding: {

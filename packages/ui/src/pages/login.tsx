@@ -1,24 +1,14 @@
 import { useEffect, useState } from "react";
 import { Zap, ArrowRight, Shield, GitBranch, Sparkles, Loader2 } from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
+import { useI18n } from "../i18n/I18nProvider";
 import type { AuthClient, AuthSession } from "../types/auth";
 
-function getAuthErrorMessage(error?: string) {
-  switch (error) {
-    case "AUTH_TIMEOUT":
-      return "授权已过期，请重新登录";
-    case "AUTH_REJECTED":
-      return "GitHub 授权已取消，请重试";
-    case "AUTH_DEVICE_FLOW_DISABLED":
-      return "GitHub 设备授权未启用，请检查 OAuth App 配置";
-    case "AUTH_NOT_CONFIGURED":
-      return "GitHub 授权暂不可用，请检查配置";
-    case "AUTH_SCOPE_INSUFFICIENT":
-      return "当前授权缺少仓库权限，请重新授权";
-    default:
-      return "GitHub 授权失败，请重试";
-  }
-}
+const LOGIN_FEATURES = [
+  { key: "login.feature1" as const, icon: GitBranch },
+  { key: "login.feature2" as const, icon: Shield },
+  { key: "login.feature3" as const, icon: Sparkles },
+];
 
 export interface LoginPageProps {
   authClient?: AuthClient;
@@ -29,9 +19,27 @@ export interface LoginPageProps {
 }
 
 export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [session, setSession] = useState<AuthSession | null>(null);
+
+  function getAuthErrorMessage(error?: string) {
+    switch (error) {
+      case "AUTH_TIMEOUT":
+        return t("login.errors.expired");
+      case "AUTH_REJECTED":
+        return t("login.errors.cancelled");
+      case "AUTH_DEVICE_FLOW_DISABLED":
+        return t("login.errors.notEnabled");
+      case "AUTH_NOT_CONFIGURED":
+        return t("login.errors.unavailable");
+      case "AUTH_SCOPE_INSUFFICIENT":
+        return t("login.errors.missingScope");
+      default:
+        return t("login.errors.failed");
+    }
+  }
 
   async function handleGitHubLogin() {
     setLoading(true);
@@ -52,10 +60,10 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
         });
         onComplete?.();
       } else {
-        setError("GitHub 授权暂不可用，请稍后重试");
+        setError(t("login.errors.unavailable"));
       }
     } catch {
-      setError("GitHub 授权失败，请重试");
+      setError(t("login.errors.failed"));
     } finally {
       setLoading(false);
     }
@@ -81,7 +89,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
           setError(getAuthErrorMessage(nextSession.error));
         }
       } catch {
-        if (active) setError("GitHub 授权状态检查失败，请重试");
+        if (active) setError(t("login.errors.checkFailed"));
       }
     }, intervalMs);
 
@@ -89,7 +97,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
       active = false;
       window.clearInterval(timer);
     };
-  }, [authClient, deviceFlow, onComplete]);
+  }, [authClient, deviceFlow, onComplete, t]);
 
   return (
     <div className="min-h-screen flex bg-[var(--bg-base)]">
@@ -112,25 +120,21 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
         {/* Features */}
         <div className="relative space-y-6">
           <h1 className="text-4xl font-bold text-white leading-tight">
-            专为 Hexo 博客
+            {t("login.title")}
             <br />
-            打造的内容管理平台
+            {t("login.subtitle")}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed">
-            连接你的 GitHub 仓库，通过直观的界面管理博客内容，所有改动自动转化为 Git 提交。
+            {t("login.description")}
           </p>
 
           <div className="space-y-4">
-            {[
-              { icon: GitBranch, text: "所有改动自动提交到 GitHub" },
-              { icon: Shield, text: "GitHub OAuth 安全认证" },
-              { icon: Sparkles, text: "现代化编辑器，支持 Markdown" },
-            ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-3 text-white/90">
+            {LOGIN_FEATURES.map(({ key, icon: Icon }) => (
+              <div key={key} className="flex items-center gap-3 text-white/90">
                 <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
                   <Icon size={16} className="text-white" />
                 </div>
-                <span className="text-sm font-medium">{text}</span>
+                <span className="text-sm font-medium">{t(key)}</span>
               </div>
             ))}
           </div>
@@ -138,7 +142,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
 
         {/* Footer */}
         <div className="relative text-white/60 text-sm">
-          基于 TanStack Start · Better Auth · GitHub API
+          {t("login.techStack")}
         </div>
       </div>
 
@@ -154,9 +158,9 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">欢迎回来</h2>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{t("login.welcomeBack")}</h2>
             <p className="text-[var(--text-secondary)] text-sm">
-              使用 GitHub 账号登录，开始管理你的博客
+              {t("login.loginPrompt")}
             </p>
           </div>
 
@@ -171,7 +175,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
             ) : (
               <GithubIcon size={18} />
             )}
-            {loading ? "正在跳转..." : "使用 GitHub 登录"}
+            {loading ? t("login.redirecting") : t("login.loginBtn")}
             {!loading && <ArrowRight size={16} className="ml-auto" />}
           </button>
 
@@ -181,7 +185,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
 
           {deviceFlow && (
             <div className="mt-5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] p-4 text-center">
-              <p className="text-sm text-[var(--text-secondary)]">在 GitHub 页面输入授权码</p>
+              <p className="text-sm text-[var(--text-secondary)]">{t("settings.auth.enterCode")}</p>
               <div className="mt-3 rounded-lg bg-[var(--bg-muted)] px-4 py-3 font-mono text-2xl font-bold tracking-widest text-[var(--text-primary)]">
                 {deviceFlow.userCode}
               </div>
@@ -191,19 +195,19 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex items-center justify-center gap-2 text-sm font-medium text-[var(--brand-primary)] hover:underline"
               >
-                打开 GitHub 授权页面
+                {t("settings.auth.openGitHub")}
                 <ArrowRight size={14} />
               </a>
               <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-                授权完成后应用会自动继续。
+                {t("login.autoContinue")}
               </p>
             </div>
           )}
 
           <p className="mt-6 text-xs text-[var(--text-tertiary)] text-center leading-relaxed">
-            登录即表示你同意我们的服务条款。
+            {t("login.consent")}
             <br />
-            你的数据仅存储在你自己的 GitHub 仓库中。
+            {t("login.dataNote")}
           </p>
         </div>
       </div>

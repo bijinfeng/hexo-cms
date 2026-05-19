@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDataProvider } from "../../context/data-provider-context";
+import { useI18n } from "../../i18n/I18nProvider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -15,6 +16,7 @@ interface GitHubSettingsProps {
 }
 
 export function GitHubSettings({ authClient, onSignedOut }: GitHubSettingsProps) {
+  const { t } = useI18n();
   const dataProvider = useDataProvider();
   const [config, setConfig] = useState<GitHubConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ export function GitHubSettings({ authClient, onSignedOut }: GitHubSettingsProps)
     } catch (error) { console.error("Failed to save config:", error); setSaving(false); }
   }
 
-  if (loading) return <div className="text-sm text-[var(--text-secondary)]">加载中...</div>;
+  if (loading) return <div className="text-sm text-[var(--text-secondary)]">{t("common.loading")}</div>;
 
   const repoUrl = owner && repo ? `https://github.com/${owner}/${repo}` : null;
 
@@ -71,37 +73,37 @@ export function GitHubSettings({ authClient, onSignedOut }: GitHubSettingsProps)
     <div className="space-y-4">
       {authClient && <GitHubAuthSettings authClient={authClient} onSignedOut={onSignedOut} />}
       <Card>
-        <CardHeader><CardTitle>GitHub 仓库</CardTitle><CardDescription>连接你的 Hexo 博客仓库</CardDescription></CardHeader>
+        <CardHeader><CardTitle>{t("settings.github.title")}</CardTitle><CardDescription>{t("settings.github.description")}</CardDescription></CardHeader>
         <CardContent className="space-y-4">
           {config && owner && repo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--status-success-bg)] border border-[var(--status-success)]">
               <CheckCircle2 size={16} className="text-[var(--status-success)] flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-[var(--text-primary)]">已连接</div>
+                <div className="text-sm font-medium text-[var(--text-primary)]">{t("settings.github.connected")}</div>
                 <div className="text-xs text-[var(--text-secondary)]">{owner}/{repo}</div>
               </div>
-              {repoUrl && <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[var(--brand-primary)] hover:underline cursor-pointer">查看仓库<ExternalLink size={10} /></a>}
+              {repoUrl && <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[var(--brand-primary)] hover:underline cursor-pointer">{t("settings.github.viewRepo")}<ExternalLink size={10} /></a>}
             </div>
           )}
-          <FormField label="仓库地址" description="格式: owner/repo">
+          <FormField label={t("settings.github.repoAddress")} description={t("settings.github.repoFormat")}>
             <div className="flex gap-2">
               <Input type="text" value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="owner" className="flex-1" />
               <span className="text-[var(--text-tertiary)] self-center">/</span>
               <Input type="text" value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="repo" className="flex-1" />
             </div>
           </FormField>
-          <FormField label="默认分支"><Input type="text" value={branch} onChange={(e) => setBranch(e.target.value)} /></FormField>
-          <FormField label="文章目录" description="Hexo 文章存放路径"><Input type="text" value={postsDir} onChange={(e) => setPostsDir(e.target.value)} className="font-mono text-sm" /></FormField>
-          <FormField label="媒体目录" description="图片等媒体文件路径"><Input type="text" value={mediaDir} onChange={(e) => setMediaDir(e.target.value)} className="font-mono text-sm" /></FormField>
-          <Button onClick={handleSave} disabled={saving || !owner || !repo}>{saving ? "保存中..." : "保存配置"}</Button>
+          <FormField label={t("settings.github.branch")}><Input type="text" value={branch} onChange={(e) => setBranch(e.target.value)} /></FormField>
+          <FormField label={t("settings.github.postsDir")} description={t("settings.github.postsDirHint")}><Input type="text" value={postsDir} onChange={(e) => setPostsDir(e.target.value)} className="font-mono text-sm" /></FormField>
+          <FormField label={t("settings.github.mediaDir")} description={t("settings.github.mediaDirHint")}><Input type="text" value={mediaDir} onChange={(e) => setMediaDir(e.target.value)} className="font-mono text-sm" /></FormField>
+          <Button onClick={handleSave} disabled={saving || !owner || !repo}>{saving ? t("common.saving") : t("settings.github.saveConfig")}</Button>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>GitHub Actions</CardTitle><CardDescription>自动化部署配置</CardDescription></CardHeader>
+        <CardHeader><CardTitle>{t("settings.github.githubActions")}</CardTitle><CardDescription>{t("settings.github.actionsDesc")}</CardDescription></CardHeader>
         <CardContent className="space-y-4">
-          <FormField label="工作流文件" description="触发部署的 workflow 文件"><Input type="text" value={workflowFile} onChange={(e) => setWorkflowFile(e.target.value)} className="font-mono text-sm" /></FormField>
-          <ToggleField label="推送后自动部署" description="每次提交后自动触发 GitHub Actions" checked={autoDeploy} onChange={setAutoDeploy} />
-          <ToggleField label="部署通知" description="部署完成后发送通知" checked={deployNotifications} onChange={setDeployNotifications} />
+          <FormField label={t("settings.github.workflowFile")} description={t("settings.github.workflowHint")}><Input type="text" value={workflowFile} onChange={(e) => setWorkflowFile(e.target.value)} className="font-mono text-sm" /></FormField>
+          <ToggleField label={t("settings.github.autoDeploy")} description={t("settings.github.autoDeployHint")} checked={autoDeploy} onChange={setAutoDeploy} />
+          <ToggleField label={t("settings.github.deployNotify")} description={t("settings.github.deployNotifyHint")} checked={deployNotifications} onChange={setDeployNotifications} />
         </CardContent>
       </Card>
     </div>
