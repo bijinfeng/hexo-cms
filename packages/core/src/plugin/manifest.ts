@@ -1,8 +1,9 @@
 import { PluginManifestError } from "./errors";
-import type { PluginManifest, PluginPermission } from "./types";
+import type { PluginManifest, PluginOrigin, PluginPermission, PluginRuntime } from "./types";
 
 const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9-_.]+$/;
-const VALID_SOURCES = new Set(["builtin", "local-dev"]);
+const VALID_ORIGINS = new Set<PluginOrigin>(["official", "local-dev", "private", "marketplace"]);
+const VALID_RUNTIMES = new Set<PluginRuntime>(["hosted", "worker", "iframe"]);
 const VALID_PERMISSIONS = new Set<PluginPermission>([
   "content.read",
   "config.read",
@@ -37,9 +38,16 @@ export function validatePluginManifest(value: unknown): PluginManifest {
   assertString(value.name, "name");
   assertString(value.version, "version");
   assertString(value.description, "description");
-  assertString(value.source, "source");
-  if (!VALID_SOURCES.has(value.source)) {
-    throw new PluginManifestError("source must be builtin or local-dev");
+  if ("source" in value) {
+    throw new PluginManifestError("source is not supported");
+  }
+  assertString(value.origin, "origin");
+  if (!VALID_ORIGINS.has(value.origin as PluginOrigin)) {
+    throw new PluginManifestError("origin must be official, local-dev, private, or marketplace");
+  }
+  assertString(value.runtime, "runtime");
+  if (!VALID_RUNTIMES.has(value.runtime as PluginRuntime)) {
+    throw new PluginManifestError("runtime must be hosted, worker, or iframe");
   }
 
   if (!Array.isArray(value.permissions)) {

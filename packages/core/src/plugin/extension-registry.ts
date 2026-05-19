@@ -6,6 +6,7 @@ import type {
   RegisteredDiagnostics,
   RegisteredSettingsPanel,
   RegisteredSidebarItem,
+  RegisteredUiFlag,
 } from "./types";
 
 function byOrderThenTitle<T extends { order?: number; title: string }>(a: T, b: T): number {
@@ -18,6 +19,7 @@ export class ExtensionRegistry {
   private readonly sidebarItems = new Map<string, RegisteredSidebarItem>();
   private readonly commands = new Map<string, RegisteredCommand>();
   private readonly diagnostics = new Map<string, RegisteredDiagnostics>();
+  private readonly uiFlags = new Map<string, RegisteredUiFlag>();
 
   registerPlugin(manifest: PluginManifest): void {
     this.unregisterPlugin(manifest.id);
@@ -63,6 +65,14 @@ export class ExtensionRegistry {
         pluginName: manifest.name,
       });
     });
+
+    contributes.uiFlags?.forEach((uiFlag) => {
+      this.uiFlags.set(`${manifest.id}:${uiFlag.id}`, {
+        ...uiFlag,
+        pluginId: manifest.id,
+        pluginName: manifest.name,
+      });
+    });
   }
 
   unregisterPlugin(pluginId: string): void {
@@ -81,6 +91,9 @@ export class ExtensionRegistry {
     for (const key of this.diagnostics.keys()) {
       if (key.startsWith(`${pluginId}:`)) this.diagnostics.delete(key);
     }
+    for (const key of this.uiFlags.keys()) {
+      if (key.startsWith(`${pluginId}:`)) this.uiFlags.delete(key);
+    }
   }
 
   snapshot(): PluginExtensionRegistrySnapshot {
@@ -90,6 +103,7 @@ export class ExtensionRegistry {
       sidebarItems: [...this.sidebarItems.values()].sort(byOrderThenTitle),
       commands: [...this.commands.values()].sort((a, b) => a.title.localeCompare(b.title)),
       diagnostics: [...this.diagnostics.values()].sort((a, b) => a.title.localeCompare(b.title)),
+      uiFlags: [...this.uiFlags.values()].sort(byOrderThenTitle),
     };
   }
 }

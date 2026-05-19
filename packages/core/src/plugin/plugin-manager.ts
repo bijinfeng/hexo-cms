@@ -168,7 +168,7 @@ export class PluginManager {
       [pluginId]: {
         id: pluginId,
         version: manifest.version,
-        source: manifest.source,
+        origin: manifest.origin,
         state: "enabled",
         enabledAt: new Date().toISOString(),
       },
@@ -185,7 +185,7 @@ export class PluginManager {
         ...this.records[pluginId],
         id: pluginId,
         version: manifest.version,
-        source: manifest.source,
+        origin: manifest.origin,
         state: "disabled",
       },
     };
@@ -321,7 +321,7 @@ export class PluginManager {
         ...existing,
         id: pluginId,
         version: manifest.version,
-        source: manifest.source,
+        origin: manifest.origin,
         state,
         lastError: {
           message,
@@ -369,7 +369,7 @@ export class PluginManager {
       records[manifest.id] = {
         id: manifest.id,
         version: manifest.version,
-        source: manifest.source,
+        origin: manifest.origin,
         state: existing?.state ?? (defaults.has(manifest.id) ? "enabled" : "installed"),
         enabledAt: existing?.enabledAt,
         lastError: existing?.lastError,

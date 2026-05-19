@@ -11,7 +11,8 @@ export const builtinPluginManifests: PluginManifest[] = [
     name: "Attachments Helper",
     version: "0.1.0",
     description: "按附件类型筛选媒体文件，并提供复制链接等轻量辅助能力。",
-    source: "builtin",
+    origin: "official",
+    runtime: "hosted",
     engine: {
       hexoCms: ">=0.1.0",
     },
@@ -75,7 +76,8 @@ export const builtinPluginManifests: PluginManifest[] = [
     name: "Comments Overview",
     version: "0.1.0",
     description: "基于 Giscus (GitHub Discussions) 的评论管理系统。配置 Giscus 参数后即可管理博客评论。",
-    source: "builtin",
+    origin: "official",
+    runtime: "hosted",
     engine: {
       hexoCms: ">=0.1.0",
     },
@@ -168,7 +170,8 @@ export const builtinPluginManifests: PluginManifest[] = [
     name: "SEO Inspector",
     version: "0.1.0",
     description: "检查文章 SEO 要素：标题长度、摘要、slug、frontmatter 完整性。",
-    source: "builtin",
+    origin: "official",
+    runtime: "hosted",
     engine: {
       hexoCms: ">=0.1.0",
     },
@@ -245,7 +248,8 @@ export const builtinPluginManifests: PluginManifest[] = [
     name: "Draft Coach",
     version: "0.1.0",
     description: "草稿助手：跟踪草稿超期、字数目标、封面图完整性，并在仪表板提供提醒。",
-    source: "builtin",
+    origin: "official",
+    runtime: "hosted",
     engine: {
       hexoCms: ">=0.1.0",
     },

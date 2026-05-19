@@ -1,7 +1,9 @@
 import type { DataProvider } from "../data-provider";
 import type { HexoPost } from "../types";
 
-export type PluginSource = "builtin" | "local-dev";
+export type PluginOrigin = "official" | "local-dev" | "private" | "marketplace";
+
+export type PluginRuntime = "hosted" | "worker" | "iframe";
 
 export type PluginState =
   | "installed"
@@ -34,7 +36,8 @@ export interface PluginManifest {
   name: string;
   version: string;
   description: string;
-  source: PluginSource;
+  origin: PluginOrigin;
+  runtime: PluginRuntime;
   engine?: {
     hexoCms?: string;
   };
@@ -54,6 +57,7 @@ export interface PluginContributions {
   commands?: CommandContribution[];
   diagnostics?: DiagnosticsContribution[];
   events?: EventContribution[];
+  uiFlags?: UiFlagContribution[];
 }
 
 export interface DashboardWidgetContribution {
@@ -124,6 +128,13 @@ export interface DiagnosticsContribution {
   description?: string;
 }
 
+export interface UiFlagContribution {
+  id: string;
+  flag: "media.documentFilter" | "media.search";
+  title: string;
+  order?: number;
+}
+
 export interface DiagnosticsTarget {
   scope: DiagnosticsScope;
   path?: string;
@@ -163,7 +174,18 @@ export interface RegisteredDiagnostics extends DiagnosticsContribution {
   pluginName: string;
 }
 
-export type PluginContributionType = "dashboard.widget" | "settings.panel" | "sidebar.item" | "command" | "event" | "diagnostics";
+export interface RegisteredUiFlag extends UiFlagContribution {
+  pluginId: string;
+  pluginName: string;
+}
+
+export type PluginContributionType =
+  | "dashboard.widget"
+  | "settings.panel"
+  | "sidebar.item"
+  | "command"
+  | "event"
+  | "diagnostics";
 
 export interface PluginCommandHandlerContext {
   pluginId: string;
@@ -301,7 +323,7 @@ export type PluginLogStoreValue = Record<string, PluginLogEntry[]>;
 export interface PluginRecord {
   id: string;
   version: string;
-  source: PluginSource;
+  origin: PluginOrigin;
   state: PluginState;
   enabledAt?: string;
   lastError?: PluginErrorSummary;
@@ -333,6 +355,7 @@ export interface PluginExtensionRegistrySnapshot {
   sidebarItems: RegisteredSidebarItem[];
   commands: RegisteredCommand[];
   diagnostics: RegisteredDiagnostics[];
+  uiFlags: RegisteredUiFlag[];
 }
 
 export interface MediaFile {
@@ -371,7 +394,7 @@ export interface PluginLogger {
   error(message: string, meta?: Record<string, unknown>): void;
 }
 
-export interface PluginContext {
+export interface PluginRuntimeContext {
   readonly plugin: PluginManifest;
   readonly content: ContentReadAPI;
   readonly storage: PluginStorageAPI;
@@ -379,6 +402,18 @@ export interface PluginContext {
   readonly events: PluginEventAPI;
   readonly http: PluginHttpAPI;
   readonly logger: PluginLogger;
+  getConfig(): PluginConfigValue;
+}
+
+export type PluginRuntimeFactory<T> = (context: PluginRuntimeContext) => T;
+
+export interface PluginDefinition<TRenderer = unknown> {
+  manifest: PluginManifest;
+  defaultEnabled?: boolean;
+  renderers?: Record<string, TRenderer>;
+  commands?: Record<string, PluginRuntimeFactory<PluginCommandHandler>>;
+  diagnostics?: Record<string, PluginRuntimeFactory<DiagnosticsHandler>>;
+  events?: Record<string, PluginRuntimeFactory<PluginEventHandler>>;
 }
 
 export interface PluginManagerSnapshot {
