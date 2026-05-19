@@ -8,6 +8,7 @@ import { Alert } from "../components/ui/alert";
 import { DashboardWidgetGrid } from "../components/dashboard-widgets";
 import { Skeleton, SkeletonCard } from "../components/skeleton";
 import { DashboardExtensionOutlet, usePluginSystem } from "../plugin";
+import { useI18n } from "../i18n/I18nProvider";
 import {
   FileText,
   Tags,
@@ -21,11 +22,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-const statusConfig = {
-  published: { label: "已发布", variant: "success" as const },
-  draft: { label: "草稿", variant: "default" as const },
-};
-
 const statColorMap: Record<string, string> = {
   orange: "bg-[var(--brand-primary-subtle)] text-[var(--brand-primary)]",
   green: "bg-[var(--brand-accent-subtle)] text-[var(--brand-accent)]",
@@ -36,6 +32,12 @@ const statColorMap: Record<string, string> = {
 export function DashboardPage() {
   const navigate = useNavigate();
   const { snapshot, getDashboardWidgetRenderer } = usePluginSystem();
+  const { t } = useI18n();
+
+  const statusConfig = useMemo(() => ({
+    published: { label: t("common.published"), variant: "success" as const },
+    draft: { label: t("common.draft"), variant: "default" as const },
+  }), [t]);
 
   const query = useDashboard();
   const data = query.data;
@@ -47,11 +49,11 @@ export function DashboardPage() {
   const repoInfo = data?.repoInfo ?? "";
 
   const statCards = useMemo(() => [
-    { label: "文章总数", value: String(stats.totalPosts), change: `${stats.publishedPosts} 已发布`, icon: FileText, color: "orange" },
-    { label: "标签 & 分类", value: String(stats.totalTags + stats.totalCategories), change: `${stats.totalTags} 标签 · ${stats.totalCategories} 分类`, icon: Tags, color: "green" },
-    { label: "草稿", value: String(stats.draftPosts), change: "待发布", icon: Clock, color: "warning" },
-    { label: "已发布", value: String(stats.publishedPosts), change: "公开文章", icon: Eye, color: "info" },
-  ], [stats]);
+    { label: t("dashboard.statsPosts"), value: String(stats.totalPosts), change: t("dashboard.statsPublished", { count: stats.publishedPosts }), icon: FileText, color: "orange" },
+    { label: t("dashboard.statsTags"), value: String(stats.totalTags + stats.totalCategories), change: t("dashboard.statsTagsSub", { tags: stats.totalTags, categories: stats.totalCategories }), icon: Tags, color: "green" },
+    { label: t("dashboard.statsDrafts"), value: String(stats.draftPosts), change: t("dashboard.statsDraftsSub"), icon: Clock, color: "warning" },
+    { label: t("dashboard.statsPublishedLabel"), value: String(stats.publishedPosts), change: t("dashboard.statsPublishedSub"), icon: Eye, color: "info" },
+  ], [stats, t]);
 
   const pluginWidgets = DashboardExtensionOutlet({
     widgets: snapshot.extensions.dashboardWidgets,
@@ -83,12 +85,12 @@ export function DashboardPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">数据大盘</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">{repoInfo || "欢迎回来"}</p>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("dashboard.title")}</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">{repoInfo || t("dashboard.welcome")}</p>
         </div>
         <Button onClick={() => navigate({ to: "/posts/new" })}>
           <Plus size={16} />
-          新建文章
+          {t("dashboard.createPost")}
         </Button>
       </div>
 
@@ -101,7 +103,7 @@ export function DashboardPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[var(--status-error)] text-white rounded-md hover:opacity-90 transition-opacity cursor-pointer"
           >
             <RefreshCw size={14} />
-            重试
+            {t("common.retry")}
           </button>
         </Alert>
       )}
@@ -134,9 +136,9 @@ export function DashboardPage() {
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle>最近文章</CardTitle>
+                    <CardTitle>{t("dashboard.recentPosts")}</CardTitle>
                     <Button variant="ghost" size="sm" className="text-[var(--brand-primary)] gap-1" onClick={() => navigate({ to: "/posts" })}>
-                      查看全部 <ArrowRight size={14} />
+                      {t("dashboard.viewAll")} <ArrowRight size={14} />
                     </Button>
                   </div>
                 </CardHeader>
@@ -144,7 +146,7 @@ export function DashboardPage() {
                   {recentPosts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)]">
                       <FileText size={32} className="mb-2 opacity-30" />
-                      <p className="text-sm">暂无文章</p>
+                      <p className="text-sm">{t("dashboard.emptyPosts")}</p>
                     </div>
                   ) : (
                     <div className="divide-y divide-[var(--border-default)]">
@@ -178,15 +180,15 @@ export function DashboardPage() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
                     <Zap size={16} className="text-[var(--brand-accent)]" />
-                    快捷操作
+                    {t("dashboard.quickActions")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {[
-                    { label: "新建文章", icon: Plus, to: "/posts/new", color: "orange" },
-                    { label: "管理文章", icon: FileText, to: "/posts", color: "info" },
-                    { label: "标签 & 分类", icon: Tags, to: "/tags", color: "green" },
-                    { label: "媒体库", icon: Eye, to: "/media", color: "warning" },
+                    { label: t("dashboard.createPost"), icon: Plus, to: "/posts/new", color: "orange" },
+                    { label: t("dashboard.managePosts"), icon: FileText, to: "/posts", color: "info" },
+                    { label: t("dashboard.tagsCategories"), icon: Tags, to: "/tags", color: "green" },
+                    { label: t("dashboard.mediaLib"), icon: Eye, to: "/media", color: "warning" },
                   ].map((action) => (
                     <button key={action.label} onClick={() => navigate({ to: action.to as "/" })}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-muted)] transition-colors cursor-pointer text-left"

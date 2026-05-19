@@ -40,6 +40,7 @@ import {
   Globe,
   Search,
 } from "lucide-react";
+import { useI18n } from "../i18n/I18nProvider";
 
 interface MenuItem {
   id: string;
@@ -191,6 +192,7 @@ interface MenuItemDialogProps {
 }
 
 function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuItemDialogProps) {
+  const { t } = useI18n();
   const [key, setKey] = useState("");
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
@@ -225,15 +227,15 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "编辑菜单项" : "新建菜单项"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("menus.editTitle") : t("menus.newTitle")}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "修改菜单的名称、链接和图标" : "添加一个新的导航菜单项"}
+            {isEdit ? t("menus.editSubtitle") : t("menus.newSubtitle")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
           <div>
-            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">菜单键名</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">{t("menus.keyLabel")}</label>
             <Input
               value={key}
               onChange={(e) => { setKey(e.target.value); setLabel(e.target.value); }}
@@ -241,21 +243,21 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
               className="h-10 bg-[var(--bg-base)]"
               disabled={isEdit}
             />
-            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">YAML 配置中的唯一标识，如 home, archives</p>
+            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{t("menus.keyHint")}</p>
           </div>
 
           <div>
-            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">显示名称</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">{t("menus.displayName")}</label>
             <Input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="首页"
+              placeholder={t("menus.displayNamePlaceholder")}
               className="h-10 bg-[var(--bg-base)]"
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">链接地址</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">{t("menus.linkLabel")}</label>
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -266,13 +268,13 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
 
           <div>
             <label className="text-xs font-medium text-[var(--text-secondary)] mb-2 block">
-              图标 {icon && <Badge variant="default" className="ml-1 text-[10px] py-0 px-1.5">{icon}</Badge>}
+              {t("menus.iconLabel")} {icon && <Badge variant="default" className="ml-1 text-[10px] py-0 px-1.5">{icon}</Badge>}
             </label>
             <div className="flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors mb-2">
               <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
               <input
                 type="text"
-                placeholder="搜索图标..."
+                placeholder={t("menus.searchIcon")}
                 value={iconSearch}
                 onChange={(e) => setIconSearch(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
@@ -299,10 +301,10 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
-            取消
+            {t("common.cancel")}
           </Button>
           <Button onClick={() => onSave({ key: key.trim(), label: label.trim(), url: url.trim(), icon: icon.trim() })} disabled={!canSave || isSaving}>
-            {isSaving ? <Loader2 size={14} className="animate-spin" /> : isEdit ? "保存修改" : "添加"}
+            {isSaving ? <Loader2 size={14} className="animate-spin" /> : isEdit ? t("menus.saveEdit") : t("menus.addBtn")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -323,21 +325,22 @@ function DeleteConfirmDialog({
   itemLabel: string;
   isDeleting: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>删除菜单项</DialogTitle>
+          <DialogTitle>{t("menus.deleteTitle")}</DialogTitle>
           <DialogDescription>
-            确定要删除 <span className="font-medium text-[var(--text-primary)]">{itemLabel}</span> 吗？此操作不可撤销。
+            {t("menus.deleteMessage", { name: itemLabel })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isDeleting}>
-            取消
+            {t("common.cancel")}
           </Button>
           <Button onClick={onConfirm} disabled={isDeleting} className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90">
-            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : "确认删除"}
+            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : t("common.confirmDelete")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -346,6 +349,7 @@ function DeleteConfirmDialog({
 }
 
 export function MenusPage() {
+  const { t } = useI18n();
   const dataProvider = useDataProvider();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [originalYaml, setOriginalYaml] = useState("");
@@ -381,7 +385,7 @@ export function MenusPage() {
         setItems([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
+      setError(err instanceof Error ? err.message : t("menus.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -443,9 +447,9 @@ export function MenusPage() {
       const updatedYaml = replaceMenuSection(originalYaml, newMenuSection);
       await dataProvider.writeConfigFile("_config.yml", updatedYaml);
       setOriginalYaml(updatedYaml);
-      setNotification("菜单配置已保存");
+      setNotification(t("menus.saved"));
     } catch (err) {
-      setNotification(err instanceof Error ? err.message : "保存失败");
+      setNotification(err instanceof Error ? err.message : t("menus.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -474,7 +478,7 @@ export function MenusPage() {
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <AlertCircle className="w-12 h-12 text-[var(--status-error)]" />
         <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-        <Button variant="outline" onClick={loadConfig}>重试</Button>
+        <Button variant="outline" onClick={loadConfig}>{t("common.retry")}</Button>
       </div>
     );
   }
@@ -500,37 +504,37 @@ export function MenusPage() {
       <Dialog open={!!notification} onOpenChange={() => setNotification(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>提示</DialogTitle>
+            <DialogTitle>{t("common.tip")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-[var(--text-secondary)]">{notification}</p>
           <DialogFooter>
-            <Button onClick={() => setNotification(null)}>确定</Button>
+            <Button onClick={() => setNotification(null)}>{t("common.ok")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">菜单管理</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("menus.title")}</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            管理网站导航菜单（{items.length} 个菜单项）
+            {t("menus.subtitle", { count: items.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={openAddDialog}>
             <Plus size={16} />
-            添加菜单
+            {t("menus.addMenu")}
           </Button>
           <Button onClick={handleSave} disabled={saving || !hasChanges()}>
             {saving ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                保存中...
+                {t("common.saving")}
               </>
             ) : (
               <>
                 <Save size={16} />
-                保存
+                {t("menus.save")}
               </>
             )}
           </Button>
@@ -541,10 +545,10 @@ export function MenusPage() {
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
             <Globe size={40} className="mb-3 opacity-30" />
-            <p className="text-sm mb-4">暂无菜单项</p>
+            <p className="text-sm mb-4">{t("menus.empty")}</p>
             <Button variant="outline" size="sm" onClick={openAddDialog}>
               <Plus size={14} />
-              添加第一个菜单
+              {t("menus.addFirst")}
             </Button>
           </CardContent>
         </Card>
@@ -571,10 +575,11 @@ export function MenusPage() {
 
       <Card className="border-dashed">
         <CardContent className="p-6">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">配置说明</h3>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">{t("menus.configNote")}</h3>
           <p className="text-xs text-[var(--text-tertiary)] leading-relaxed">
-            菜单配置保存在 Hexo 站点的 <code className="px-1 py-0.5 rounded bg-[var(--bg-muted)] text-[var(--text-secondary)]">_config.yml</code> 文件中。
-            每个菜单项包含键名、链接地址和图标名称。拖拽可调整菜单项的顺序。修改后点击"保存"即可更新站点配置。
+            {t("menus.configNoteContent").split("<code>")[0]}
+            <code className="px-1 py-0.5 rounded bg-[var(--bg-muted)] text-[var(--text-secondary)]">_config.yml</code>
+            {t("menus.configNoteContent").split("</code>")[1]}
           </p>
         </CardContent>
       </Card>

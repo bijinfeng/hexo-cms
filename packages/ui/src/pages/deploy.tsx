@@ -29,64 +29,67 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { useI18n } from "../i18n/I18nProvider";
 
 type DeployStatus = "success" | "failed" | "running" | "pending";
 
-const statusConfig = {
-  success: {
-    icon: CheckCircle2,
-    color: "var(--status-success)",
-    bg: "var(--status-success-bg)",
-    label: "成功",
-    variant: "success" as const,
-  },
-  failed: {
-    icon: XCircle,
-    color: "var(--status-error)",
-    bg: "var(--status-error-bg)",
-    label: "失败",
-    variant: "error" as const,
-  },
-  running: {
-    icon: RefreshCw,
-    color: "var(--status-info)",
-    bg: "var(--status-info-bg)",
-    label: "运行中",
-    variant: "default" as const,
-  },
-  pending: {
-    icon: Clock,
-    color: "var(--status-warning)",
-    bg: "var(--status-warning-bg)",
-    label: "等待中",
-    variant: "warning" as const,
-  },
-} satisfies Record<DeployStatus, {
-  icon: typeof CheckCircle2;
-  color: string;
-  bg: string;
-  label: string;
-  variant: "success" | "error" | "default" | "warning";
-}>;
-
-function formatRelativeTime(isoDate: string): string {
-  const now = new Date();
-  const date = new Date(isoDate);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return "刚刚";
-  if (diffMins < 60) return `${diffMins} 分钟前`;
-  if (diffHours < 24) return `${diffHours} 小时前`;
-  if (diffDays === 1) return "昨天";
-  if (diffDays < 7) return `${diffDays} 天前`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} 周前`;
-  return date.toLocaleDateString("zh-CN");
-}
-
 export function DeployPage() {
+  const { t } = useI18n();
+
+  const statusConfig = useMemo(() => ({
+    success: {
+      icon: CheckCircle2,
+      color: "var(--status-success)",
+      bg: "var(--status-success-bg)",
+      label: t("deploy.statusSuccess"),
+      variant: "success" as const,
+    },
+    failed: {
+      icon: XCircle,
+      color: "var(--status-error)",
+      bg: "var(--status-error-bg)",
+      label: t("deploy.statusFailed"),
+      variant: "error" as const,
+    },
+    running: {
+      icon: RefreshCw,
+      color: "var(--status-info)",
+      bg: "var(--status-info-bg)",
+      label: t("deploy.statusRunning2"),
+      variant: "default" as const,
+    },
+    pending: {
+      icon: Clock,
+      color: "var(--status-warning)",
+      bg: "var(--status-warning-bg)",
+      label: t("deploy.statusPending"),
+      variant: "warning" as const,
+    },
+  }) satisfies Record<DeployStatus, {
+    icon: typeof CheckCircle2;
+    color: string;
+    bg: string;
+    label: string;
+    variant: "success" | "error" | "default" | "warning";
+  }>, [t]);
+
+  function formatRelativeTime(isoDate: string): string {
+    const now = new Date();
+    const date = new Date(isoDate);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return t("deploy.timeJustNow");
+    if (diffMins < 60) return t("deploy.timeMinutesAgo", { mins: diffMins });
+    if (diffHours < 24) return t("deploy.timeHoursAgo", { hours: diffHours });
+    if (diffDays === 1) return t("deploy.timeYesterday");
+    if (diffDays < 7) return t("deploy.timeDaysAgo", { days: diffDays });
+    if (diffDays < 30) return t("deploy.timeWeeksAgo", { weeks: Math.floor(diffDays / 7) });
+    return date.toLocaleDateString();
+  }
+
   const [notification, setNotification] = useState<string | null>(null);
 
   const configQuery = useConfig();
@@ -97,7 +100,7 @@ export function DeployPage() {
   const error =
     configQuery.error?.message ??
     deploymentsQuery.error?.message ??
-    (!configQuery.isPending && !configQuery.data ? "请先在设置页面配置 GitHub 仓库" : "");
+    (!configQuery.isPending && !configQuery.data ? t("deploy.noConfig") : "");
 
   const data = useMemo(() => {
     const config = configQuery.data;
@@ -136,7 +139,7 @@ export function DeployPage() {
       failedCount: failed,
       avgDuration,
     };
-  }, [configQuery.data, deploymentsQuery.data]);
+  }, [configQuery.data, deploymentsQuery.data, t]);
 
   const deployments = data?.deployments ?? [];
   const siteUrl = data?.siteUrl ?? "";
@@ -151,9 +154,9 @@ export function DeployPage() {
     if (!config) return;
     try {
       await triggerDeploy.mutateAsync(config.workflow_file || config.workflowFile || "pages.yml");
-      setNotification("部署已触发，请稍后刷新查看状态");
+      setNotification(t("deploy.triggered"));
     } catch (err) {
-      setNotification(err instanceof Error ? err.message : "触发部署失败");
+      setNotification(err instanceof Error ? err.message : t("deploy.triggerFailed"));
     }
   }
 
@@ -187,14 +190,14 @@ export function DeployPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">部署管理</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("deploy.title")}</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            GitHub Actions 自动化部署到 GitHub Pages
+            {t("deploy.subtitle")}
           </p>
         </div>
         <Button onClick={handleManualDeploy} disabled={deploying}>
           {deploying ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-          手动触发部署
+          {t("deploy.triggerDeploy")}
         </Button>
       </div>
 
@@ -206,10 +209,10 @@ export function DeployPage() {
               <Globe size={18} className="text-[var(--status-success)]" />
             </div>
             <div>
-              <div className="text-xs text-[var(--text-tertiary)]">站点状态</div>
+              <div className="text-xs text-[var(--text-tertiary)]">{t("deploy.statusLabel")}</div>
               <div className="flex items-center gap-1.5 text-sm font-semibold text-[var(--status-success)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-success)] animate-pulse" />
-                正常运行
+                {t("deploy.statusRunning")}
               </div>
             </div>
           </div>
@@ -224,7 +227,7 @@ export function DeployPage() {
               <ExternalLink size={10} />
             </a>
           ) : (
-            <span className="text-xs text-[var(--text-tertiary)]">未配置 Pages</span>
+            <span className="text-xs text-[var(--text-tertiary)]">{t("deploy.statusNoPages")}</span>
           )}
         </div>
 
@@ -234,14 +237,14 @@ export function DeployPage() {
               <Activity size={18} className="text-[var(--brand-primary)]" />
             </div>
             <div>
-              <div className="text-xs text-[var(--text-tertiary)]">成功率</div>
+              <div className="text-xs text-[var(--text-tertiary)]">{t("deploy.successRate")}</div>
               <div className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">
                 {deployments.length > 0 ? Math.round((successCount / deployments.length) * 100) : 0}%
               </div>
             </div>
           </div>
           <div className="text-xs text-[var(--text-tertiary)]">
-            {successCount} 成功 · {failedCount} 失败
+            {t("deploy.successCount", { success: successCount, failed: failedCount })}
           </div>
         </div>
 
@@ -251,13 +254,13 @@ export function DeployPage() {
               <Server size={18} className="text-[var(--brand-accent)]" />
             </div>
             <div>
-              <div className="text-xs text-[var(--text-tertiary)]">平均耗时</div>
+              <div className="text-xs text-[var(--text-tertiary)]">{t("deploy.avgDuration")}</div>
               <div className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">
                 {avgDuration || "—"}
               </div>
             </div>
           </div>
-          <div className="text-xs text-[var(--text-tertiary)]">最近 {deployments.length} 次部署</div>
+          <div className="text-xs text-[var(--text-tertiary)]">{t("deploy.recentDeploys", { count: deployments.length })}</div>
         </div>
       </div>
 
@@ -265,9 +268,9 @@ export function DeployPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
               <Zap size={16} className="text-[var(--brand-accent)]" />
-              部署历史
+              {t("deploy.deployHistory")}
             </CardTitle>
             <Button
               variant="ghost"
@@ -277,7 +280,7 @@ export function DeployPage() {
               disabled={refreshing}
             >
               <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-              刷新
+              {t("deploy.refresh")}
             </Button>
           </div>
         </CardHeader>
@@ -285,7 +288,7 @@ export function DeployPage() {
           {deployments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
               <Zap size={40} className="mb-3 opacity-30" />
-              <p className="text-sm">暂无部署记录</p>
+              <p className="text-sm">{t("deploy.empty")}</p>
             </div>
           ) : (
             <div className="divide-y divide-[var(--border-default)]">
@@ -363,11 +366,11 @@ export function DeployPage() {
       <Dialog open={!!notification} onOpenChange={() => setNotification(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>提示</DialogTitle>
+            <DialogTitle>{t("common.tip")}</DialogTitle>
           </DialogHeader>
           <DialogDescription>{notification}</DialogDescription>
           <DialogFooter>
-            <Button onClick={() => setNotification(null)}>确定</Button>
+            <Button onClick={() => setNotification(null)}>{t("common.ok")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

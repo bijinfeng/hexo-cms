@@ -18,8 +18,10 @@ import {
   Download,
   AlertCircle,
 } from "lucide-react";
+import { useI18n } from "../i18n/I18nProvider";
 
 export function ThemesPage() {
+  const { t } = useI18n();
   const query = useThemes();
   const switchTheme = useSwitchTheme();
   const loading = query.isPending;
@@ -33,9 +35,9 @@ export function ThemesPage() {
     if (switching) return;
     try {
       await switchTheme.mutateAsync(themeName);
-      setNotification(`已切换到主题「${themeName}」，请重新部署站点以生效`);
+      setNotification(t("themes.switched", { theme: themeName }));
     } catch (err) {
-      setNotification(err instanceof Error ? err.message : "切换主题失败");
+      setNotification(err instanceof Error ? err.message : t("themes.switchFailed"));
     }
   }
 
@@ -67,22 +69,22 @@ export function ThemesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">主题管理</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("themes.title")}</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            {currentTheme ? `当前使用：${currentTheme}` : "管理和切换 Hexo 主题"}
+            {currentTheme ? t("themes.subtitle", { theme: currentTheme }) : t("themes.description")}
           </p>
         </div>
         <Button variant="outline" disabled>
           <Download size={16} />
-          安装新主题
+          {t("themes.installNew")}
         </Button>
       </div>
 
       {installedThemes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
           <Palette size={40} className="mb-3 opacity-30" />
-          <p className="text-sm">未检测到已安装的主题</p>
-          <p className="text-xs mt-1">请在仓库的 themes/ 目录下安装主题</p>
+          <p className="text-sm">{t("themes.empty")}</p>
+          <p className="text-xs mt-1">{t("themes.emptyHint")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -100,7 +102,7 @@ export function ThemesPage() {
                     <Palette size={32} className="text-[var(--text-tertiary)] opacity-30" />
                     {isActive && (
                       <div className="absolute top-2 right-2">
-                        <Badge variant="success">当前使用</Badge>
+                        <Badge variant="success">{t("themes.currentUse")}</Badge>
                       </div>
                     )}
                   </div>
@@ -111,20 +113,20 @@ export function ThemesPage() {
                         {themeName}
                       </h3>
                       <p className="text-xs text-[var(--text-tertiary)]">
-                        Hexo 主题
+                        {t("themes.hexoTheme")}
                       </p>
                     </div>
                   </div>
 
                   <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
-                    已安装在 themes/{themeName} 目录
+                    {t("themes.installedAt", { name: themeName })}
                   </p>
 
                   <div className="flex items-center gap-2">
                     {isActive ? (
                       <Button variant="success" size="sm" className="flex-1" disabled>
                         <CheckCircle2 size={14} />
-                        已启用
+                        {t("common.enabled")}
                       </Button>
                     ) : (
                       <Button
@@ -134,7 +136,7 @@ export function ThemesPage() {
                         onClick={() => handleSwitchTheme(themeName)}
                         disabled={switching}
                       >
-                        {switching ? "切换中..." : "切换主题"}
+                        {switching ? t("themes.switching") : t("themes.switchTo")}
                       </Button>
                     )}
                   </div>
@@ -148,11 +150,11 @@ export function ThemesPage() {
       <Dialog open={!!notification} onOpenChange={() => setNotification(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>提示</DialogTitle>
+            <DialogTitle>{t("common.tip")}</DialogTitle>
           </DialogHeader>
           <DialogDescription>{notification}</DialogDescription>
           <DialogFooter>
-            <Button onClick={() => setNotification(null)}>确定</Button>
+            <Button onClick={() => setNotification(null)}>{t("common.ok")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
