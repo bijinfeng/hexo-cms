@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "../../utils";
 import { Button } from "../ui/button";
-import { Sun, Moon, Bell, Search, Menu } from "lucide-react";
+import { Sun, Moon, Bell, Search, Menu, Globe } from "lucide-react";
 import { WindowControls } from "./WindowControls";
 import { UserMenu } from "../user-menu";
 import { CommandPalette } from "../command-palette";
+import { useI18n } from "../../i18n/I18nProvider";
 import type { AuthClient } from "../../types/auth";
 
 interface TopbarProps {
@@ -17,6 +18,7 @@ interface TopbarProps {
 }
 
 export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, authClient, onSignedOut }: TopbarProps) {
+  const { t, locale, setLocale } = useI18n();
   const [isDark, setIsDark] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const isMac = /Mac|Darwin/i.test(navigator.userAgent || navigator.platform);
@@ -98,6 +100,16 @@ export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, aut
         {/* Theme toggle */}
         <Button variant="ghost" size="icon" onClick={toggleTheme}>
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </Button>
+
+        {/* Language toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
+          title={t("topbar.language")}
+        >
+          <Globe size={18} />
         </Button>
 
         {/* User avatar / menu */}
