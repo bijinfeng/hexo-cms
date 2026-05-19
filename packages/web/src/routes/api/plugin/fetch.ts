@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PermissionBroker, assertPluginHttpRequestAllowed, builtinPluginManifests } from "@hexo-cms/core";
+import { PermissionBroker, assertPluginHttpRequestAllowed } from "@hexo-cms/core";
+import { getWebPluginManifests } from "../../../lib/plugin-host";
 import { getAuth, json } from "../../../lib/server-utils";
 import { appendPluginNetworkAudit } from "../../../lib/plugin-network-audit-db";
 
@@ -22,7 +23,6 @@ interface PluginFetchResponseBody {
 
 const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
 const DEFAULT_TIMEOUT_MS = 10_000;
-const permissionBroker = new PermissionBroker(builtinPluginManifests);
 
 function sanitizeRequestHeaders(headers: Record<string, string> | undefined): Record<string, string> {
   if (!headers) return {};
@@ -54,7 +54,9 @@ export const Route = createFileRoute("/api/plugin/fetch")({
 
         let parsedUrl: URL;
         try {
-          const manifest = builtinPluginManifests.find((plugin) => plugin.id === req.pluginId);
+          const manifests = await getWebPluginManifests();
+          const permissionBroker = new PermissionBroker(manifests);
+          const manifest = manifests.find((plugin) => plugin.id === req.pluginId);
           if (!manifest) return json({ error: "Unknown plugin" }, 403);
           parsedUrl = assertPluginHttpRequestAllowed(req.pluginId, manifest, permissionBroker, req.url);
         } catch (error) {

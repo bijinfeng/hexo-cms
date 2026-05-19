@@ -1,5 +1,6 @@
 import { createRootRoute, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
+import type { PluginConfigValue, PluginHost } from "@hexo-cms/core";
 import {
   CMSLayout,
   DataProviderProvider,
@@ -12,6 +13,7 @@ import {
 } from "@hexo-cms/ui/app-shell";
 import { desktopAuthClient, subscribeToDesktopAuthChanges } from "../lib/desktop-auth-client";
 import { desktopDataProvider } from "../lib/desktop-data-provider-instance";
+import { createDesktopPluginHost } from "../lib/plugin-host";
 import { UpdateBanner } from "../components/UpdateBanner";
 import { useUpdater } from "../hooks/useUpdater";
 
@@ -24,6 +26,7 @@ function RootComponent() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [hasConfig, setHasConfig] = useState<boolean | null>(null);
   const [isPending, setIsPending] = useState(true);
+  const [pluginHost, setPluginHost] = useState<PluginHost<ComponentType<{ config?: PluginConfigValue }>> | null>(null);
   const loadingRef = useRef(false);
   const updater = useUpdater();
 
@@ -33,22 +36,31 @@ function RootComponent() {
     const refreshSession = () => {
       setIsPending(true);
       setHasConfig(null);
+      setPluginHost(null);
       desktopAuthClient.getSession()
         .then(async (nextSession) => {
           if (!active) return;
           setSession(nextSession);
 
           if (nextSession.state === "authenticated") {
-            const config = await desktopDataProvider.getConfig();
-            if (active) setHasConfig(Boolean(config));
+            const [config, host] = await Promise.all([
+              desktopDataProvider.getConfig(),
+              createDesktopPluginHost(),
+            ]);
+            if (active) {
+              setHasConfig(Boolean(config));
+              setPluginHost(host);
+            }
           } else if (active) {
             setHasConfig(null);
+            setPluginHost(null);
           }
         })
         .catch(() => {
           if (active) {
             setSession({ state: "anonymous" });
             setHasConfig(null);
+            setPluginHost(null);
           }
         })
         .finally(() => {
@@ -68,7 +80,10 @@ function RootComponent() {
     };
   }, [pathname]);
 
-  const guardPending = isPending || (session?.state === "authenticated" && hasConfig === null && !isSetupRoute);
+  const guardPending =
+    isPending ||
+    (session?.state === "authenticated" && hasConfig === null && !isSetupRoute) ||
+    (session?.state === "authenticated" && !isPublicRoute && !isSetupRoute && !pluginHost);
 
   useEffect(() => {
     if (loadingRef.current) return;
@@ -88,9 +103,11 @@ function RootComponent() {
 
   if (isPublicRoute || isSetupRoute) return <ErrorBoundary><Outlet /></ErrorBoundary>;
 
+  if (!pluginHost) return null;
+
   return (
     <DataProviderProvider provider={desktopDataProvider}>
-      <PluginProvider>
+      <PluginProvider host={pluginHost}>
         <ErrorBoundary>
           {updater && <UpdateBanner updater={updater} />}
           <CMSLayout

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } from "electron";
 import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
+import { officialPlugins } from "@hexo-cms/plugins";
 import { createDesktopAuthManager } from "./desktop-auth";
 import { createDesktopPersistence } from "./desktop-persistence";
 import { createGitHubServiceProvider } from "./github-service-provider";
@@ -15,7 +16,9 @@ const desktopPersistence = createDesktopPersistence({
   getUserDataPath: () => app.getPath("userData"),
   keytarService: KEYTAR_SERVICE,
 });
+const officialPluginManifests = officialPlugins.map((plugin) => plugin.manifest);
 const pluginHttpProxy = createPluginHttpProxy({
+  manifests: officialPluginManifests,
   appendAudit: (entry) => desktopPersistence.appendPluginNetworkAudit(entry),
 });
 

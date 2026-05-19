@@ -1,7 +1,6 @@
 import {
   PermissionBroker,
   assertPluginHttpRequestAllowed,
-  builtinPluginManifests,
   type PluginHttpPermissionBroker,
   type PluginManifest,
 } from "@hexo-cms/core";
@@ -29,8 +28,8 @@ export interface PluginFetchResponseBody {
 
 export interface PluginHttpProxyOptions {
   appendAudit(entry: PluginNetworkAuditEntryInput): void;
+  manifests: PluginManifest[];
   fetchImpl?: typeof fetch;
-  manifests?: PluginManifest[];
   permissionBroker?: PluginHttpPermissionBroker;
   maxResponseSize?: number;
   defaultTimeoutMs?: number;
@@ -38,8 +37,8 @@ export interface PluginHttpProxyOptions {
 
 export function createPluginHttpProxy({
   appendAudit,
+  manifests,
   fetchImpl = defaultFetch,
-  manifests = builtinPluginManifests,
   permissionBroker = new PermissionBroker(manifests),
   maxResponseSize = DEFAULT_MAX_RESPONSE_SIZE,
   defaultTimeoutMs = DEFAULT_TIMEOUT_MS,

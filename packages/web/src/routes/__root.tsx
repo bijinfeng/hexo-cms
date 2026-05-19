@@ -1,5 +1,6 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
+import type { PluginConfigValue, PluginHost } from "@hexo-cms/core";
 import {
   CMSLayout,
   DataProviderProvider,
@@ -12,6 +13,7 @@ import {
 } from "@hexo-cms/ui/app-shell";
 import { webAuthClient } from "../lib/auth-client";
 import { webDataProvider } from "../lib/web-data-provider-instance";
+import { createWebPluginHost } from "../lib/plugin-host";
 import appCss from "../styles.css?url";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
@@ -63,6 +65,7 @@ function RootComponent() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [hasConfig, setHasConfig] = useState<boolean | null>(null);
   const [isPending, setIsPending] = useState(true);
+  const [pluginHost, setPluginHost] = useState<PluginHost<ComponentType<{ config?: PluginConfigValue }>> | null>(null);
   const loadingRef = useRef(false);
 
   useEffect(() => {
@@ -72,21 +75,30 @@ function RootComponent() {
     async function loadSessionAndConfig() {
       setIsPending(true);
       setHasConfig(null);
+      setPluginHost(null);
       try {
         const nextSession = await webAuthClient.getSession();
         if (!active) return;
         setSession(nextSession);
 
         if (nextSession.state === "authenticated") {
-          const config = await webDataProvider.getConfig();
-          if (active) setHasConfig(Boolean(config));
+          const [config, host] = await Promise.all([
+            webDataProvider.getConfig(),
+            createWebPluginHost(),
+          ]);
+          if (active) {
+            setHasConfig(Boolean(config));
+            setPluginHost(host);
+          }
         } else if (active) {
           setHasConfig(null);
+          setPluginHost(null);
         }
       } catch {
         if (active) {
           setSession({ state: "anonymous" });
           setHasConfig(null);
+          setPluginHost(null);
         }
       } finally {
         if (active) {
@@ -103,7 +115,10 @@ function RootComponent() {
     };
   }, [pathname]);
 
-  const guardPending = isPending || (session?.state === "authenticated" && hasConfig === null && !isSetupRoute);
+  const guardPending =
+    isPending ||
+    (session?.state === "authenticated" && hasConfig === null && !isSetupRoute) ||
+    (session?.state === "authenticated" && !isPublicRoute && !isSetupRoute && !pluginHost);
 
   useEffect(() => {
     if (loadingRef.current) return;
@@ -126,24 +141,30 @@ function RootComponent() {
 
   if (session?.state !== "authenticated" && !isPublicRoute) return null;
 
-  // Wrap all routes with providers to prevent "usePluginSystem must be used inside PluginProvider" errors
-  // Public routes don't use CMSLayout, but still need providers for consistency
+  if (isPublicRoute || isSetupRoute) {
+    return (
+      <DataProviderProvider provider={webDataProvider}>
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
+      </DataProviderProvider>
+    );
+  }
+
+  if (!pluginHost) return null;
+
   return (
     <DataProviderProvider provider={webDataProvider}>
-      <PluginProvider>
+      <PluginProvider host={pluginHost}>
         <ErrorBoundary>
-          {isPublicRoute || isSetupRoute ? (
-            <Outlet />
-          ) : (
-            <CMSLayout
-              authClient={webAuthClient}
-              onSignedOut={() => navigate({ to: "/login", replace: true })}
-            >
-              <ErrorBoundary>
-                <Outlet />
-              </ErrorBoundary>
-            </CMSLayout>
-          )}
+          <CMSLayout
+            authClient={webAuthClient}
+            onSignedOut={() => navigate({ to: "/login", replace: true })}
+          >
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
+          </CMSLayout>
         </ErrorBoundary>
       </PluginProvider>
     </DataProviderProvider>
