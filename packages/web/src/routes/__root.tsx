@@ -77,6 +77,7 @@ function RootComponent() {
   const [pluginHost, setPluginHost] = useState<PluginHost<ComponentType<{ config?: PluginConfigValue }>> | null>(null);
   const loadingRef = useRef(false);
   const [locale] = useState<"zh" | "en">(() => detectWebLocale());
+  const [pluginTranslationVersion, setPluginTranslationVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -130,14 +131,17 @@ function RootComponent() {
     (session?.state === "authenticated" && hasConfig === null && !isSetupRoute) ||
     (session?.state === "authenticated" && !isPublicRoute && !isSetupRoute && !pluginHost);
 
-  const i18nConfig = useMemo(() => ({
-    locales: ["zh", "en"],
-    defaultLocale: "zh",
-    resources: {
-      zh: {},
-      en: {},
-    },
-  }), []);
+  const i18nConfig = useMemo(() => {
+    const pluginTranslations = pluginHost?.collectPluginTranslations() ?? {};
+    return {
+      locales: ["zh", "en"],
+      defaultLocale: "zh",
+      resources: {
+        zh: { ...(pluginTranslations.zh ?? {}) },
+        en: { ...(pluginTranslations.en ?? {}) },
+      },
+    };
+  }, [pluginHost, pluginTranslationVersion]);
 
   useEffect(() => {
     if (loadingRef.current) return;
@@ -181,7 +185,10 @@ function RootComponent() {
       }}
     >
       <DataProviderProvider provider={webDataProvider}>
-        <PluginProvider host={pluginHost}>
+        <PluginProvider
+          host={pluginHost}
+          onStateChange={() => setPluginTranslationVersion(v => v + 1)}
+        >
           <ErrorBoundary>
             <CMSLayout
               authClient={webAuthClient}

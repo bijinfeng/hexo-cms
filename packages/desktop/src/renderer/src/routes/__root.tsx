@@ -32,6 +32,7 @@ function RootComponent() {
   const loadingRef = useRef(false);
   const updater = useUpdater();
   const [locale, setLocale] = useState<"zh" | "en" | null>(null);
+  const [pluginTranslationVersion, setPluginTranslationVersion] = useState(0);
 
   useEffect(() => {
     const api = getElectronAPI();
@@ -110,14 +111,17 @@ function RootComponent() {
     (session?.state === "authenticated" && hasConfig === null && !isSetupRoute) ||
     (session?.state === "authenticated" && !isPublicRoute && !isSetupRoute && !pluginHost);
 
-  const i18nConfig = useMemo(() => ({
-    locales: ["zh", "en"],
-    defaultLocale: "zh",
-    resources: {
-      zh: {},
-      en: {},
-    },
-  }), []);
+  const i18nConfig = useMemo(() => {
+    const pluginTranslations = pluginHost?.collectPluginTranslations() ?? {};
+    return {
+      locales: ["zh", "en"],
+      defaultLocale: "zh",
+      resources: {
+        zh: { ...(pluginTranslations.zh ?? {}) },
+        en: { ...(pluginTranslations.en ?? {}) },
+      },
+    };
+  }, [pluginHost, pluginTranslationVersion]);
 
   useEffect(() => {
     if (loadingRef.current) return;
@@ -148,7 +152,10 @@ function RootComponent() {
       }}
     >
       <DataProviderProvider provider={desktopDataProvider}>
-        <PluginProvider host={pluginHost}>
+        <PluginProvider
+          host={pluginHost}
+          onStateChange={() => setPluginTranslationVersion(v => v + 1)}
+        >
           <ErrorBoundary>
             {updater && <UpdateBanner updater={updater} />}
             <CMSLayout
