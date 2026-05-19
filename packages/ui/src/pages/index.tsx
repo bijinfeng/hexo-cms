@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useDataProvider } from "../context/data-provider-context";
+import { useAsyncData } from "../hooks/use-async-data";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -33,40 +34,32 @@ const statColorMap: Record<string, string> = {
   info: "bg-[var(--status-info-bg)] text-[var(--status-info)]",
 };
 
+interface DashboardData {
+  stats: { totalPosts: number; publishedPosts: number; draftPosts: number; totalTags: number; totalCategories: number };
+  recentPosts: Array<{ title: string; slug: string; date: string; status: string }>;
+  repoInfo: string;
+}
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
   const { snapshot, getDashboardWidgetRenderer } = usePluginSystem();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [stats, setStats] = useState({
-    totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalTags: 0, totalCategories: 0,
-  });
-  const [recentPosts, setRecentPosts] = useState<Array<{ title: string; slug: string; date: string; status: string }>>([]);
-  const [repoInfo, setRepoInfo] = useState("");
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  async function loadDashboard() {
-    setLoading(true);
-    setError("");
-    try {
+  const { data, loading, error, refresh } = useAsyncData<DashboardData>(
+    async () => {
       const config = await dataProvider.getConfig();
-      if (config) setRepoInfo(`${config.owner}/${config.repo}`);
       const [statsData, tagsData, postsData] = await Promise.all([
         dataProvider.getStats(), dataProvider.getTags(), dataProvider.getPosts(),
       ]);
-      setStats({
-        totalPosts: statsData.totalPosts,
-        publishedPosts: statsData.publishedPosts,
-        draftPosts: statsData.draftPosts,
-        totalTags: tagsData.tags.length,
-        totalCategories: tagsData.categories.length,
-      });
-      setRecentPosts(
-        postsData
+      return {
+        stats: {
+          totalPosts: statsData.totalPosts,
+          publishedPosts: statsData.publishedPosts,
+          draftPosts: statsData.draftPosts,
+          totalTags: tagsData.tags.length,
+          totalCategories: tagsData.categories.length,
+        },
+        recentPosts: postsData
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 5)
           .map((post) => ({
@@ -74,15 +67,16 @@ export function DashboardPage() {
             slug: post.path.replace(/^source\/_posts\//, "").replace(/\.md$/, ""),
             date: post.date,
             status: post.frontmatter?.draft ? "draft" : "published",
-          }))
-      );
-    } catch (err) {
-      console.error("Failed to load dashboard:", err);
-      setError("加载统计数据失败，请重试");
-    } finally {
-      setLoading(false);
-    }
-  }
+          })),
+        repoInfo: config ? `${config.owner}/${config.repo}` : "",
+      };
+    },
+    [dataProvider],
+  );
+
+  const stats = data?.stats ?? { totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalTags: 0, totalCategories: 0 };
+  const recentPosts = data?.recentPosts ?? [];
+  const repoInfo = data?.repoInfo ?? "";
 
   const statCards = useMemo(() => [
     { label: "文章总数", value: String(stats.totalPosts), change: `${stats.publishedPosts} 已发布`, icon: FileText, color: "orange" },
@@ -135,7 +129,7 @@ export function DashboardPage() {
           <AlertCircle size={18} className="text-[var(--status-error)] flex-shrink-0" />
           <span className="text-sm text-[var(--status-error)] flex-1">{error}</span>
           <button
-            onClick={loadDashboard}
+            onClick={refresh}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[var(--status-error)] text-white rounded-md hover:opacity-90 transition-opacity cursor-pointer"
           >
             <RefreshCw size={14} />

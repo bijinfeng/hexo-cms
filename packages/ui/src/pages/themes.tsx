@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useDataProvider } from "../context/data-provider-context";
+import { useAsyncData } from "../hooks/use-async-data";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -21,38 +22,27 @@ import {
 
 export function ThemesPage() {
   const dataProvider = useDataProvider();
-  const [currentTheme, setCurrentTheme] = useState<string | null>(null);
-  const [installedThemes, setInstalledThemes] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data, loading, error, refresh } = useAsyncData(
+    async () => {
+      const themesData = await dataProvider.getThemes();
+      return {
+        currentTheme: themesData.currentTheme,
+        installedThemes: themesData.installedThemes.map((t) => t.name),
+      };
+    },
+    [dataProvider],
+  );
+  const currentTheme = data?.currentTheme ?? null;
+  const installedThemes = data?.installedThemes ?? [];
   const [switching, setSwitching] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadThemes();
-  }, []);
-
-  async function loadThemes() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const themesData = await dataProvider.getThemes();
-      setCurrentTheme(themesData.currentTheme);
-      setInstalledThemes(themesData.installedThemes.map((t) => t.name));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleSwitchTheme(themeName: string) {
     if (switching) return;
     try {
       setSwitching(true);
       await dataProvider.switchTheme(themeName);
-      setCurrentTheme(themeName);
+      await refresh();
       setNotification(`已切换到主题「${themeName}」，请重新部署站点以生效`);
     } catch (err) {
       setNotification(err instanceof Error ? err.message : "切换主题失败");
