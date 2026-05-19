@@ -108,6 +108,11 @@ export {
   usePluginDataProvider,
   usePluginSystem,
   createPlatformPluginConfigStore,
+  createPlatformPluginFetch,
+  createPlatformPluginLogStore,
+  createPlatformPluginSecretStore,
+  createPlatformPluginStateStore,
+  createPlatformPluginStorageStore,
 } from "./plugin";
 
 // Utils
