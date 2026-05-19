@@ -142,7 +142,7 @@ export class PluginManager {
     this.rebuildExtensions();
   }
 
-  private createContentAPI(pluginId: string): ContentReadAPI {
+  createContentAPI(pluginId: string): ContentReadAPI {
     if (!this.dataProvider) {
       throw new Error("PluginManager requires a dataProvider to create content API");
     }
@@ -304,6 +304,18 @@ export class PluginManager {
     });
 
     return results;
+  }
+
+  getPluginConfig(pluginId: string): PluginConfigValue {
+    this.getManifest(pluginId);
+    return this.configs[pluginId] ?? {};
+  }
+
+  unregisterPluginRuntime(pluginId: string): void {
+    this.getManifest(pluginId);
+    this.commandRegistry.unregisterHandlers(pluginId);
+    this.diagnosticsRegistry.unregisterPlugin(pluginId);
+    this.eventBus.unregisterPlugin(pluginId);
   }
 
   recordPluginError(pluginId: string, error: PluginRuntimeErrorInput): PluginManagerSnapshot {

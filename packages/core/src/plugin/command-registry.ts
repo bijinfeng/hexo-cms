@@ -53,6 +53,12 @@ export class CommandRegistry {
     }
   }
 
+  unregisterHandlers(pluginId: string): void {
+    for (const key of this.handlers.keys()) {
+      if (key.startsWith(`${pluginId}:`)) this.handlers.delete(key);
+    }
+  }
+
   registerHandler(pluginId: string, commandId: string, handler: PluginCommandHandler): void {
     this.handlers.set(commandKey(pluginId, commandId), handler);
   }

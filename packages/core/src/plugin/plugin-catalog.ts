@@ -4,41 +4,42 @@ import type { PluginDefinition, PluginManifest } from "./types";
 import type { PluginSourceResolver } from "./source-resolver";
 
 export class PluginCatalog<TRenderer = unknown> {
-  private constructor(
-    private readonly pluginDefinitions: Array<PluginDefinition<TRenderer>>,
-    private readonly pluginManifests: PluginManifest[],
-    private readonly definitionsById: Map<string, PluginDefinition<TRenderer>>,
-    private readonly manifestsById: Map<string, PluginManifest>,
-  ) {}
+  private readonly pluginDefinitions: Array<PluginDefinition<TRenderer>>;
+  private readonly pluginManifests: PluginManifest[];
+  private readonly definitionsById = new Map<string, PluginDefinition<TRenderer>>();
+  private readonly manifestsById = new Map<string, PluginManifest>();
+
+  constructor(definitions: Array<PluginDefinition<TRenderer>>) {
+    this.pluginDefinitions = [];
+    this.pluginManifests = [];
+
+    for (const definition of definitions) {
+      const manifest = validatePluginManifest(definition.manifest);
+      if (manifest.runtime !== "hosted") {
+        throw new PluginManifestError(`unsupported plugin runtime: ${manifest.runtime}`);
+      }
+      if (this.definitionsById.has(manifest.id)) {
+        throw new PluginManifestError(`duplicate plugin id: ${manifest.id}`);
+      }
+      const normalized = { ...definition, manifest };
+      this.pluginDefinitions.push(normalized);
+      this.pluginManifests.push(manifest);
+      this.definitionsById.set(manifest.id, normalized);
+      this.manifestsById.set(manifest.id, manifest);
+    }
+  }
 
   static async discover<TRenderer = unknown>(
     resolvers: Array<PluginSourceResolver<TRenderer>>,
   ): Promise<PluginCatalog<TRenderer>> {
     const definitions: Array<PluginDefinition<TRenderer>> = [];
-    const manifests: PluginManifest[] = [];
-    const definitionsById = new Map<string, PluginDefinition<TRenderer>>();
-    const manifestsById = new Map<string, PluginManifest>();
 
     for (const resolver of resolvers) {
       const discovered = await resolver.discover();
-
-      for (const definition of discovered) {
-        const manifest = validatePluginManifest(definition.manifest);
-        if (manifest.runtime !== "hosted") {
-          throw new PluginManifestError(`unsupported plugin runtime: ${manifest.runtime}`);
-        }
-        if (definitionsById.has(manifest.id)) {
-          throw new PluginManifestError(`duplicate plugin id: ${manifest.id}`);
-        }
-
-        definitions.push(definition);
-        manifests.push(manifest);
-        definitionsById.set(manifest.id, definition);
-        manifestsById.set(manifest.id, manifest);
-      }
+      definitions.push(...discovered);
     }
 
-    return new PluginCatalog(definitions, manifests, definitionsById, manifestsById);
+    return new PluginCatalog(definitions);
   }
 
   definitions(): Array<PluginDefinition<TRenderer>> {

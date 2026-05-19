@@ -63,7 +63,7 @@ describe("plugin platform contract", () => {
     const catalog = await PluginCatalog.discover([new StaticPluginSourceResolver("official", [plugin])]);
 
     expect(catalog.manifests()).toEqual([expect.objectContaining({ id: validManifest.id })]);
-    expect(catalog.getDefinition(validManifest.id)).toBe(plugin);
+    expect(catalog.getDefinition(validManifest.id)).toEqual(plugin);
     expect(catalog.getManifest(validManifest.id)).toEqual(
       expect.objectContaining({
         origin: "official",
