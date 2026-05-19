@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useDataProvider } from "../context/data-provider-context";
+import { useAsyncData } from "../hooks/use-async-data";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -35,23 +36,14 @@ export function PagesPage() {
   const { location } = useRouterState();
   const isListRoute = location.pathname === "/pages";
   const dataProvider = useDataProvider();
-  const [pages, setPages] = useState<PageItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [deleteConfirmPage, setDeleteConfirmPage] = useState<PageItem | null>(null);
+  const [deleteError, setDeleteError] = useState("");
 
-  useEffect(() => {
-    if (!isListRoute) return;
-
-    loadPages();
-  }, [isListRoute]);
-
-  async function loadPages() {
-    setLoading(true);
-    setError("");
-    try {
+  const { data, loading, error, refresh } = useAsyncData<PageItem[]>(
+    async () => {
+      if (!isListRoute) return [];
       const rawPages = await dataProvider.getPages();
-      const formattedPages = rawPages
+      return rawPages
         .filter((page) => !page.path.includes("_posts"))
         .map((page, index) => ({
           id: String(index + 1),
@@ -62,14 +54,10 @@ export function PagesPage() {
           status: page.frontmatter?.draft ? "draft" : "published",
           description: page.frontmatter?.description || (page.content || "").slice(0, 50) + "...",
         }));
-      setPages(formattedPages);
-    } catch (err) {
-      console.error("Failed to load pages:", err);
-      setError(err instanceof Error ? err.message : "加载页面失败");
-    } finally {
-      setLoading(false);
-    }
-  }
+    },
+    [dataProvider, isListRoute],
+  );
+  const pages = data ?? [];
 
   function handleDeletePage(page: PageItem) {
     setDeleteConfirmPage(page);
@@ -79,10 +67,10 @@ export function PagesPage() {
     if (!deleteConfirmPage) return;
     try {
       await dataProvider.deletePage(deleteConfirmPage.filePath);
-      setPages((prev) => prev.filter((p) => p.id !== deleteConfirmPage.id));
+      await refresh();
     } catch (err) {
       console.error("Failed to delete page:", err);
-      setError(err instanceof Error ? err.message : "删除失败");
+      setDeleteError(err instanceof Error ? err.message : "删除失败");
     } finally {
       setDeleteConfirmPage(null);
     }
@@ -98,11 +86,11 @@ export function PagesPage() {
         title="页面管理"
         description="管理独立页面"
         loading={loading}
-        error={error}
+        error={error || deleteError}
         items={pages}
         searchFields={["title", "path"]}
         searchPlaceholder="搜索页面..."
-        onRetry={loadPages}
+        onRetry={refresh}
         emptyMessage="还没有页面"
         headerExtra={
           <Button onClick={() => navigate({ to: "/pages/new" })}>
