@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState, useCallback, useMemo, useEffect } from "react";
+import type { Frontmatter, HexoPost } from "@hexo-cms/core";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -69,14 +70,14 @@ export function NewPagePage() {
       const finalStatus = publish ? "published" : status;
       const finalSlug = slug || title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
       const filePath = `source/${finalSlug}/index.md`;
-      const frontmatter: Record<string, any> = {
+      const frontmatter: Frontmatter = {
         title,
         date: new Date().toISOString().split("T")[0],
       };
       if (finalStatus === "draft") frontmatter.draft = true;
 
-      const page = { path: filePath, title, date: frontmatter.date, content, frontmatter };
-      await dataProvider.savePage(page as any);
+      const page: HexoPost = { path: filePath, title, date: frontmatter.date ?? "", content, frontmatter };
+      await dataProvider.savePage(page);
       autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {

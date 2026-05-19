@@ -75,7 +75,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   const handleSelect = useCallback(
     (to: string) => {
-      navigate({ to } as any);
+      navigate({ to: to as "/" });
       onClose();
     },
     [navigate, onClose]

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useState, useCallback, useEffect, useMemo } from "react";
+import type { Frontmatter, HexoPost } from "@hexo-cms/core";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -99,14 +100,14 @@ export function EditPagePage() {
     setSaving(true);
     setError("");
     try {
-      const frontmatter: Record<string, any> = {
+      const frontmatter: Frontmatter = {
         title,
         date: new Date().toISOString().split("T")[0],
       };
       if (status === "draft") frontmatter.draft = true;
 
-      const page = { path: postPath, title, date: frontmatter.date, content, frontmatter };
-      await dataProvider.savePage(page as any);
+      const page: HexoPost = { path: postPath, title, date: frontmatter.date ?? "", content, frontmatter };
+      await dataProvider.savePage(page);
       autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {

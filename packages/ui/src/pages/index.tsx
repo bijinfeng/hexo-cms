@@ -226,7 +226,7 @@ export function DashboardPage() {
                     { label: "标签 & 分类", icon: Tags, to: "/tags", color: "green" },
                     { label: "媒体库", icon: Eye, to: "/media", color: "warning" },
                   ].map((action) => (
-                    <button key={action.label} onClick={() => navigate({ to: action.to as any })}
+                    <button key={action.label} onClick={() => navigate({ to: action.to as "/" })}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-muted)] transition-colors cursor-pointer text-left"
                     >
                       <div className={`w-7 h-7 rounded-md flex items-center justify-center ${statColorMap[action.color]}`}>
