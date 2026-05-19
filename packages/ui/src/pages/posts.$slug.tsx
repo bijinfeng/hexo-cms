@@ -25,7 +25,7 @@ import {
 } from "../components/ui/select";
 import { Skeleton } from "../components/skeleton";
 import { DiagnosticsPanel } from "../plugin/diagnostics-panel";
-import type { HexoPost } from "@hexo-cms/core";
+import type { Frontmatter, HexoPost } from "@hexo-cms/core";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { marked } from "marked";
 import { sanitizeHtml } from "../sanitize";
@@ -72,7 +72,7 @@ export function EditPostPage() {
 
   // Build current post for diagnostics
   const currentPost = useMemo<HexoPost>(() => {
-    const frontmatter: Record<string, any> = {
+    const frontmatter: Frontmatter = {
       title,
       date: date || new Date().toISOString().split("T")[0],
     };
@@ -84,7 +84,7 @@ export function EditPostPage() {
     return {
       path: postPath,
       title,
-      date: frontmatter.date,
+      date: frontmatter.date ?? "",
       content,
       frontmatter,
     };
@@ -156,7 +156,7 @@ export function EditPostPage() {
 
     try {
       const finalStatus = publish ? "published" : status;
-      const frontmatter: Record<string, any> = {
+      const frontmatter: Frontmatter = {
         title,
         date: date || new Date().toISOString().split("T")[0],
       };
@@ -168,7 +168,7 @@ export function EditPostPage() {
       const post = {
         path: postPath,
         title,
-        date: frontmatter.date,
+        date: frontmatter.date ?? "",
         content,
         frontmatter,
       };

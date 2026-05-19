@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useAsyncData } from "../hooks/use-async-data";
 import type { Frontmatter, HexoPost } from "@hexo-cms/core";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
@@ -41,23 +42,15 @@ export function EditPagePage() {
   const [preview, setPreview] = useState(false);
   const [status, setStatus] = useState<"draft" | "published">("published");
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [postPath, setPostPath] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
 
   const autosave = useAutoSave(slug, content);
 
-  useEffect(() => {
-    loadPage();
-  }, [slug]);
-
-  async function loadPage() {
-    try {
-      setLoading(true);
-      setError("");
-
+  const { loading, error } = useAsyncData(
+    async () => {
       const path = `source/${slug}/index.md`;
       const page = await dataProvider.getPage(path);
 
@@ -72,12 +65,10 @@ export function EditPagePage() {
       }
       setPostPath(page.path);
       setStatus(page.frontmatter.draft ? "draft" : "published");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
-    } finally {
-      setLoading(false);
-    }
-  }
+      return page;
+    },
+    [dataProvider, slug],
+  );
 
   const onChange = useCallback((value: string) => {
     setContent(value);
@@ -93,12 +84,12 @@ export function EditPagePage() {
 
   async function handleSave() {
     if (!title.trim()) {
-      setError("请输入页面标题");
+      setSaveError("请输入页面标题");
       return;
     }
 
     setSaving(true);
-    setError("");
+    setSaveError("");
     try {
       const frontmatter: Frontmatter = {
         title,
@@ -111,7 +102,7 @@ export function EditPagePage() {
       autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存失败");
+      setSaveError(err instanceof Error ? err.message : "保存失败");
     } finally {
       setSaving(false);
     }
@@ -126,7 +117,7 @@ export function EditPagePage() {
       await dataProvider.deletePage(postPath);
       navigate({ to: "/pages" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "删除失败");
+      setSaveError(err instanceof Error ? err.message : "删除失败");
     }
   }
 
@@ -182,9 +173,9 @@ export function EditPagePage() {
         </div>
       </div>
 
-      {error && (
+      {(error || saveError) && (
         <Alert variant="destructive" className="mx-6 mt-3">
-          {error}
+          {error || saveError}
         </Alert>
       )}
 

@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState, useCallback, useMemo, useEffect } from "react";
+import type { Frontmatter } from "@hexo-cms/core";
 import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -94,7 +95,7 @@ export function NewPostPage() {
       const fileName = `${finalSlug}.md`;
       const filePath = `source/_posts/${fileName}`;
 
-      const frontmatter: Record<string, any> = {
+      const frontmatter: Frontmatter = {
         title,
         date: date || new Date().toISOString().split("T")[0],
       };
@@ -103,7 +104,7 @@ export function NewPostPage() {
       if (category) frontmatter.category = category;
       if (finalStatus === "draft") frontmatter.draft = true;
 
-      const post = { path: filePath, title, date: frontmatter.date, content, frontmatter };
+      const post = { path: filePath, title, date: frontmatter.date ?? "", content, frontmatter };
 
       await dataProvider.savePost(post);
       autosave.clear();
