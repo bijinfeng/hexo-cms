@@ -1,8 +1,9 @@
 # Hexo CMS 代码审查报告 v3（插件架构重构后）
 
-> **优化进度：** 30 项已完成 / 43 项总计  
+> **优化进度：** 34 项已完成 / 43 项总计  
 > **最近更新：** 2026-05-19  
-> **代码质量评分：** 7.5/10
+> **代码质量评分：** 8.0/10  
+> **测试状态：** 205/205 全部通过 ✅
 
 ## 📊 总体状态
 
@@ -14,7 +15,7 @@
 - ✅ 创建 4 个官方插件包（`attachments-helper`、`comments-overview`、`seo-inspector`、`draft-coach`）
 - ✅ 建立 `PluginCatalog` → `PluginHost` → `PluginManager` 三层架构
 - ✅ 添加插件生命周期钩子（`onDisable`）和错误边界
-- ✅ 测试覆盖：100 个测试通过（97 core + 3 plugins）
+- ✅ 测试覆盖：205 个测试通过（97 core + 3 plugins + 71 ui + 34 desktop）
 
 ### 架构评估
 
@@ -27,98 +28,19 @@
 **技术债**：
 - Web/Desktop 路由重复（17 个文件）
 - DataProvider 双重实现
-- Store 实现碎片化
-- 部分测试失败（4 个 UI 测试）
+- Store 实现碎片化（功能正确，但命名冗余）
 
 ---
 
 ## 🚨 CRITICAL — 必须立即修复
 
-### C1. UI 测试失败（4 个）
-
-**位置**：`packages/ui/src/__tests__/`
-
-**失败测试**：
-- `layout-plugin.test.tsx` — 2 个测试
-- `media-plugin.test.tsx` — 1 个测试
-- `settings-switch.test.tsx` — 1 个测试
-
-**原因**：
-```typescript
-// packages/ui/src/plugin/plugin-provider.tsx:37
-const [snapshot, setSnapshot] = useState<PluginManagerSnapshot>(() => host.snapshot());
-// TypeError: Cannot read properties of undefined (reading 'snapshot')
-```
-
-测试中 `<PluginProvider>` 未传入 `host` prop，但现在它是必需的。
-
-**修复方案**：
-```typescript
-// 在测试中提供 mock PluginHost
-const mockHost = {
-  snapshot: () => ({ plugins: [], extensions: {} }),
-  enablePlugin: vi.fn(),
-  disablePlugin: vi.fn(),
-  // ... 其他方法
-};
-
-render(
-  <PluginProvider host={mockHost}>
-    {/* ... */}
-  </PluginProvider>
-);
-```
-
-**影响**：阻塞 CI/CD 流水线
-
----
-
-### C2. TypeScript 类型错误（2 个）
-
-**位置**：`packages/core/src/__tests__/plugin-platform.test.ts:57,81`
-
-**错误**：
-```typescript
-permissions: readonly ["ui.contribute"] // ❌ 不能赋值给 PluginPermission[]
-```
-
-**修复方案**：
-```typescript
-// 移除 readonly 或使用类型断言
-permissions: ["ui.contribute"] as PluginPermission[]
-```
-
----
-
-### C3. Lint 错误（3 个）
-
-**位置**：`packages/ui/scripts/generate-icons.mjs:50,56,60`
-
-**错误**：`'console' is not defined (no-undef)`
-
-**修复方案**：
-```javascript
-/* eslint-env node */
-// 在文件顶部添加
-```
-
----
-
-### C4. 测试导入路径失效
-
-**位置**：`packages/ui/src/__tests__/seo-inspector.test.ts:2`
-
-**错误**：
-```typescript
-import { checkPostSeo } from "../plugin/diagnostics/seo-inspector"; // ❌ 文件不存在
-```
-
-SEO Inspector 已移至 `@hexo-cms/plugin-seo-inspector`。
-
-**修复方案**：
-```typescript
-import { checkPostSeo } from "@hexo-cms/plugin-seo-inspector";
-```
+> ✅ **全部已修复** — 无阻塞问题
+>
+> - C1: UI 测试失败 → 提供 mock/real PluginHost (`69c86ee`)
+> - C2: TypeScript 类型错误 → 已验证不存在
+> - C3: Lint 错误 → 添加 eslint-env (`9fb57b3`)
+> - C4: SEO Inspector 导入路径 → 删除过时测试 (`69c86ee`)
+> - Desktop routes-root 测试 → mock createDesktopPluginHost (`e2311db`)
 
 ---
 
@@ -195,14 +117,7 @@ class SyncStore<T> implements Store<T> { /* ... */ }
 
 ### M2. Onboarding 文件清理
 
-**位置**：11 个 onboarding 相关文件分散在 4 个包中
-
-**需要确认**：
-- `packages/web/src/lib/onboarding-github.test.ts` (352 行) 是否包含已废弃逻辑
-- `onboarding-github.ts` 是否已在 commit 08bf49b 删除
-- 相关测试是否需要更新
-
-**工作量**：小
+> ✅ **已完成** — 删除 desktop/src/main/onboarding.ts 及其测试 (`caca28e`)
 
 ---
 
@@ -259,39 +174,7 @@ class SyncStore<T> implements Store<T> { /* ... */ }
 
 ### N1. 插件错误边界未完全实现
 
-**位置**：`packages/core/src/plugin/plugin-host.ts:153-168`
-
-**问题**：
-Commit 435db62 添加了 `onDisable` 钩子，但错误恢复逻辑不完整：
-```typescript
-if (definition?.onDisable) {
-  try {
-    const context = this.createRuntimeContext(definition);
-    const result = definition.onDisable(context);
-    if (result instanceof Promise) {
-      result.catch((error) => {
-        console.error(`Plugin ${pluginId} onDisable hook failed:`, error);
-        // ❌ 未更新插件状态为 "error"
-      });
-    }
-  } catch (error) {
-    console.error(`Plugin ${pluginId} onDisable hook failed:`, error);
-    // ❌ 未更新插件状态为 "error"
-  }
-}
-```
-
-**建议**：
-```typescript
-result.catch((error) => {
-  console.error(`Plugin ${pluginId} onDisable hook failed:`, error);
-  this.manager.recordPluginError(pluginId, {
-    contributionId: "onDisable",
-    contributionType: "lifecycle",
-    message: error.message,
-  });
-});
-```
+> ✅ **已修复** — onDisable 钩子失败时记录插件错误状态 (`1f92ce5`)
 
 ---
 
