@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useDataProvider } from "../context/data-provider-context";
-import { useAsyncData } from "../hooks/use-async-data";
+import { usePages, useDeletePage } from "../hooks/use-pages-query";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -35,29 +34,28 @@ export function PagesPage() {
   const navigate = useNavigate();
   const { location } = useRouterState();
   const isListRoute = location.pathname === "/pages";
-  const dataProvider = useDataProvider();
   const [deleteConfirmPage, setDeleteConfirmPage] = useState<PageItem | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const { data, loading, error, refresh } = useAsyncData<PageItem[]>(
-    async () => {
-      if (!isListRoute) return [];
-      const rawPages = await dataProvider.getPages();
-      return rawPages
-        .filter((page) => !page.path.includes("_posts"))
-        .map((page, index) => ({
-          id: String(index + 1),
-          title: page.title || page.path.split("/").pop()?.replace(".md", "") || "未命名",
-          path: "/" + page.path.replace(/^source\//, "").replace(/\.md$/, ""),
-          filePath: page.path,
-          slug: page.path.replace(/^source\//, "").replace(/\/index\.md$/, "").replace(/\.md$/, ""),
-          status: page.frontmatter?.draft ? "draft" : "published",
-          description: page.frontmatter?.description || (page.content || "").slice(0, 50) + "...",
-        }));
-    },
-    [dataProvider, isListRoute],
-  );
-  const pages = data ?? [];
+  const query = usePages({ enabled: isListRoute });
+  const deletePageMutation = useDeletePage();
+  const loading = isListRoute && query.isPending;
+  const error = query.error?.message ?? "";
+
+  const pages = useMemo<PageItem[]>(() => {
+    if (!isListRoute || !query.data) return [];
+    return query.data
+      .filter((page) => !page.path.includes("_posts"))
+      .map((page, index) => ({
+        id: String(index + 1),
+        title: page.title || page.path.split("/").pop()?.replace(".md", "") || "未命名",
+        path: "/" + page.path.replace(/^source\//, "").replace(/\.md$/, ""),
+        filePath: page.path,
+        slug: page.path.replace(/^source\//, "").replace(/\/index\.md$/, "").replace(/\.md$/, ""),
+        status: page.frontmatter?.draft ? "draft" : "published",
+        description: page.frontmatter?.description || (page.content || "").slice(0, 50) + "...",
+      }));
+  }, [query.data, isListRoute]);
 
   function handleDeletePage(page: PageItem) {
     setDeleteConfirmPage(page);
@@ -66,8 +64,7 @@ export function PagesPage() {
   async function confirmDeletePage() {
     if (!deleteConfirmPage) return;
     try {
-      await dataProvider.deletePage(deleteConfirmPage.filePath);
-      await refresh();
+      await deletePageMutation.mutateAsync(deleteConfirmPage.filePath);
     } catch (err) {
       console.error("Failed to delete page:", err);
       setDeleteError(err instanceof Error ? err.message : "删除失败");
@@ -90,7 +87,7 @@ export function PagesPage() {
         items={pages}
         searchFields={["title", "path"]}
         searchPlaceholder="搜索页面..."
-        onRetry={refresh}
+        onRetry={() => query.refetch()}
         emptyMessage="还没有页面"
         headerExtra={
           <Button onClick={() => navigate({ to: "/pages/new" })}>

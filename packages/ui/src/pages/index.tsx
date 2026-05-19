@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useDataProvider } from "../context/data-provider-context";
-import { useAsyncData } from "../hooks/use-async-data";
+import { useDashboard } from "../hooks/use-dashboard-queries";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -34,45 +33,14 @@ const statColorMap: Record<string, string> = {
   info: "bg-[var(--status-info-bg)] text-[var(--status-info)]",
 };
 
-interface DashboardData {
-  stats: { totalPosts: number; publishedPosts: number; draftPosts: number; totalTags: number; totalCategories: number };
-  recentPosts: Array<{ title: string; slug: string; date: string; status: string }>;
-  repoInfo: string;
-}
-
 export function DashboardPage() {
   const navigate = useNavigate();
-  const dataProvider = useDataProvider();
   const { snapshot, getDashboardWidgetRenderer } = usePluginSystem();
 
-  const { data, loading, error, refresh } = useAsyncData<DashboardData>(
-    async () => {
-      const config = await dataProvider.getConfig();
-      const [statsData, tagsData, postsData] = await Promise.all([
-        dataProvider.getStats(), dataProvider.getTags(), dataProvider.getPosts(),
-      ]);
-      return {
-        stats: {
-          totalPosts: statsData.totalPosts,
-          publishedPosts: statsData.publishedPosts,
-          draftPosts: statsData.draftPosts,
-          totalTags: tagsData.tags.length,
-          totalCategories: tagsData.categories.length,
-        },
-        recentPosts: postsData
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-          .slice(0, 5)
-          .map((post) => ({
-            title: post.title,
-            slug: post.path.replace(/^source\/_posts\//, "").replace(/\.md$/, ""),
-            date: post.date,
-            status: post.frontmatter?.draft ? "draft" : "published",
-          })),
-        repoInfo: config ? `${config.owner}/${config.repo}` : "",
-      };
-    },
-    [dataProvider],
-  );
+  const query = useDashboard();
+  const data = query.data;
+  const loading = query.isPending;
+  const error = query.error?.message ?? "";
 
   const stats = data?.stats ?? { totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalTags: 0, totalCategories: 0 };
   const recentPosts = data?.recentPosts ?? [];
@@ -129,7 +97,7 @@ export function DashboardPage() {
           <AlertCircle size={18} className="text-[var(--status-error)] flex-shrink-0" />
           <span className="text-sm text-[var(--status-error)] flex-1">{error}</span>
           <button
-            onClick={refresh}
+            onClick={() => query.refetch()}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[var(--status-error)] text-white rounded-md hover:opacity-90 transition-opacity cursor-pointer"
           >
             <RefreshCw size={14} />

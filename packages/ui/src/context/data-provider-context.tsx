@@ -1,6 +1,8 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useRef } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import type { DataProvider } from '@hexo-cms/core';
 import type { HexoPost } from '@hexo-cms/core';
+import { createQueryClient } from '../lib/query-client';
 
 const DataProviderContext = createContext<DataProvider | null>(null);
 
@@ -38,10 +40,14 @@ export function DataProviderProvider({ children, provider }: {
   children: React.ReactNode;
   provider: DataProvider;
 }) {
+  const queryClientRef = useRef(createQueryClient());
+
   return (
-    <DataProviderContext.Provider value={provider}>
-      {children}
-    </DataProviderContext.Provider>
+    <QueryClientProvider client={queryClientRef.current}>
+      <DataProviderContext.Provider value={provider}>
+        {children}
+      </DataProviderContext.Provider>
+    </QueryClientProvider>
   );
 }
 

@@ -1,6 +1,5 @@
 ﻿import { useState } from "react";
-import { useAsyncData } from "../hooks/use-async-data";
-import { useDataProvider } from "../context/data-provider-context";
+import { useTags, useRenameTag, useDeleteTag, useMergeTag } from "../hooks/use-tags-query";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -52,27 +51,23 @@ interface DialogState {
 }
 
 export function TagsPage() {
-  const dataProvider = useDataProvider();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("tags");
-  const [processing, setProcessing] = useState(false);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [newName, setNewName] = useState("");
   const [mergeTarget, setMergeTarget] = useState("");
   const [notification, setNotification] = useState<string | null>(null);
 
-  const { data, loading, error, refresh: loadTagsAndCategories } = useAsyncData(
-    async () => {
-      const result = await dataProvider.getTags();
-      return {
-        tags: result.tags.map((t, i) => ({ ...t, color: tagColors[i % tagColors.length] })),
-        categories: result.categories,
-      };
-    },
-    [dataProvider],
-  );
-  const tags = data?.tags ?? [];
-  const categories = data?.categories ?? [];
+  const query = useTags();
+  const loading = query.isPending;
+  const error = query.error?.message ?? "";
+  const tags = (query.data?.tags ?? []).map((t, i) => ({ ...t, color: tagColors[i % tagColors.length] }));
+  const categories = query.data?.categories ?? [];
+
+  const renameMutation = useRenameTag();
+  const deleteMutation = useDeleteTag();
+  const mergeMutation = useMergeTag();
+  const processing = renameMutation.isPending || deleteMutation.isPending || mergeMutation.isPending;
 
   function openRenameDialog(type: "tag" | "category", name: string, id: string) {
     setDialog({ type: "rename", itemType: type, itemName: name, itemId: id });
@@ -97,14 +92,14 @@ export function TagsPage() {
     if (!dialog || !newName.trim()) return;
 
     try {
-      setProcessing(true);
-      await dataProvider.renameTag(dialog.itemType, dialog.itemName, newName.trim());
+      await renameMutation.mutateAsync({
+        type: dialog.itemType,
+        name: dialog.itemName,
+        newName: newName.trim(),
+      });
       closeDialog();
-      await loadTagsAndCategories();
     } catch (err) {
       setNotification(err instanceof Error ? err.message : "重命名失败");
-    } finally {
-      setProcessing(false);
     }
   }
 
@@ -112,14 +107,13 @@ export function TagsPage() {
     if (!dialog) return;
 
     try {
-      setProcessing(true);
-      await dataProvider.deleteTag(dialog.itemType, dialog.itemName);
+      await deleteMutation.mutateAsync({
+        type: dialog.itemType,
+        name: dialog.itemName,
+      });
       closeDialog();
-      await loadTagsAndCategories();
     } catch (err) {
       setNotification(err instanceof Error ? err.message : "删除失败");
-    } finally {
-      setProcessing(false);
     }
   }
 
@@ -127,15 +121,15 @@ export function TagsPage() {
     if (!dialog || !mergeTarget) return;
 
     try {
-      setProcessing(true);
-      await dataProvider.mergeTag(dialog.itemType, dialog.itemName, mergeTarget);
+      await mergeMutation.mutateAsync({
+        type: dialog.itemType,
+        name: dialog.itemName,
+        target: mergeTarget,
+      });
       closeDialog();
-      await loadTagsAndCategories();
       setNotification(null);
     } catch (err) {
       setNotification(err instanceof Error ? err.message : "合并失败");
-    } finally {
-      setProcessing(false);
     }
   }
 

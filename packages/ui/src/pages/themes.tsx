@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useDataProvider } from "../context/data-provider-context";
-import { useAsyncData } from "../hooks/use-async-data";
+import { useThemes, useSwitchTheme } from "../hooks/use-themes-query";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -21,33 +20,22 @@ import {
 } from "lucide-react";
 
 export function ThemesPage() {
-  const dataProvider = useDataProvider();
-  const { data, loading, error, refresh } = useAsyncData(
-    async () => {
-      const themesData = await dataProvider.getThemes();
-      return {
-        currentTheme: themesData.currentTheme,
-        installedThemes: themesData.installedThemes.map((t) => t.name),
-      };
-    },
-    [dataProvider],
-  );
-  const currentTheme = data?.currentTheme ?? null;
-  const installedThemes = data?.installedThemes ?? [];
-  const [switching, setSwitching] = useState(false);
+  const query = useThemes();
+  const switchTheme = useSwitchTheme();
+  const loading = query.isPending;
+  const error = query.error?.message ?? "";
+  const currentTheme = query.data?.currentTheme ?? null;
+  const installedThemes = (query.data?.installedThemes ?? []).map((t) => t.name);
   const [notification, setNotification] = useState<string | null>(null);
+  const switching = switchTheme.isPending;
 
   async function handleSwitchTheme(themeName: string) {
     if (switching) return;
     try {
-      setSwitching(true);
-      await dataProvider.switchTheme(themeName);
-      await refresh();
+      await switchTheme.mutateAsync(themeName);
       setNotification(`已切换到主题「${themeName}」，请重新部署站点以生效`);
     } catch (err) {
       setNotification(err instanceof Error ? err.message : "切换主题失败");
-    } finally {
-      setSwitching(false);
     }
   }
 

@@ -1,8 +1,7 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useState, useCallback, useMemo } from "react";
-import { useAsyncData } from "../hooks/use-async-data";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { usePage, useSavePage, useDeletePage } from "../hooks/use-pages-query";
 import type { Frontmatter, HexoPost } from "@hexo-cms/core";
-import { useDataProvider } from "../context/data-provider-context";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Alert } from "../components/ui/alert";
@@ -34,41 +33,44 @@ import {
 
 export function EditPagePage() {
   const navigate = useNavigate();
-  const dataProvider = useDataProvider();
   const { slug } = useParams({ strict: false }) as { slug: string };
+
+  const path = `source/${slug}/index.md`;
+  const pageQuery = usePage(path);
+  const savePageMutation = useSavePage();
+  const deletePageMutation = useDeletePage();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [preview, setPreview] = useState(false);
   const [status, setStatus] = useState<"draft" | "published">("published");
-  const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [postPath, setPostPath] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const autosave = useAutoSave(slug, content);
 
-  const { loading, error } = useAsyncData(
-    async () => {
-      const path = `source/${slug}/index.md`;
-      const page = await dataProvider.getPage(path);
+  const loading = pageQuery.isPending;
+  const error = pageQuery.error?.message ?? "";
+  const saving = savePageMutation.isPending;
 
-      setTitle(page.title || "");
-
-      const draft = autosave.restore();
-      if (draft) {
-        setContent(draft);
-        setDraftRestored(true);
-      } else {
-        setContent(page.content || "");
-      }
-      setPostPath(page.path);
-      setStatus(page.frontmatter.draft ? "draft" : "published");
-      return page;
-    },
-    [dataProvider, slug],
-  );
+  useEffect(() => {
+    if (initialized || !pageQuery.data) return;
+    const page = pageQuery.data;
+    setTitle(page.title || "");
+    const draft = autosave.restore();
+    if (draft) {
+      setContent(draft);
+      setDraftRestored(true);
+    } else {
+      setContent(page.content || "");
+    }
+    setPostPath(page.path);
+    setStatus(page.frontmatter.draft ? "draft" : "published");
+    setInitialized(true);
+  }, [pageQuery.data, initialized, autosave]);
 
   const onChange = useCallback((value: string) => {
     setContent(value);
@@ -88,7 +90,6 @@ export function EditPagePage() {
       return;
     }
 
-    setSaving(true);
     setSaveError("");
     try {
       const frontmatter: Frontmatter = {
@@ -98,13 +99,11 @@ export function EditPagePage() {
       if (status === "draft") frontmatter.draft = true;
 
       const page: HexoPost = { path: postPath, title, date: frontmatter.date ?? "", content, frontmatter };
-      await dataProvider.savePage(page);
+      await savePageMutation.mutateAsync(page);
       autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "保存失败");
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -114,7 +113,7 @@ export function EditPagePage() {
 
   async function confirmDelete() {
     try {
-      await dataProvider.deletePage(postPath);
+      await deletePageMutation.mutateAsync(postPath);
       navigate({ to: "/pages" });
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "删除失败");

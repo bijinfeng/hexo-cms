@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useAsyncData } from "../hooks/use-async-data";
-import { useDataProvider } from "../context/data-provider-context";
+import { useMemo, useState } from "react";
+import { useDeployments, useTriggerDeploy } from "../hooks/use-deployments-query";
+import { useConfig } from "../hooks/use-dashboard-queries";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -87,74 +87,78 @@ function formatRelativeTime(isoDate: string): string {
 }
 
 export function DeployPage() {
-  const dataProvider = useDataProvider();
-  const [deploying, setDeploying] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
 
-  const { data, loading, error, refresh: loadDeployments } = useAsyncData(
-    async () => {
-      const config = await dataProvider.getConfig();
-      if (!config) {
-        throw new Error("请先在设置页面配置 GitHub 仓库");
-      }
+  const configQuery = useConfig();
+  const deploymentsQuery = useDeployments();
+  const triggerDeploy = useTriggerDeploy();
 
-      const runs = await dataProvider.getDeployments();
-      const formattedRuns = runs.map((run) => ({
-        id: run.id,
-        message: run.conclusion || run.status,
-        branch: "main",
-        time: formatRelativeTime(run.createdAt),
-        duration: run.duration,
-        status: (run.conclusion === "success" ? "success" : run.conclusion === "failure" ? "failed" : run.status === "in_progress" ? "running" : "pending") as "success" | "failed" | "running" | "pending",
-        url: `https://github.com/${config.owner}/${config.repo}/actions/runs/${run.id}`,
-      }));
+  const loading = configQuery.isPending || deploymentsQuery.isPending;
+  const error =
+    configQuery.error?.message ??
+    deploymentsQuery.error?.message ??
+    (!configQuery.isPending && !configQuery.data ? "请先在设置页面配置 GitHub 仓库" : "");
 
-      const success = formattedRuns.filter((r) => r.status === "success").length;
-      const failed = formattedRuns.filter((r) => r.status === "failed").length;
-      const durations = formattedRuns.filter((r) => r.duration > 0).map((r) => r.duration);
-      let avgDuration = "";
-      if (durations.length > 0) {
-        const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
-        avgDuration = `${Math.floor(avg / 60000)}m ${Math.floor((avg % 60000) / 1000)}s`;
-      }
+  const data = useMemo(() => {
+    const config = configQuery.data;
+    const runs = deploymentsQuery.data;
+    if (!config || !runs) return null;
 
-      return {
-        deployments: formattedRuns,
-        siteUrl: `https://${config.owner}.github.io/${config.repo}`,
-        successCount: success,
-        failedCount: failed,
-        avgDuration,
-      };
-    },
-    [dataProvider],
-  );
+    const formattedRuns = runs.map((run) => ({
+      id: run.id,
+      message: run.conclusion || run.status,
+      branch: "main",
+      time: formatRelativeTime(run.createdAt),
+      duration: run.duration,
+      status: (run.conclusion === "success"
+        ? "success"
+        : run.conclusion === "failure"
+          ? "failed"
+          : run.status === "in_progress"
+            ? "running"
+            : "pending") as DeployStatus,
+      url: `https://github.com/${config.owner}/${config.repo}/actions/runs/${run.id}`,
+    }));
+
+    const success = formattedRuns.filter((r) => r.status === "success").length;
+    const failed = formattedRuns.filter((r) => r.status === "failed").length;
+    const durations = formattedRuns.filter((r) => r.duration > 0).map((r) => r.duration);
+    let avgDuration = "";
+    if (durations.length > 0) {
+      const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
+      avgDuration = `${Math.floor(avg / 60000)}m ${Math.floor((avg % 60000) / 1000)}s`;
+    }
+
+    return {
+      deployments: formattedRuns,
+      siteUrl: `https://${config.owner}.github.io/${config.repo}`,
+      successCount: success,
+      failedCount: failed,
+      avgDuration,
+    };
+  }, [configQuery.data, deploymentsQuery.data]);
 
   const deployments = data?.deployments ?? [];
   const siteUrl = data?.siteUrl ?? "";
   const successCount = data?.successCount ?? 0;
   const failedCount = data?.failedCount ?? 0;
   const avgDuration = data?.avgDuration ?? "";
+  const deploying = triggerDeploy.isPending;
+  const refreshing = deploymentsQuery.isFetching && !deploymentsQuery.isPending;
 
   async function handleManualDeploy() {
+    const config = configQuery.data;
+    if (!config) return;
     try {
-      setDeploying(true);
-      const config = await dataProvider.getConfig();
-      if (!config) return;
-      await dataProvider.triggerDeploy(config.workflow_file || config.workflowFile || "pages.yml");
+      await triggerDeploy.mutateAsync(config.workflow_file || config.workflowFile || "pages.yml");
       setNotification("部署已触发，请稍后刷新查看状态");
-      setTimeout(() => loadDeployments(), 3000);
     } catch (err) {
       setNotification(err instanceof Error ? err.message : "触发部署失败");
-    } finally {
-      setDeploying(false);
     }
   }
 
   async function handleRefresh() {
-    setRefreshing(true);
-    await loadDeployments();
-    setRefreshing(false);
+    await deploymentsQuery.refetch();
   }
 
   if (loading) {
