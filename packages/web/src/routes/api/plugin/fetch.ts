@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PermissionBroker, assertPluginHttpRequestAllowed, sanitizeHeaders } from "@hexo-cms/core";
+import {
+  PermissionBroker,
+  assertPluginHttpRequestAllowed,
+  sanitizeHeaders,
+  PLUGIN_HTTP_DEFAULT_TIMEOUT_MS,
+  PLUGIN_HTTP_MAX_RESPONSE_SIZE,
+} from "@hexo-cms/core";
 import { getWebPluginManifests } from "../../../lib/plugin-host";
 import { getAuth, json } from "../../../lib/server-utils";
 import { appendPluginNetworkAudit } from "../../../lib/plugin-network-audit-db";
@@ -20,9 +26,6 @@ interface PluginFetchResponseBody {
   headers: Record<string, string>;
   body: string;
 }
-
-const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
-const DEFAULT_TIMEOUT_MS = 10_000;
 
 export const Route = createFileRoute("/api/plugin/fetch")({
   server: {
@@ -51,7 +54,7 @@ export const Route = createFileRoute("/api/plugin/fetch")({
           return json({ error: error instanceof Error ? error.message : "Invalid URL" }, 403);
         }
 
-        const timeoutMs = req.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+        const timeoutMs = req.timeoutMs ?? PLUGIN_HTTP_DEFAULT_TIMEOUT_MS;
         const controller = new globalThis.AbortController();
         const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -68,7 +71,7 @@ export const Route = createFileRoute("/api/plugin/fetch")({
           });
 
           const contentLength = response.headers.get("content-length");
-          if (contentLength && parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
+          if (contentLength && parseInt(contentLength, 10) > PLUGIN_HTTP_MAX_RESPONSE_SIZE) {
             appendPluginNetworkAudit(session.user.id, {
               pluginId: auditPluginId,
               url: parsedUrl.toString(),
@@ -80,7 +83,7 @@ export const Route = createFileRoute("/api/plugin/fetch")({
           }
 
           const body = await response.text();
-          if (body.length > MAX_RESPONSE_SIZE) {
+          if (body.length > PLUGIN_HTTP_MAX_RESPONSE_SIZE) {
             appendPluginNetworkAudit(session.user.id, {
               pluginId: auditPluginId,
               url: parsedUrl.toString(),

@@ -1,5 +1,8 @@
 import type { PluginHttpAPI, PluginHttpRequestOptions, PluginManifest, PluginPermission } from "./types";
 
+export const PLUGIN_HTTP_DEFAULT_TIMEOUT_MS = 10_000;
+export const PLUGIN_HTTP_MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
+
 export type PluginHttpPermissionBroker = {
   assert(pluginId: string, permission: PluginPermission, operation: string): void;
 };
@@ -36,7 +39,7 @@ export function createPluginHttpAPI(
   return {
     async fetch<T = unknown>(url: string, options: PluginHttpRequestOptions = {}): Promise<T> {
       const target = assertPluginHttpRequestAllowed(pluginId, manifest, permissionBroker, url);
-      const timeoutMs = options.timeoutMs ?? 10_000;
+      const timeoutMs = options.timeoutMs ?? PLUGIN_HTTP_DEFAULT_TIMEOUT_MS;
       if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
         throw new Error("Plugin HTTP timeout must be a positive number");
       }

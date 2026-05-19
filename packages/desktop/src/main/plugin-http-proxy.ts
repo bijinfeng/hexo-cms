@@ -2,13 +2,12 @@ import {
   PermissionBroker,
   assertPluginHttpRequestAllowed,
   sanitizeHeaders,
+  PLUGIN_HTTP_DEFAULT_TIMEOUT_MS,
+  PLUGIN_HTTP_MAX_RESPONSE_SIZE,
   type PluginHttpPermissionBroker,
   type PluginManifest,
 } from "@hexo-cms/core";
 import type { PluginNetworkAuditEntryInput } from "./desktop-persistence";
-
-const DEFAULT_MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
-const DEFAULT_TIMEOUT_MS = 10_000;
 
 export interface PluginFetchRequest {
   pluginId?: string;
@@ -41,8 +40,8 @@ export function createPluginHttpProxy({
   manifests,
   fetchImpl = defaultFetch,
   permissionBroker = new PermissionBroker(manifests),
-  maxResponseSize = DEFAULT_MAX_RESPONSE_SIZE,
-  defaultTimeoutMs = DEFAULT_TIMEOUT_MS,
+  maxResponseSize = PLUGIN_HTTP_MAX_RESPONSE_SIZE,
+  defaultTimeoutMs = PLUGIN_HTTP_DEFAULT_TIMEOUT_MS,
 }: PluginHttpProxyOptions) {
   return {
     fetch: (req: PluginFetchRequest) =>
