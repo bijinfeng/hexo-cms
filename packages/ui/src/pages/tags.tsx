@@ -1,4 +1,5 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState } from "react";
+import { useAsyncData } from "../hooks/use-async-data";
 import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -54,34 +55,24 @@ export function TagsPage() {
   const dataProvider = useDataProvider();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("tags");
-  const [tags, setTags] = useState<Array<{ id: string; name: string; slug: string; count: number; color?: string }>>([]);
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string; count: number; color?: string }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [newName, setNewName] = useState("");
   const [mergeTarget, setMergeTarget] = useState("");
   const [notification, setNotification] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadTagsAndCategories();
-  }, []);
-
-  async function loadTagsAndCategories() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await dataProvider.getTags();
-      setTags(data.tags.map((t, i) => ({ ...t, color: tagColors[i % tagColors.length] })));
-      setCategories(data.categories);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data, loading, error, refresh: loadTagsAndCategories } = useAsyncData(
+    async () => {
+      const result = await dataProvider.getTags();
+      return {
+        tags: result.tags.map((t, i) => ({ ...t, color: tagColors[i % tagColors.length] })),
+        categories: result.categories,
+      };
+    },
+    [dataProvider],
+  );
+  const tags = data?.tags ?? [];
+  const categories = data?.categories ?? [];
 
   function openRenameDialog(type: "tag" | "category", name: string, id: string) {
     setDialog({ type: "rename", itemType: type, itemName: name, itemId: id });

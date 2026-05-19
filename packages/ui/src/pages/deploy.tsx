@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useAsyncData } from "../hooks/use-async-data";
 import { useDataProvider } from "../context/data-provider-context";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -30,16 +31,6 @@ import {
 } from "lucide-react";
 
 type DeployStatus = "success" | "failed" | "running" | "pending";
-
-type DeploymentViewModel = {
-  id: string;
-  message: string;
-  branch: string;
-  time: string;
-  duration: number;
-  status: DeployStatus;
-  url: string;
-};
 
 const statusConfig = {
   success: {
@@ -97,30 +88,15 @@ function formatRelativeTime(isoDate: string): string {
 
 export function DeployPage() {
   const dataProvider = useDataProvider();
-  const [deployments, setDeployments] = useState<DeploymentViewModel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [siteUrl, setSiteUrl] = useState("");
-  const [successCount, setSuccessCount] = useState(0);
-  const [failedCount, setFailedCount] = useState(0);
-  const [avgDuration, setAvgDuration] = useState("");
   const [deploying, setDeploying] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadDeployments();
-  }, []);
-
-  async function loadDeployments() {
-    try {
-      setLoading(true);
-      setError("");
-
+  const { data, loading, error, refresh: loadDeployments } = useAsyncData(
+    async () => {
       const config = await dataProvider.getConfig();
       if (!config) {
-        setError("请先在设置页面配置 GitHub 仓库");
-        return;
+        throw new Error("请先在设置页面配置 GitHub 仓库");
       }
 
       const runs = await dataProvider.getDeployments();
@@ -134,25 +110,31 @@ export function DeployPage() {
         url: `https://github.com/${config.owner}/${config.repo}/actions/runs/${run.id}`,
       }));
 
-      setDeployments(formattedRuns);
-      setSiteUrl(`https://${config.owner}.github.io/${config.repo}`);
-
       const success = formattedRuns.filter((r) => r.status === "success").length;
       const failed = formattedRuns.filter((r) => r.status === "failed").length;
-      setSuccessCount(success);
-      setFailedCount(failed);
-
       const durations = formattedRuns.filter((r) => r.duration > 0).map((r) => r.duration);
+      let avgDuration = "";
       if (durations.length > 0) {
         const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
-        setAvgDuration(`${Math.floor(avg / 60000)}m ${Math.floor((avg % 60000) / 1000)}s`);
+        avgDuration = `${Math.floor(avg / 60000)}m ${Math.floor((avg % 60000) / 1000)}s`;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
-    } finally {
-      setLoading(false);
-    }
-  }
+
+      return {
+        deployments: formattedRuns,
+        siteUrl: `https://${config.owner}.github.io/${config.repo}`,
+        successCount: success,
+        failedCount: failed,
+        avgDuration,
+      };
+    },
+    [dataProvider],
+  );
+
+  const deployments = data?.deployments ?? [];
+  const siteUrl = data?.siteUrl ?? "";
+  const successCount = data?.successCount ?? 0;
+  const failedCount = data?.failedCount ?? 0;
+  const avgDuration = data?.avgDuration ?? "";
 
   async function handleManualDeploy() {
     try {
