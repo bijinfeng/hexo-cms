@@ -28,7 +28,7 @@ export function loadPluginState(userId: string): PluginStateStoreValue {
     value[row.pluginId] = {
       id: row.pluginId,
       version: "0.0.0",
-      source: "builtin",
+      origin: "official",
       state: row.state as "enabled" | "disabled" | "error",
       enabledAt: row.enabledAt ?? undefined,
       lastError: parseJsonColumn(row.lastError, undefined),

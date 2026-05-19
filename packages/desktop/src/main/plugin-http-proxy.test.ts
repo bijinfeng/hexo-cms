@@ -9,7 +9,8 @@ const networkPlugin: PluginManifest = {
   name: "Network Plugin",
   version: "1.0.0",
   description: "Fetches allowed URLs",
-  source: "builtin",
+  origin: "official",
+  runtime: "hosted",
   permissions: ["network.fetch"],
   network: { allowedHosts: ["api.example.com"] },
 };

@@ -1,8 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  ATTACHMENTS_HELPER_PLUGIN_ID,
-  COMMENTS_OVERVIEW_PLUGIN_ID,
-  SEO_INSPECTOR_PLUGIN_ID,
   MemoryPluginStateStore,
   MemoryPluginConfigStore,
   MemoryPluginLogStore,
@@ -15,16 +12,31 @@ import {
   assertPluginHttpRequestAllowed,
   type DiagnosticsHandler,
   type PluginFetch,
+  type PluginManifest,
   type PluginSecretStoreValue,
   type PluginStorageStoreValue,
-  builtinPluginManifests,
   validatePluginManifest,
 } from "../plugin";
 import type { DataProvider } from "../data-provider";
 
+function makeTestManifest(overrides: Partial<PluginManifest> = {}): PluginManifest {
+  return {
+    id: "hexo-cms-test-plugin",
+    name: "Test Plugin",
+    version: "0.1.0",
+    description: "A test plugin",
+    origin: "official",
+    runtime: "hosted",
+    permissions: [],
+    ...overrides,
+  };
+}
+
 describe("plugin system", () => {
-  it("validates builtin plugin manifests", () => {
-    expect(() => validatePluginManifest(builtinPluginManifests[0])).not.toThrow();
+  it("validates a plugin manifest", () => {
+    expect(() =>
+      validatePluginManifest(makeTestManifest({ id: "hexo-cms-valid-plugin", name: "Valid Plugin" })),
+    ).not.toThrow();
   });
 
   it("requires network hosts when network.fetch is declared", () => {
@@ -42,80 +54,132 @@ describe("plugin system", () => {
   });
 
   it("enables and disables plugin contributions", () => {
+    const testManifest = makeTestManifest({
+      id: "hexo-cms-test-attachments",
+      name: "Test Attachments",
+      permissions: ["ui.contribute"],
+      contributes: {
+        dashboardWidgets: [
+          {
+            id: "attachments.summary",
+            title: "Attachments Summary",
+            renderer: "builtin.attachments.summary",
+            size: "small",
+          },
+        ],
+      },
+    });
+
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [testManifest],
       store: new MemoryPluginStateStore(),
     });
 
     expect(manager.snapshot().extensions.dashboardWidgets).toHaveLength(0);
 
-    manager.enable(ATTACHMENTS_HELPER_PLUGIN_ID);
+    manager.enable("hexo-cms-test-attachments");
     expect(manager.snapshot().extensions.dashboardWidgets).toEqual([
       expect.objectContaining({
-        pluginId: ATTACHMENTS_HELPER_PLUGIN_ID,
+        pluginId: "hexo-cms-test-attachments",
         renderer: "builtin.attachments.summary",
       }),
     ]);
 
-    manager.disable(ATTACHMENTS_HELPER_PLUGIN_ID);
+    manager.disable("hexo-cms-test-attachments");
     expect(manager.snapshot().extensions.dashboardWidgets).toHaveLength(0);
   });
 
   it("registers comments overview as a second built-in plugin", () => {
-    expect(builtinPluginManifests.map((manifest) => manifest.id)).toContain(COMMENTS_OVERVIEW_PLUGIN_ID);
+    const testManifest = makeTestManifest({
+      id: "hexo-cms-test-comments",
+      name: "Test Comments Overview",
+      permissions: ["ui.contribute"],
+      contributes: {
+        dashboardWidgets: [
+          {
+            id: "comments.overview",
+            title: "评论概览",
+            renderer: "builtin.comments.overview",
+            size: "small",
+          },
+        ],
+      },
+    });
 
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [testManifest],
       store: new MemoryPluginStateStore(),
     });
 
-    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+    manager.enable("hexo-cms-test-comments");
 
     expect(manager.snapshot().extensions.dashboardWidgets).toEqual([
       expect.objectContaining({
-        pluginId: COMMENTS_OVERVIEW_PLUGIN_ID,
+        pluginId: "hexo-cms-test-comments",
         renderer: "builtin.comments.overview",
         title: "评论概览",
       }),
     ]);
 
-    manager.disable(COMMENTS_OVERVIEW_PLUGIN_ID);
+    manager.disable("hexo-cms-test-comments");
     expect(manager.snapshot().extensions.dashboardWidgets).toHaveLength(0);
   });
 
   it("enforces declared permissions", () => {
-    const broker = new PermissionBroker(builtinPluginManifests);
+    const testManifest = makeTestManifest({
+      id: "hexo-cms-test-attachments",
+      name: "Test Attachments",
+      permissions: ["content.read"],
+    });
+
+    const broker = new PermissionBroker([testManifest]);
 
     expect(() =>
-      broker.assert(ATTACHMENTS_HELPER_PLUGIN_ID, "content.read", "content.getMediaFiles"),
+      broker.assert("hexo-cms-test-attachments", "content.read", "content.getMediaFiles"),
     ).not.toThrow();
     expect(() =>
-      broker.assert(ATTACHMENTS_HELPER_PLUGIN_ID, "network.fetch", "http.fetch"),
+      broker.assert("hexo-cms-test-attachments", "network.fetch", "http.fetch"),
     ).toThrow(PluginPermissionError);
   });
 
   it("persists plugin config across manager instances", () => {
+    const testManifest = makeTestManifest({
+      id: "hexo-cms-test-comments",
+      name: "Test Comments Overview",
+      permissions: ["ui.contribute", "pluginConfig.write"],
+      contributes: {
+        dashboardWidgets: [
+          {
+            id: "comments.overview",
+            title: "评论概览",
+            renderer: "builtin.comments.overview",
+            size: "small",
+          },
+        ],
+      },
+    });
+
     const configStore = new MemoryPluginConfigStore();
     const firstManager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [testManifest],
       store: new MemoryPluginStateStore(),
       configStore,
     });
 
-    firstManager.updatePluginConfig(COMMENTS_OVERVIEW_PLUGIN_ID, {
+    firstManager.updatePluginConfig("hexo-cms-test-comments", {
       provider: "waline",
       moderationUrl: "https://comments.example.com",
       showPendingAlert: false,
     });
 
     const secondManager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [testManifest],
       store: new MemoryPluginStateStore(),
       configStore,
     });
 
     expect(
-      secondManager.snapshot().plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID)?.config,
+      secondManager.snapshot().plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments")?.config,
     ).toEqual({
       provider: "waline",
       moderationUrl: "https://comments.example.com",
@@ -145,18 +209,27 @@ describe("plugin system", () => {
   });
 
   it("executes registered plugin commands and returns command errors", async () => {
-    const manager = new PluginManager({
-      manifests: builtinPluginManifests,
-      store: new MemoryPluginStateStore(),
-      commandHandlers: {
-        [`${COMMENTS_OVERVIEW_PLUGIN_ID}:comments.openModeration`]: ({ args }) => `opened:${String(args[0])}`,
+    const testManifest = makeTestManifest({
+      id: "hexo-cms-test-comments",
+      name: "Test Comments Overview",
+      permissions: ["ui.contribute", "command.register"],
+      contributes: {
+        commands: [{ id: "comments.openModeration", title: "Open Moderation" }],
       },
     });
 
-    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+    const manager = new PluginManager({
+      manifests: [testManifest],
+      store: new MemoryPluginStateStore(),
+      commandHandlers: {
+        [`hexo-cms-test-comments:comments.openModeration`]: ({ args }) => `opened:${String(args[0])}`,
+      },
+    });
+
+    manager.enable("hexo-cms-test-comments");
 
     await expect(
-      manager.executeCommand(COMMENTS_OVERVIEW_PLUGIN_ID, "comments.openModeration", [
+      manager.executeCommand("hexo-cms-test-comments", "comments.openModeration", [
         "https://comments.example.com",
       ]),
     ).resolves.toEqual(
@@ -167,7 +240,7 @@ describe("plugin system", () => {
     );
 
     const missingHandler = await manager.executeCommand(
-      COMMENTS_OVERVIEW_PLUGIN_ID,
+      "hexo-cms-test-comments",
       "comments.unknown",
     );
 
@@ -179,13 +252,13 @@ describe("plugin system", () => {
     );
 
     const managerWithoutHandlers = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [testManifest],
       store: new MemoryPluginStateStore(),
     });
-    managerWithoutHandlers.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
+    managerWithoutHandlers.enable("hexo-cms-test-comments");
 
     await expect(
-      managerWithoutHandlers.executeCommand(COMMENTS_OVERVIEW_PLUGIN_ID, "comments.openModeration"),
+      managerWithoutHandlers.executeCommand("hexo-cms-test-comments", "comments.openModeration"),
     ).resolves.toEqual(
       expect.objectContaining({
         ok: false,
@@ -229,13 +302,19 @@ describe("plugin system", () => {
   });
 
   it("isolates plugin storage by plugin id and persists through the storage store", async () => {
+    const storageManifest = makeTestManifest({
+      id: "hexo-cms-test-attachments",
+      name: "Test Attachments",
+      permissions: ["pluginStorage.read", "pluginStorage.write"],
+    });
+
     const storageStore = new MemoryPluginStorageStore();
     const firstManager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [storageManifest],
       store: new MemoryPluginStateStore(),
       storageStore,
     });
-    const attachmentsStorage = firstManager.createStorageAPI(ATTACHMENTS_HELPER_PLUGIN_ID);
+    const attachmentsStorage = firstManager.createStorageAPI("hexo-cms-test-attachments");
 
     await attachmentsStorage.set("recentAttachment", {
       name: "guide.pdf",
@@ -249,13 +328,19 @@ describe("plugin system", () => {
       path: "source/images/guide.pdf",
     });
 
+    const commentsStorageManifest = makeTestManifest({
+      id: "hexo-cms-test-comments",
+      name: "Test Comments",
+      permissions: ["ui.contribute"],
+    });
+
     const secondManager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [storageManifest, commentsStorageManifest],
       store: new MemoryPluginStateStore(),
       storageStore,
     });
-    const secondAttachmentsStorage = secondManager.createStorageAPI(ATTACHMENTS_HELPER_PLUGIN_ID);
-    const commentsStorage = secondManager.createStorageAPI(COMMENTS_OVERVIEW_PLUGIN_ID);
+    const secondAttachmentsStorage = secondManager.createStorageAPI("hexo-cms-test-attachments");
+    const commentsStorage = secondManager.createStorageAPI("hexo-cms-test-comments");
 
     await expect(secondAttachmentsStorage.get("copyCount")).resolves.toBe(2);
     await expect(commentsStorage.keys()).rejects.toThrow(PluginPermissionError);
@@ -296,6 +381,12 @@ describe("plugin system", () => {
   });
 
   it("supports asynchronous plugin storage stores", async () => {
+    const storageManifest = makeTestManifest({
+      id: "hexo-cms-test-attachments",
+      name: "Test Attachments",
+      permissions: ["pluginStorage.read", "pluginStorage.write"],
+    });
+
     const storageStore = {
       value: {} as PluginStorageStoreValue,
       async load() {
@@ -306,11 +397,11 @@ describe("plugin system", () => {
       },
     };
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [storageManifest],
       store: new MemoryPluginStateStore(),
       storageStore,
     });
-    const storage = manager.createStorageAPI(ATTACHMENTS_HELPER_PLUGIN_ID);
+    const storage = manager.createStorageAPI("hexo-cms-test-attachments");
 
     await storage.set("lastPath", "source/images/guide.pdf");
 
@@ -543,15 +634,27 @@ describe("plugin system", () => {
   });
 
   it("records scoped and sanitized plugin logs", () => {
+    const attachmentsManifest = makeTestManifest({
+      id: "hexo-cms-test-attachments",
+      name: "Test Attachments",
+      permissions: ["ui.contribute"],
+    });
+
+    const commentsManifest = makeTestManifest({
+      id: "hexo-cms-test-comments",
+      name: "Test Comments",
+      permissions: ["ui.contribute"],
+    });
+
     const logStore = new MemoryPluginLogStore();
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [attachmentsManifest, commentsManifest],
       store: new MemoryPluginStateStore(),
       logStore,
       maxLogEntriesPerPlugin: 2,
     });
-    const attachmentsLogger = manager.createLogger(ATTACHMENTS_HELPER_PLUGIN_ID);
-    const commentsLogger = manager.createLogger(COMMENTS_OVERVIEW_PLUGIN_ID);
+    const attachmentsLogger = manager.createLogger("hexo-cms-test-attachments");
+    const commentsLogger = manager.createLogger("hexo-cms-test-comments");
 
     attachmentsLogger.debug("Preparing attachment scan");
     attachmentsLogger.info("Copied link with token=secret-token at /Users/demo/blog/.env", {
@@ -561,8 +664,8 @@ describe("plugin system", () => {
     attachmentsLogger.warn("Attachment scan finished");
     commentsLogger.error("Comments sync failed with cookie=session-cookie");
 
-    const attachmentsLogs = manager.getPluginLogs(ATTACHMENTS_HELPER_PLUGIN_ID);
-    const commentsLogs = manager.getPluginLogs(COMMENTS_OVERVIEW_PLUGIN_ID);
+    const attachmentsLogs = manager.getPluginLogs("hexo-cms-test-attachments");
+    const commentsLogs = manager.getPluginLogs("hexo-cms-test-comments");
 
     expect(attachmentsLogs).toHaveLength(2);
     expect(attachmentsLogs[0].message).toBe("Copied link with token=[redacted] at [redacted-path]");
@@ -576,20 +679,36 @@ describe("plugin system", () => {
   });
 
   it("includes recent plugin logs in snapshots and writes runtime errors to the log store", () => {
+    const testManifest = makeTestManifest({
+      id: "hexo-cms-test-comments",
+      name: "Test Comments Overview",
+      permissions: ["ui.contribute"],
+      contributes: {
+        dashboardWidgets: [
+          {
+            id: "comments.overview",
+            title: "评论概览",
+            renderer: "builtin.comments.overview",
+            size: "small",
+          },
+        ],
+      },
+    });
+
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [testManifest],
       store: new MemoryPluginStateStore(),
       logStore: new MemoryPluginLogStore(),
     });
 
-    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
-    manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+    manager.enable("hexo-cms-test-comments");
+    manager.recordPluginError("hexo-cms-test-comments", {
       contributionId: "comments.overview",
       contributionType: "dashboard.widget",
       message: "Renderer failed with apiKey=secret-key at C:\\Users\\demo\\.env",
     });
 
-    const plugin = manager.snapshot().plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+    const plugin = manager.snapshot().plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
 
     expect(plugin?.logs).toEqual([
       expect.objectContaining({
@@ -719,25 +838,41 @@ describe("plugin system", () => {
   });
 
   it("records sanitized plugin runtime errors without disabling the plugin", () => {
+    const testManifest = makeTestManifest({
+      id: "hexo-cms-test-comments",
+      name: "Test Comments Overview",
+      permissions: ["ui.contribute"],
+      contributes: {
+        dashboardWidgets: [
+          {
+            id: "comments.overview",
+            title: "评论概览",
+            renderer: "builtin.comments.overview",
+            size: "small",
+          },
+        ],
+      },
+    });
+
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [testManifest],
       store: new MemoryPluginStateStore(),
     });
 
-    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
-    const snapshot = manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+    manager.enable("hexo-cms-test-comments");
+    const snapshot = manager.recordPluginError("hexo-cms-test-comments", {
       contributionId: "comments.overview",
       contributionType: "dashboard.widget",
       message: "Renderer failed with token=secret-token at C:\\Users\\demo\\project\\.env",
       stack: "Error: Renderer failed\n    at C:\\Users\\demo\\project\\.env:1:1",
     });
 
-    const plugin = snapshot.plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+    const plugin = snapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
 
     expect(plugin?.record.state).toBe("enabled");
     expect(snapshot.extensions.dashboardWidgets).toEqual([
       expect.objectContaining({
-        pluginId: COMMENTS_OVERVIEW_PLUGIN_ID,
+        pluginId: "hexo-cms-test-comments",
       }),
     ]);
     expect(plugin?.record.lastError).toEqual(
@@ -753,42 +888,58 @@ describe("plugin system", () => {
   });
 
   it("trips an error fuse after repeated plugin runtime failures", () => {
+    const testManifest = makeTestManifest({
+      id: "hexo-cms-test-comments",
+      name: "Test Comments Overview",
+      permissions: ["ui.contribute"],
+      contributes: {
+        dashboardWidgets: [
+          {
+            id: "comments.overview",
+            title: "评论概览",
+            renderer: "builtin.comments.overview",
+            size: "small",
+          },
+        ],
+      },
+    });
+
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [testManifest],
       store: new MemoryPluginStateStore(),
       errorThreshold: 3,
     });
 
-    manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
-    manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+    manager.enable("hexo-cms-test-comments");
+    manager.recordPluginError("hexo-cms-test-comments", {
       contributionId: "comments.overview",
       contributionType: "dashboard.widget",
       message: "Renderer failed once",
     });
-    const secondSnapshot = manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+    const secondSnapshot = manager.recordPluginError("hexo-cms-test-comments", {
       contributionId: "comments.overview",
       contributionType: "dashboard.widget",
       message: "Renderer failed twice",
     });
 
     expect(
-      secondSnapshot.plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID)?.record.state,
+      secondSnapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments")?.record.state,
     ).toBe("enabled");
     expect(secondSnapshot.extensions.dashboardWidgets).toHaveLength(1);
 
-    const trippedSnapshot = manager.recordPluginError(COMMENTS_OVERVIEW_PLUGIN_ID, {
+    const trippedSnapshot = manager.recordPluginError("hexo-cms-test-comments", {
       contributionId: "comments.overview",
       contributionType: "dashboard.widget",
       message: "Renderer failed three times",
     });
-    const plugin = trippedSnapshot.plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+    const plugin = trippedSnapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
 
     expect(plugin?.record.state).toBe("error");
     expect(plugin?.record.lastError?.count).toBe(3);
     expect(trippedSnapshot.extensions.dashboardWidgets).toHaveLength(0);
 
-    const retriedSnapshot = manager.enable(COMMENTS_OVERVIEW_PLUGIN_ID);
-    const retriedPlugin = retriedSnapshot.plugins.find(({ manifest }) => manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+    const retriedSnapshot = manager.enable("hexo-cms-test-comments");
+    const retriedPlugin = retriedSnapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
 
     expect(retriedPlugin?.record.state).toBe("enabled");
     expect(retriedPlugin?.record.lastError).toBeUndefined();
@@ -796,11 +947,20 @@ describe("plugin system", () => {
   });
 
   it("registers the SEO Inspector manifest with diagnostics contributions", () => {
-    expect(builtinPluginManifests.map((m) => m.id)).toContain(SEO_INSPECTOR_PLUGIN_ID);
+    const seoManifest = makeTestManifest({
+      id: "hexo-cms-test-seo",
+      name: "Test SEO Inspector",
+      permissions: ["ui.contribute"],
+      contributes: {
+        diagnostics: [
+          { id: "seo.post-checks", title: "SEO Post Checks", scope: "post" },
+          { id: "seo.site-checks", title: "SEO Site Checks", scope: "site" },
+        ],
+      },
+    });
 
-    const manifest = builtinPluginManifests.find((m) => m.id === SEO_INSPECTOR_PLUGIN_ID);
-    expect(manifest?.contributes?.diagnostics).toHaveLength(2);
-    expect(manifest?.contributes?.diagnostics?.map((d) => d.scope)).toEqual(["post", "site"]);
+    expect(seoManifest.contributes?.diagnostics).toHaveLength(2);
+    expect(seoManifest.contributes?.diagnostics?.map((d) => d.scope)).toEqual(["post", "site"]);
   });
 
   it("runs diagnostics handlers and returns structured reports", async () => {
@@ -842,16 +1002,28 @@ describe("plugin system", () => {
       return issues;
     };
 
-    const manager = new PluginManager({
-      manifests: builtinPluginManifests,
-      store: new MemoryPluginStateStore(),
-      dataProvider: createMockDataProvider(),
-      diagnosticsHandlers: {
-        [`${SEO_INSPECTOR_PLUGIN_ID}:seo.post-checks`]: postHandler,
+    const seoManifest = makeTestManifest({
+      id: "hexo-cms-test-seo",
+      name: "Test SEO Inspector",
+      permissions: ["ui.contribute", "content.read"],
+      contributes: {
+        diagnostics: [
+          { id: "seo.post-checks", title: "SEO Post Checks", scope: "post" },
+          { id: "seo.site-checks", title: "SEO Site Checks", scope: "site" },
+        ],
       },
     });
 
-    manager.enable(SEO_INSPECTOR_PLUGIN_ID);
+    const manager = new PluginManager({
+      manifests: [seoManifest],
+      store: new MemoryPluginStateStore(),
+      dataProvider: createMockDataProvider(),
+      diagnosticsHandlers: {
+        [`hexo-cms-test-seo:seo.post-checks`]: postHandler,
+      },
+    });
+
+    manager.enable("hexo-cms-test-seo");
 
     const reports = await manager.runDiagnostics({
       scope: "post",
@@ -865,7 +1037,7 @@ describe("plugin system", () => {
     });
 
     expect(reports).toHaveLength(1);
-    expect(reports[0].pluginId).toBe(SEO_INSPECTOR_PLUGIN_ID);
+    expect(reports[0].pluginId).toBe("hexo-cms-test-seo");
     expect(reports[0].scope).toBe("post");
     expect(reports[0].issues).toEqual([
       { id: "test.title.missing", severity: "error", message: "Title missing" },
@@ -873,13 +1045,25 @@ describe("plugin system", () => {
   });
 
   it("returns an error issue when diagnostics handler is missing", async () => {
+    const seoManifest = makeTestManifest({
+      id: "hexo-cms-test-seo",
+      name: "Test SEO Inspector",
+      permissions: ["ui.contribute", "content.read"],
+      contributes: {
+        diagnostics: [
+          { id: "seo.post-checks", title: "SEO Post Checks", scope: "post" },
+          { id: "seo.site-checks", title: "SEO Site Checks", scope: "site" },
+        ],
+      },
+    });
+
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [seoManifest],
       store: new MemoryPluginStateStore(),
       dataProvider: {} as DataProvider,
     });
 
-    manager.enable(SEO_INSPECTOR_PLUGIN_ID);
+    manager.enable("hexo-cms-test-seo");
 
     const reports = await manager.runDiagnostics({ scope: "post" });
     expect(reports[0].issues[0].severity).toBe("error");
@@ -887,13 +1071,24 @@ describe("plugin system", () => {
   });
 
   it("skips diagnostics contributions from disabled plugins", async () => {
+    const seoManifest = makeTestManifest({
+      id: "hexo-cms-test-seo",
+      name: "Test SEO Inspector",
+      permissions: ["ui.contribute", "content.read"],
+      contributes: {
+        diagnostics: [
+          { id: "seo.post-checks", title: "SEO Post Checks", scope: "post" },
+          { id: "seo.site-checks", title: "SEO Site Checks", scope: "site" },
+        ],
+      },
+    });
+
     const manager = new PluginManager({
-      manifests: builtinPluginManifests,
+      manifests: [seoManifest],
       store: new MemoryPluginStateStore(),
       dataProvider: {} as DataProvider,
     });
 
-    // Don't enable SEO Inspector
     const reports = await manager.runDiagnostics({ scope: "post" });
     expect(reports).toHaveLength(0);
   });

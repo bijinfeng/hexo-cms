@@ -1,5 +1,4 @@
 export * from "./audit-log";
-export * from "./builtin";
 export * from "./command-registry";
 export * from "./define-plugin";
 export * from "./diagnostics-registry";

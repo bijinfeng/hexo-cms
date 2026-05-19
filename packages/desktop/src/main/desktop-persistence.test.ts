@@ -44,12 +44,12 @@ describe("desktop persistence", () => {
 
     persistence.saveConfig({ owner: "hexo", repo: "blog", branch: "main" });
     persistence.savePluginStorage({ pluginA: { count: 2 } });
-    persistence.savePluginState({ pluginA: { id: "pluginA", version: "1.0.0", source: "builtin", state: "enabled" } });
+    persistence.savePluginState({ pluginA: { id: "pluginA", version: "1.0.0", origin: "official", state: "enabled" } });
 
     expect(persistence.loadConfig()).toEqual({ owner: "hexo", repo: "blog", branch: "main" });
     expect(persistence.loadPluginStorage()).toEqual({ pluginA: { count: 2 } });
     expect(JSON.parse(readFileSync(join(root, "plugins", "state.json"), "utf-8"))).toEqual({
-      pluginA: { id: "pluginA", version: "1.0.0", source: "builtin", state: "enabled" },
+      pluginA: { id: "pluginA", version: "1.0.0", origin: "official", state: "enabled" },
     });
   });
 
