@@ -160,10 +160,20 @@ export class PluginHost<TRenderer = unknown> {
         if (result instanceof Promise) {
           result.catch((error) => {
             console.error(`Plugin ${pluginId} onDisable hook failed:`, error);
+            this.manager.recordPluginError(pluginId, {
+              contributionId: "lifecycle:onDisable",
+              contributionType: "command",
+              message: error instanceof Error ? error.message : String(error),
+            });
           });
         }
       } catch (error) {
         console.error(`Plugin ${pluginId} onDisable hook failed:`, error);
+        this.manager.recordPluginError(pluginId, {
+          contributionId: "lifecycle:onDisable",
+          contributionType: "command",
+          message: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
