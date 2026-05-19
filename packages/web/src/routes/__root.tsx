@@ -1,10 +1,11 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import type { PluginConfigValue, PluginHost } from "@hexo-cms/core";
 import {
   CMSLayout,
   DataProviderProvider,
   ErrorBoundary,
+  I18nProvider,
   PluginProvider,
   getAuthRedirect,
   isOnboardingRoute,
@@ -20,6 +21,14 @@ const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');v
 
 function NotFound() {
   return <div className="flex items-center justify-center h-full text-sm">404 — 页面不存在</div>;
+}
+
+function detectWebLocale(): "zh" | "en" {
+  const stored = localStorage.getItem("hexo-cms-locale");
+  if (stored === "zh" || stored === "en") return stored;
+  const browserLang = navigator.language.split("-")[0];
+  if (browserLang === "zh" || browserLang === "en") return browserLang;
+  return "zh";
 }
 
 export const Route = createRootRoute({
@@ -67,6 +76,7 @@ function RootComponent() {
   const [isPending, setIsPending] = useState(true);
   const [pluginHost, setPluginHost] = useState<PluginHost<ComponentType<{ config?: PluginConfigValue }>> | null>(null);
   const loadingRef = useRef(false);
+  const [locale] = useState<"zh" | "en">(() => detectWebLocale());
 
   useEffect(() => {
     let active = true;
@@ -120,6 +130,15 @@ function RootComponent() {
     (session?.state === "authenticated" && hasConfig === null && !isSetupRoute) ||
     (session?.state === "authenticated" && !isPublicRoute && !isSetupRoute && !pluginHost);
 
+  const i18nConfig = useMemo(() => ({
+    locales: ["zh", "en"],
+    defaultLocale: "zh",
+    resources: {
+      zh: {},
+      en: {},
+    },
+  }), []);
+
   useEffect(() => {
     if (loadingRef.current) return;
     const redirect = getAuthRedirect({
@@ -154,19 +173,27 @@ function RootComponent() {
   if (!pluginHost) return null;
 
   return (
-    <DataProviderProvider provider={webDataProvider}>
-      <PluginProvider host={pluginHost}>
-        <ErrorBoundary>
-          <CMSLayout
-            authClient={webAuthClient}
-            onSignedOut={() => navigate({ to: "/login", replace: true })}
-          >
-            <ErrorBoundary>
-              <Outlet />
-            </ErrorBoundary>
-          </CMSLayout>
-        </ErrorBoundary>
-      </PluginProvider>
-    </DataProviderProvider>
+    <I18nProvider
+      config={i18nConfig}
+      initialLocale={locale}
+      onLocaleChange={(newLocale) => {
+        localStorage.setItem("hexo-cms-locale", newLocale);
+      }}
+    >
+      <DataProviderProvider provider={webDataProvider}>
+        <PluginProvider host={pluginHost}>
+          <ErrorBoundary>
+            <CMSLayout
+              authClient={webAuthClient}
+              onSignedOut={() => navigate({ to: "/login", replace: true })}
+            >
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
+            </CMSLayout>
+          </ErrorBoundary>
+        </PluginProvider>
+      </DataProviderProvider>
+    </I18nProvider>
   );
 }
