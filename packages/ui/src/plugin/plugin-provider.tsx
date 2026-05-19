@@ -29,9 +29,11 @@ const PluginContext = createContext<PluginContextValue | null>(null);
 export function PluginProvider({
   children,
   host,
+  onStateChange,
 }: {
   children: React.ReactNode;
   host: PluginHost<ComponentType<{ config?: PluginConfigValue }>>;
+  onStateChange?: () => void;
 }) {
   const dataProvider = useDataProvider();
   const [snapshot, setSnapshot] = useState<PluginManagerSnapshot>(() => host.snapshot());
@@ -47,11 +49,13 @@ export function PluginProvider({
 
   const enablePlugin = useCallback((pluginId: string) => {
     setSnapshot(host.enablePlugin(pluginId));
-  }, [host]);
+    onStateChange?.();
+  }, [host, onStateChange]);
 
   const disablePlugin = useCallback((pluginId: string) => {
     setSnapshot(host.disablePlugin(pluginId));
-  }, [host]);
+    onStateChange?.();
+  }, [host, onStateChange]);
 
   const updatePluginConfig = useCallback((pluginId: string, config: PluginConfigValue) => {
     setSnapshot(host.updatePluginConfig(pluginId, config));
