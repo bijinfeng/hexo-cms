@@ -4,7 +4,8 @@ import { Badge } from "../../components/ui/badge";
 import { Card, CardContent } from "../../components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { filterOptions, dateRangeOptions } from "./usePostsFilter";
+import { useI18n } from "../../i18n/I18nProvider";
+import type { DateRangeOption } from "./usePostsFilter";
 
 interface PostFiltersProps {
   search: string;
@@ -22,6 +23,8 @@ interface PostFiltersProps {
   onClearAll: () => void;
   filteredCount: number;
   totalCount: number;
+  filterOptions: string[];
+  dateRangeOptions: DateRangeOption[];
 }
 
 export function PostFilters({
@@ -33,7 +36,9 @@ export function PostFilters({
   dateRange, onDateRangeChange,
   allCategories, onClearAll,
   filteredCount, totalCount,
+  filterOptions, dateRangeOptions,
 }: PostFiltersProps) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col sm:flex-row gap-3">
@@ -47,7 +52,7 @@ export function PostFilters({
           <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
           <input
             type="text"
-            placeholder="搜索标题、标签、内容、分类..."
+            placeholder={t("posts.filter.searchPlaceholder")}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
@@ -61,7 +66,7 @@ export function PostFilters({
 
         <Button variant="outline" size="default" className="gap-2 flex-shrink-0" onClick={onToggleFilters}>
           <Filter size={14} className={hasActiveFilters ? "text-[var(--brand-primary)]" : ""} />
-          高级筛选
+          {t("posts.filter.advancedFilter")}
           {showFilters ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </Button>
       </div>
@@ -72,7 +77,7 @@ export function PostFilters({
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">分类</label>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">{t("posts.filter.categoryLabel")}</label>
                   <Select value={selectedCategory} onValueChange={onSelectedCategoryChange}>
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -85,7 +90,7 @@ export function PostFilters({
                   </Select>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">日期范围</label>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">{t("posts.filter.dateRangeLabel")}</label>
                   <ToggleGroup type="single" value={dateRange} onValueChange={(v) => v && onDateRangeChange(v)}>
                     {dateRangeOptions.map((opt) => (
                       <ToggleGroupItem key={opt.value} value={opt.value} size="sm" className="flex-1 text-xs">{opt.label}</ToggleGroupItem>
@@ -97,14 +102,14 @@ export function PostFilters({
               {hasActiveFilters && (
                 <div className="flex items-center justify-between pt-3 border-t border-[var(--border-default)]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-[var(--text-tertiary)]">激活的过滤器:</span>
-                    {search && <Badge variant="default" className="gap-1">搜索: {search.slice(0, 20)}{search.length > 20 && "..."}</Badge>}
-                    {activeFilter !== "全部" && <Badge variant="default">状态: {activeFilter}</Badge>}
-                    {selectedCategory !== "全部分类" && <Badge variant="default">分类: {selectedCategory}</Badge>}
-                    {dateRange !== "all" && <Badge variant="default">日期: {dateRangeOptions.find((o) => o.value === dateRange)?.label}</Badge>}
+                    <span className="text-xs text-[var(--text-tertiary)]">{t("posts.filter.activeFilters")}:</span>
+                    {search && <Badge variant="default" className="gap-1">{t("posts.filter.searchFilter")}: {search.slice(0, 20)}{search.length > 20 && "..."}</Badge>}
+                    {activeFilter !== t("posts.filter.all") && <Badge variant="default">{t("posts.filter.statusFilter")}: {activeFilter}</Badge>}
+                    {selectedCategory !== t("posts.filter.allCategories") && <Badge variant="default">{t("posts.filter.categoryFilter")}: {selectedCategory}</Badge>}
+                    {dateRange !== "all" && <Badge variant="default">{t("posts.filter.dateFilter")}: {dateRangeOptions.find((o) => o.value === dateRange)?.label}</Badge>}
                   </div>
                   <Button variant="outline" size="sm" onClick={onClearAll} className="gap-1 flex-shrink-0">
-                    <X size={12} />清除所有
+                    <X size={12} />{t("posts.filter.clearAll")}
                   </Button>
                 </div>
               )}
@@ -115,11 +120,11 @@ export function PostFilters({
 
       {(hasActiveFilters || filteredCount !== totalCount) && (
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-[var(--text-secondary)]">
-            显示 <span className="font-semibold text-[var(--brand-primary)]">{filteredCount}</span> / {totalCount} 篇文章
-          </span>
-          {hasActiveFilters && (
-            <button onClick={onClearAll} className="text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer text-xs underline">清除过滤</button>
+              <span className="text-[var(--text-secondary)]">
+                {t("posts.filter.showCount", { count: filteredCount, total: totalCount })}
+              </span>
+              {hasActiveFilters && (
+                <button onClick={onClearAll} className="text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer text-xs underline">{t("posts.filter.clearFilter")}</button>
           )}
         </div>
       )}

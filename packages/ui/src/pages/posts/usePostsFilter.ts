@@ -1,20 +1,11 @@
 import { useMemo, useState } from "react";
+import { useI18n } from "../../i18n/I18nProvider";
 import { usePosts } from "../../hooks/use-posts-query";
 
-export const statusConfig = {
-  published: { label: "已发布", variant: "success" as const },
-  draft: { label: "草稿", variant: "default" as const },
-  archived: { label: "已归档", variant: "warning" as const },
-};
-
-export const filterOptions = ["全部", "已发布", "草稿", "已归档"];
-
-export const dateRangeOptions = [
-  { label: "全部时间", value: "all" },
-  { label: "最近 7 天", value: "7" },
-  { label: "最近 30 天", value: "30" },
-  { label: "最近 90 天", value: "90" },
-];
+export interface DateRangeOption {
+  label: string;
+  value: string;
+}
 
 export interface PostDisplayItem {
   id: string;
@@ -30,10 +21,29 @@ export interface PostDisplayItem {
 }
 
 export function usePostsFilter(options: { enabled?: boolean } = {}) {
+  const { t } = useI18n();
   const query = usePosts({ enabled: options.enabled });
+
+  const statusConfig = useMemo(() => ({
+    published: { label: t("posts.filter.published"), variant: "success" as const },
+    draft: { label: t("posts.filter.draft"), variant: "default" as const },
+    archived: { label: t("posts.filter.archived"), variant: "warning" as const },
+  }), [t]);
+
+  const filterOptions = useMemo(() => [
+    t("posts.filter.all"), t("posts.filter.published"), t("posts.filter.draft"), t("posts.filter.archived"),
+  ], [t]);
+
+  const dateRangeOptions = useMemo<DateRangeOption[]>(() => [
+    { label: t("posts.filter.allTime"), value: "all" },
+    { label: t("posts.filter.last7Days"), value: "7" },
+    { label: t("posts.filter.last30Days"), value: "30" },
+    { label: t("posts.filter.last90Days"), value: "90" },
+  ], [t]);
+
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState("全部");
-  const [selectedCategory, setSelectedCategory] = useState("全部分类");
+  const [activeFilter, setActiveFilter] = useState(t("posts.filter.all"));
+  const [selectedCategory, setSelectedCategory] = useState(t("posts.filter.allCategories"));
   const [dateRange, setDateRange] = useState("all");
 
   const posts = useMemo<PostDisplayItem[]>(() => {
@@ -47,7 +57,7 @@ export function usePostsFilter(options: { enabled?: boolean } = {}) {
       status: (post.frontmatter?.draft ? "draft" : "published") as "published" | "draft" | "archived",
       views: 0,
       tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter.tags as string[] : [],
-      category: typeof post.frontmatter?.category === "string" ? post.frontmatter.category : "未分类",
+      category: typeof post.frontmatter?.category === "string" ? post.frontmatter.category : t("posts.filter.uncategorized"),
       excerpt: (post.content || "").slice(0, 100) + "...",
     }));
   }, [query.data]);
@@ -56,19 +66,19 @@ export function usePostsFilter(options: { enabled?: boolean } = {}) {
   const error = query.error?.message ?? "";
 
   const allCategories = useMemo(
-    () => ["全部分类", ...Array.from(new Set(posts.map((p) => p.category)))],
-    [posts],
+    () => [t("posts.filter.allCategories"), ...Array.from(new Set(posts.map((p) => p.category)))],
+    [posts, t],
   );
 
   const hasActiveFilters = useMemo(
-    () => search !== "" || activeFilter !== "全部" || selectedCategory !== "全部分类" || dateRange !== "all",
-    [search, activeFilter, selectedCategory, dateRange],
+    () => search !== "" || activeFilter !== t("posts.filter.all") || selectedCategory !== t("posts.filter.allCategories") || dateRange !== "all",
+    [search, activeFilter, selectedCategory, dateRange, t],
   );
 
   const clearAllFilters = () => {
     setSearch("");
-    setActiveFilter("全部");
-    setSelectedCategory("全部分类");
+    setActiveFilter(t("posts.filter.all"));
+    setSelectedCategory(t("posts.filter.allCategories"));
     setDateRange("all");
   };
 
@@ -81,12 +91,12 @@ export function usePostsFilter(options: { enabled?: boolean } = {}) {
       p.category.toLowerCase().includes(search.toLowerCase());
 
     const matchFilter =
-      activeFilter === "全部" ||
-      (activeFilter === "已发布" && p.status === "published") ||
-      (activeFilter === "草稿" && p.status === "draft") ||
-      (activeFilter === "已归档" && p.status === "archived");
+      activeFilter === t("posts.filter.all") ||
+      (activeFilter === t("posts.filter.published") && p.status === "published") ||
+      (activeFilter === t("posts.filter.draft") && p.status === "draft") ||
+      (activeFilter === t("posts.filter.archived") && p.status === "archived");
 
-    const matchCategory = selectedCategory === "全部分类" || p.category === selectedCategory;
+    const matchCategory = selectedCategory === t("posts.filter.allCategories") || p.category === selectedCategory;
 
     const matchDateRange = (() => {
       if (dateRange === "all") return true;
@@ -96,7 +106,7 @@ export function usePostsFilter(options: { enabled?: boolean } = {}) {
     })();
 
     return matchSearch && matchFilter && matchCategory && matchDateRange;
-  }), [posts, search, activeFilter, selectedCategory, dateRange]);
+  }), [posts, search, activeFilter, selectedCategory, dateRange, t]);
 
   return {
     posts, loading, error,
@@ -107,5 +117,8 @@ export function usePostsFilter(options: { enabled?: boolean } = {}) {
     allCategories, hasActiveFilters, clearAllFilters,
     filtered,
     loadPosts: () => query.refetch().then(() => undefined),
+    statusConfig,
+    filterOptions,
+    dateRangeOptions,
   };
 }
