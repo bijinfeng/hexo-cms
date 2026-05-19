@@ -12,20 +12,20 @@ const validManifest = {
   name: "Test Plugin",
   version: "1.0.0",
   description: "Test plugin",
-  origin: "official",
-  runtime: "hosted",
-  permissions: ["ui.contribute"],
+  origin: "official" as const,
+  runtime: "hosted" as const,
+  permissions: ["ui.contribute"] as ["ui.contribute"],
   contributes: {
     dashboardWidgets: [
       {
         id: "test.widget",
         title: "Test Widget",
         renderer: "test.widget",
-        size: "medium",
+        size: "medium" as const,
       },
     ],
   },
-} as const;
+};
 
 describe("plugin platform contract", () => {
   it("validates origin and runtime instead of source", () => {
