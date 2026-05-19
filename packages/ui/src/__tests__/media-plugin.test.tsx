@@ -6,6 +6,7 @@ import { PluginProvider } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import { MediaPage } from "../pages/media";
 import type { DataProvider } from "@hexo-cms/core";
+import { createMockPluginHost } from "./test-utils";
 
 function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider {
   return {
@@ -55,7 +56,7 @@ describe("MediaPage plugin boundaries", () => {
 
     render(
       <DataProviderProvider provider={createDataProvider()}>
-        <PluginProvider>
+        <PluginProvider host={createMockPluginHost()}>
           <PluginHarness />
         </PluginProvider>
       </DataProviderProvider>,

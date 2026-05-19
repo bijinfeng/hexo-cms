@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkPostSeo } from "../plugin/diagnostics/seo-inspector";
+import { checkPostSeo } from "@hexo-cms/plugin-seo-inspector";
 import type { HexoPost } from "@hexo-cms/core";
 
 function createPost(overrides: Partial<HexoPost> = {}): HexoPost {

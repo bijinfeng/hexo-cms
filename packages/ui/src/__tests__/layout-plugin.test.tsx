@@ -6,6 +6,7 @@ import { CMSLayout } from "../components/layout/CMSLayout";
 import { PluginProvider } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import type { DataProvider } from "@hexo-cms/core";
+import { createMockPluginHost } from "./test-utils";
 
 vi.mock("@tanstack/react-router", () => ({
   useRouterState: () => ({ location: { pathname: "/media" } }),
@@ -69,7 +70,7 @@ describe("CMSLayout plugin policy", () => {
 
     render(
       <DataProviderProvider provider={createDataProvider()}>
-        <PluginProvider>
+        <PluginProvider host={createMockPluginHost()}>
           <PluginSettingsPanel />
           <CMSLayout>
             <div>媒体内容</div>
@@ -90,7 +91,7 @@ describe("CMSLayout plugin policy", () => {
 
     render(
       <DataProviderProvider provider={createDataProvider()}>
-        <PluginProvider>
+        <PluginProvider host={createMockPluginHost()}>
           <PluginSettingsPanel />
           <CMSLayout>
             <div>媒体内容</div>

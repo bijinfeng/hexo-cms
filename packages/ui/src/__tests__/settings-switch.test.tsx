@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SettingsPage } from "../pages/settings";
 import { PluginProvider } from "../plugin";
+import { createMockPluginHost } from "./test-utils";
 
 describe("SettingsPage switches", () => {
   beforeEach(() => {
@@ -11,7 +12,7 @@ describe("SettingsPage switches", () => {
 
   it("can open directly on the plugin settings section", () => {
     render(
-      <PluginProvider>
+      <PluginProvider host={createMockPluginHost()}>
         <SettingsPage initialSection="plugins" />
       </PluginProvider>,
     );
