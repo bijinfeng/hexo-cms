@@ -50,6 +50,12 @@ vi.mock("../lib/desktop-data-provider-instance", () => ({
   },
 }));
 
+vi.mock("../lib/plugin-host", () => ({
+  createDesktopPluginHost: vi.fn(() => Promise.resolve({
+    snapshot: () => ({ plugins: [], extensions: { commands: [], diagnostics: [], dashboardWidgets: [], events: [], sidebarItems: [], settingsPanels: [], uiFlags: [] } }),
+  })),
+}));
+
 async function renderElement(element: ReactElement) {
   const container = document.createElement("div");
   document.body.appendChild(container);
