@@ -21,7 +21,9 @@ import appCss from "../styles.css?url";
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
 
 function NotFound() {
-  return <div className="flex items-center justify-center h-full text-sm">404 — 页面不存在</div>;
+  const stored = typeof window !== "undefined" ? localStorage.getItem("hexo-cms-locale") : null;
+  const text = stored === "en" ? "404 - Page Not Found" : "404 — 页面不存在";
+  return <div className="flex items-center justify-center h-full text-sm">{text}</div>;
 }
 
 function detectWebLocale(): "zh" | "en" {
@@ -52,8 +54,10 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const stored = typeof window !== "undefined" ? localStorage.getItem("hexo-cms-locale") : null;
+  const lang = stored === "en" ? "en" : "zh-CN";
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
