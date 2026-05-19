@@ -30,5 +30,25 @@ export const seoInspectorManifest: PluginManifest = {
       { id: "seo.post-checks", title: "Post SEO checks", scope: "post" },
       { id: "seo.site-checks", title: "Site SEO summary", scope: "site" },
     ],
+    translations: {
+      zh: {
+        "seo.post.title": "SEO 检查",
+        "seo.post.missingTitle": "缺少标题",
+        "seo.post.titleHint": "在 frontmatter 中添加 title 字段",
+        "seo.post.noDescription": "缺少描述",
+        "seo.post.descHint": "在 frontmatter 中添加 description 字段",
+        "seo.site.title": "站点 SEO 概览",
+        "seo.site.noSitemap": "未找到 sitemap",
+      },
+      en: {
+        "seo.post.title": "SEO Check",
+        "seo.post.missingTitle": "Missing title",
+        "seo.post.titleHint": "Add a title field in frontmatter",
+        "seo.post.noDescription": "Missing description",
+        "seo.post.descHint": "Add a description field in frontmatter",
+        "seo.site.title": "Site SEO Overview",
+        "seo.site.noSitemap": "Sitemap not found",
+      },
+    },
   },
 };
