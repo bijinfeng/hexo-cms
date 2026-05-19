@@ -12,6 +12,7 @@ import {
   isPublicAuthRoute,
   type AuthSession,
 } from "@hexo-cms/ui/app-shell";
+import { zh, en } from "@hexo-cms/ui";
 import { webAuthClient } from "../lib/auth-client";
 import { webDataProvider } from "../lib/web-data-provider-instance";
 import { createWebPluginHost } from "../lib/plugin-host";
@@ -137,8 +138,8 @@ function RootComponent() {
       locales: ["zh", "en"],
       defaultLocale: "zh",
       resources: {
-        zh: { ...(pluginTranslations.zh ?? {}) },
-        en: { ...(pluginTranslations.en ?? {}) },
+        zh: { ...zh, ...(pluginTranslations.zh ?? {}) },
+        en: { ...en, ...(pluginTranslations.en ?? {}) },
       },
     };
   }, [pluginHost, pluginTranslationVersion]);

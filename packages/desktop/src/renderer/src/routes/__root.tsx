@@ -12,6 +12,7 @@ import {
   isPublicAuthRoute,
   type AuthSession,
 } from "@hexo-cms/ui/app-shell";
+import { zh, en } from "@hexo-cms/ui";
 import { desktopAuthClient, subscribeToDesktopAuthChanges } from "../lib/desktop-auth-client";
 import { desktopDataProvider } from "../lib/desktop-data-provider-instance";
 import { createDesktopPluginHost } from "../lib/plugin-host";
@@ -117,8 +118,8 @@ function RootComponent() {
       locales: ["zh", "en"],
       defaultLocale: "zh",
       resources: {
-        zh: { ...(pluginTranslations.zh ?? {}) },
-        en: { ...(pluginTranslations.en ?? {}) },
+        zh: { ...zh, ...(pluginTranslations.zh ?? {}) },
+        en: { ...en, ...(pluginTranslations.en ?? {}) },
       },
     };
   }, [pluginHost, pluginTranslationVersion]);
