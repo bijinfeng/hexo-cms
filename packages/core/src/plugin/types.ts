@@ -414,6 +414,7 @@ export interface PluginDefinition<TRenderer = unknown> {
   commands?: Record<string, PluginRuntimeFactory<PluginCommandHandler>>;
   diagnostics?: Record<string, PluginRuntimeFactory<DiagnosticsHandler>>;
   events?: Record<string, PluginRuntimeFactory<PluginEventHandler>>;
+  onDisable?: (context: PluginRuntimeContext) => void | Promise<void>;
 }
 
 export interface PluginManagerSnapshot {

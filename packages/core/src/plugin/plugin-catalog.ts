@@ -35,8 +35,12 @@ export class PluginCatalog<TRenderer = unknown> {
     const definitions: Array<PluginDefinition<TRenderer>> = [];
 
     for (const resolver of resolvers) {
-      const discovered = await resolver.discover();
-      definitions.push(...discovered);
+      try {
+        const discovered = await resolver.discover();
+        definitions.push(...discovered);
+      } catch (error) {
+        console.error(`Plugin resolver failed to discover plugins:`, error);
+      }
     }
 
     return new PluginCatalog(definitions);

@@ -151,6 +151,22 @@ export class PluginHost<TRenderer = unknown> {
   }
 
   private unregisterRuntime(pluginId: string): void {
+    const definition = this.options.catalog.getDefinition(pluginId);
+
+    if (definition?.onDisable) {
+      try {
+        const context = this.createRuntimeContext(definition);
+        const result = definition.onDisable(context);
+        if (result instanceof Promise) {
+          result.catch((error) => {
+            console.error(`Plugin ${pluginId} onDisable hook failed:`, error);
+          });
+        }
+      } catch (error) {
+        console.error(`Plugin ${pluginId} onDisable hook failed:`, error);
+      }
+    }
+
     for (const key of this.renderers.keys()) {
       if (key.startsWith(`${pluginId}:`)) this.renderers.delete(key);
     }
