@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { useDataProvider } from "../context/data-provider-context";
+import { usePost, useSavePost, useDeletePost } from "../hooks/use-posts-query";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Alert } from "../components/ui/alert";
@@ -53,7 +53,11 @@ const availableCategories = ["前端开发", "后端开发", "系统设计", "�
 export function EditPostPage() {
   const navigate = useNavigate();
   const { slug } = useParams({ strict: false }) as { slug: string };
-  const dataProvider = useDataProvider();
+
+  const path = `source/_posts/${slug}.md`;
+  const postQuery = usePost(path);
+  const savePostMutation = useSavePost();
+  const deletePostMutation = useDeletePost();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -62,13 +66,16 @@ export function EditPostPage() {
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("published");
   const [date, setDate] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [postPath, setPostPath] = useState("");
   const [draftRestored, setDraftRestored] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const autosave = useAutoSave(slug, content);
+
+  const loading = postQuery.isPending;
+  const error = postQuery.error?.message ?? "";
+  const saving = savePostMutation.isPending;
 
   // Build current post for diagnostics
   const currentPost = useMemo<HexoPost>(() => {
@@ -91,47 +98,34 @@ export function EditPostPage() {
   }, [title, content, date, selectedTags, category, status, postPath]);
 
   useEffect(() => {
-    loadPost();
-  }, [slug]);
+    if (initialized || !postQuery.data) return;
+    const post = postQuery.data;
+    setPostPath(post.path);
+    setTitle(post.title || "");
 
-  async function loadPost() {
-    setLoading(true);
-    try {
-      const path = `source/_posts/${slug}.md`;
-      setPostPath(path);
-
-      const post = await dataProvider.getPost(path);
-      setTitle(post.title || "");
-
-      // Check for draft before setting content
-      const draft = autosave.restore();
-      if (draft) {
-        setContent(draft);
-        setDraftRestored(true);
-      } else {
-        setContent(post.content || "");
-      }
-
-      setDate(post.date || new Date().toISOString().split("T")[0]);
-      setStatus(post.frontmatter?.draft ? "draft" : "published");
-
-      const tags = post.frontmatter?.tags;
-      if (Array.isArray(tags)) {
-        setSelectedTags(tags);
-      } else if (typeof tags === "string") {
-        setSelectedTags([tags]);
-      }
-
-      if (post.frontmatter?.category) {
-        setCategory(post.frontmatter.category);
-      }
-    } catch (err) {
-      console.error("Failed to load post:", err);
-      setError(err instanceof Error ? err.message : "文章不存在或加载失败");
-    } finally {
-      setLoading(false);
+    const draft = autosave.restore();
+    if (draft) {
+      setContent(draft);
+      setDraftRestored(true);
+    } else {
+      setContent(post.content || "");
     }
-  }
+
+    setDate(post.date || new Date().toISOString().split("T")[0]);
+    setStatus(post.frontmatter?.draft ? "draft" : "published");
+
+    const tags = post.frontmatter?.tags;
+    if (Array.isArray(tags)) {
+      setSelectedTags(tags);
+    } else if (typeof tags === "string") {
+      setSelectedTags([tags]);
+    }
+
+    if (post.frontmatter?.category) {
+      setCategory(post.frontmatter.category);
+    }
+    setInitialized(true);
+  }, [postQuery.data, initialized, autosave]);
 
   const onChange = useCallback((value: string) => {
     setContent(value);
@@ -147,12 +141,11 @@ export function EditPostPage() {
 
   async function handleSave(publish = false) {
     if (!title.trim()) {
-      setError("请输入文章标题");
+      setSaveError("请输入文章标题");
       return;
     }
 
-    setSaving(true);
-    setError("");
+    setSaveError("");
 
     try {
       const finalStatus = publish ? "published" : status;
@@ -173,14 +166,12 @@ export function EditPostPage() {
         frontmatter,
       };
 
-      await dataProvider.savePost(post);
+      await savePostMutation.mutateAsync(post);
       autosave.clear();
       navigate({ to: "/posts" });
     } catch (err) {
       console.error("Failed to save post:", err);
-      setError(err instanceof Error ? err.message : "保存失败");
-    } finally {
-      setSaving(false);
+      setSaveError(err instanceof Error ? err.message : "保存失败");
     }
   }
 
@@ -197,17 +188,15 @@ export function EditPostPage() {
   }
 
   async function confirmDelete() {
-    setSaving(true);
-    setError("");
+    setSaveError("");
 
     try {
-      await dataProvider.deletePost(postPath);
+      await deletePostMutation.mutateAsync(postPath);
       navigate({ to: "/posts" });
     } catch (err) {
       console.error("Failed to delete post:", err);
-      setError(err instanceof Error ? err.message : "删除失败");
+      setSaveError(err instanceof Error ? err.message : "删除失败");
     } finally {
-      setSaving(false);
       setDeleteOpen(false);
     }
   }
@@ -262,9 +251,9 @@ export function EditPostPage() {
       </div>
 
       {/* Error message */}
-      {error && (
+      {(error || saveError) && (
         <Alert variant="destructive" className="mx-6 mt-3">
-          {error}
+          {error || saveError}
         </Alert>
       )}
 

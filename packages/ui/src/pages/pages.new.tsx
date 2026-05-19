@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Frontmatter, HexoPost } from "@hexo-cms/core";
-import { useDataProvider } from "../context/data-provider-context";
+import { useSavePage } from "../hooks/use-pages-query";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Alert } from "../components/ui/alert";
@@ -27,15 +27,15 @@ import {
 
 export function NewPagePage() {
   const navigate = useNavigate();
-  const dataProvider = useDataProvider();
+  const savePageMutation = useSavePage();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState(`# 页面标题\n\n在这里开始写作...\n`);
   const [preview, setPreview] = useState(false);
   const [status, setStatus] = useState<"draft" | "published">("published");
   const [slug, setSlug] = useState("");
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [draftRestored, setDraftRestored] = useState(false);
+  const saving = savePageMutation.isPending;
 
   const autosave = useAutoSave("new-page", content);
 
@@ -64,7 +64,6 @@ export function NewPagePage() {
       setError("请输入页面标题");
       return;
     }
-    setSaving(true);
     setError("");
     try {
       const finalStatus = publish ? "published" : status;
@@ -77,13 +76,11 @@ export function NewPagePage() {
       if (finalStatus === "draft") frontmatter.draft = true;
 
       const page: HexoPost = { path: filePath, title, date: frontmatter.date ?? "", content, frontmatter };
-      await dataProvider.savePage(page);
+      await savePageMutation.mutateAsync(page);
       autosave.clear();
       navigate({ to: "/pages" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存失败");
-    } finally {
-      setSaving(false);
     }
   }
 

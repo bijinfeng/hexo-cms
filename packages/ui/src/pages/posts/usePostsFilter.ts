@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useDataProvider } from "../../context/data-provider-context";
+import { useMemo, useState } from "react";
+import { usePosts } from "../../hooks/use-posts-query";
 
 export const statusConfig = {
   published: { label: "已发布", variant: "success" as const },
@@ -29,41 +29,31 @@ export interface PostDisplayItem {
   excerpt: string;
 }
 
-export function usePostsFilter() {
-  const dataProvider = useDataProvider();
-  const [posts, setPosts] = useState<PostDisplayItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+export function usePostsFilter(options: { enabled?: boolean } = {}) {
+  const query = usePosts({ enabled: options.enabled });
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("全部");
   const [selectedCategory, setSelectedCategory] = useState("全部分类");
   const [dateRange, setDateRange] = useState("all");
 
-  const loadPosts = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const rawPosts = await dataProvider.getPosts();
-      const formattedPosts = rawPosts.map((post, index: number) => ({
-        id: String(index + 1),
-        title: post.title,
-        slug: post.path.replace(/^.*\//, "").replace(/\.md$/, ""),
-        path: post.path,
-        date: post.date || new Date().toISOString().split("T")[0],
-        status: (post.frontmatter?.draft ? "draft" : "published") as "published" | "draft" | "archived",
-        views: 0,
-        tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter.tags as string[] : [],
-        category: typeof post.frontmatter?.category === "string" ? post.frontmatter.category : "未分类",
-        excerpt: (post.content || "").slice(0, 100) + "...",
-      }));
-      setPosts(formattedPosts);
-    } catch (err) {
-      console.error("Failed to load posts:", err);
-      setError(err instanceof Error ? err.message : "加载文章失败");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const posts = useMemo<PostDisplayItem[]>(() => {
+    if (!query.data) return [];
+    return query.data.map((post, index: number) => ({
+      id: String(index + 1),
+      title: post.title,
+      slug: post.path.replace(/^.*\//, "").replace(/\.md$/, ""),
+      path: post.path,
+      date: post.date || new Date().toISOString().split("T")[0],
+      status: (post.frontmatter?.draft ? "draft" : "published") as "published" | "draft" | "archived",
+      views: 0,
+      tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter.tags as string[] : [],
+      category: typeof post.frontmatter?.category === "string" ? post.frontmatter.category : "未分类",
+      excerpt: (post.content || "").slice(0, 100) + "...",
+    }));
+  }, [query.data]);
+
+  const loading = query.isPending;
+  const error = query.error?.message ?? "";
 
   const allCategories = useMemo(
     () => ["全部分类", ...Array.from(new Set(posts.map((p) => p.category)))],
@@ -109,12 +99,13 @@ export function usePostsFilter() {
   }), [posts, search, activeFilter, selectedCategory, dateRange]);
 
   return {
-    posts, setPosts, loading, error, setError,
+    posts, loading, error,
     search, setSearch,
     activeFilter, setActiveFilter,
     selectedCategory, setSelectedCategory,
     dateRange, setDateRange,
     allCategories, hasActiveFilters, clearAllFilters,
-    filtered, loadPosts,
+    filtered,
+    loadPosts: () => query.refetch().then(() => undefined),
   };
 }

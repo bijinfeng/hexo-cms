@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -11,7 +11,7 @@ import {
 import {
   FileText, Plus, Eye, Edit3, Trash2, Calendar, Tag, RefreshCw, Loader2,
 } from "lucide-react";
-import { useDataProvider } from "../context/data-provider-context";
+import { useDeletePost } from "../hooks/use-posts-query";
 import { usePostsFilter, statusConfig } from "./posts/usePostsFilter";
 import { useBatchOperations } from "./posts/useBatchOperations";
 import { PostFilters } from "./posts/PostFilters";
@@ -20,17 +20,17 @@ export function PostsPage() {
   const navigate = useNavigate();
   const { location } = useRouterState();
   const isListRoute = location.pathname === "/posts";
-  const dataProvider = useDataProvider();
+  const deletePostMutation = useDeletePost();
 
   const {
-    posts, setPosts, loading, error, setError,
+    posts, loading, error,
     search, setSearch,
     activeFilter, setActiveFilter,
     selectedCategory, setSelectedCategory,
     dateRange, setDateRange,
     allCategories, hasActiveFilters, clearAllFilters,
     filtered, loadPosts,
-  } = usePostsFilter();
+  } = usePostsFilter({ enabled: isListRoute });
 
   const {
     selectedPosts, setSelectedPosts,
@@ -38,25 +38,21 @@ export function PostsPage() {
     selectedPostsData, selectedDrafts, selectedPublished,
     toggleSelectAll, toggleSelectPost,
     handleBatchDelete, handleBatchPublish,
-  } = useBatchOperations(posts, loadPosts);
+  } = useBatchOperations(posts);
 
   const [showFilters, setShowFilters] = useState(false);
   const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState(false);
   const [showBatchPublishDialog, setShowBatchPublishDialog] = useState(false);
   const [showBatchUnpublishDialog, setShowBatchUnpublishDialog] = useState(false);
   const [deleteConfirmPost, setDeleteConfirmPost] = useState<(typeof filtered)[number] | null>(null);
-
-  useEffect(() => {
-    if (isListRoute) loadPosts();
-  }, [isListRoute]);
+  const [deleteError, setDeleteError] = useState("");
 
   async function confirmSingleDelete() {
     if (!deleteConfirmPost) return;
     try {
-      await dataProvider.deletePost(deleteConfirmPost.path);
-      setPosts((prev) => prev.filter((p) => p.id !== deleteConfirmPost.id));
+      await deletePostMutation.mutateAsync(deleteConfirmPost.path);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "删除失败");
+      setDeleteError(err instanceof Error ? err.message : "删除失败");
     } finally {
       setDeleteConfirmPost(null);
     }
@@ -97,7 +93,7 @@ export function PostsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowBatchDeleteDialog(false)} disabled={batchProcessing}>取消</Button>
-            <Button onClick={() => handleBatchDelete(setError)} disabled={batchProcessing} className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90">
+            <Button onClick={() => handleBatchDelete(setDeleteError)} disabled={batchProcessing} className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90">
               {batchProcessing ? <><Loader2 size={16} className="animate-spin" />删除中...</> : "确认删除"}
             </Button>
           </DialogFooter>
@@ -113,7 +109,7 @@ export function PostsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowBatchPublishDialog(false)} disabled={batchProcessing}>取消</Button>
-            <Button onClick={() => { setShowBatchPublishDialog(false); handleBatchPublish(true, setError); }} disabled={batchProcessing}>
+            <Button onClick={() => { setShowBatchPublishDialog(false); handleBatchPublish(true, setDeleteError); }} disabled={batchProcessing}>
               {batchProcessing ? <><Loader2 size={16} className="animate-spin" />发布中...</> : "确认发布"}
             </Button>
           </DialogFooter>
@@ -129,7 +125,7 @@ export function PostsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowBatchUnpublishDialog(false)} disabled={batchProcessing}>取消</Button>
-            <Button onClick={() => { setShowBatchUnpublishDialog(false); handleBatchPublish(false, setError); }} disabled={batchProcessing}>
+            <Button onClick={() => { setShowBatchUnpublishDialog(false); handleBatchPublish(false, setDeleteError); }} disabled={batchProcessing}>
               {batchProcessing ? <><Loader2 size={16} className="animate-spin" />处理中...</> : "确认取消发布"}
             </Button>
           </DialogFooter>
@@ -161,7 +157,7 @@ export function PostsPage() {
         </div>
       </div>
 
-      {error && <Alert variant="destructive">{error}</Alert>}
+      {(error || deleteError) && <Alert variant="destructive">{error || deleteError}</Alert>}
 
       {/* Filters */}
       <PostFilters

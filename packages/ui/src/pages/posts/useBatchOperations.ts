@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDataProvider } from "../../context/data-provider-context";
+import { queryKeys } from "../../lib/query-keys";
 import type { PostDisplayItem } from "./usePostsFilter";
 
-export function useBatchOperations(posts: PostDisplayItem[], loadPosts: () => Promise<void>) {
+export function useBatchOperations(posts: PostDisplayItem[]) {
   const dataProvider = useDataProvider();
+  const queryClient = useQueryClient();
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [batchProcessing, setBatchProcessing] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
@@ -47,7 +50,7 @@ export function useBatchOperations(posts: PostDisplayItem[], loadPosts: () => Pr
       setBatchProgress({ current: i + 1, total: postsToDelete.length });
     }
 
-    await loadPosts();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
     setBatchProcessing(false);
     setBatchProgress(null);
     setSelectedPosts(new Set());
@@ -82,7 +85,7 @@ export function useBatchOperations(posts: PostDisplayItem[], loadPosts: () => Pr
       setBatchProgress({ current: i + 1, total: postsToUpdate.length });
     }
 
-    await loadPosts();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
     setBatchProcessing(false);
     setBatchProgress(null);
     setSelectedPosts(new Set());

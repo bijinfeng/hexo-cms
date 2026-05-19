@@ -1,7 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Frontmatter } from "@hexo-cms/core";
-import { useDataProvider } from "../context/data-provider-context";
+import { useSavePost } from "../hooks/use-posts-query";
+import { useTriggerDeploy } from "../hooks/use-deployments-query";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Alert } from "../components/ui/alert";
@@ -42,7 +43,8 @@ const availableCategories = ["前端开发", "后端开发", "系统设计", "�
 
 export function NewPostPage() {
   const navigate = useNavigate();
-  const dataProvider = useDataProvider();
+  const savePostMutation = useSavePost();
+  const triggerDeployMutation = useTriggerDeploy();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState(`# 文章标题\n\n在这里开始写作...\n`);
   const [preview, setPreview] = useState(false);
@@ -106,14 +108,14 @@ export function NewPostPage() {
 
       const post = { path: filePath, title, date: frontmatter.date ?? "", content, frontmatter };
 
-      await dataProvider.savePost(post);
+      await savePostMutation.mutateAsync(post);
       autosave.clear();
       setSaveStatus("saved");
 
       if (publish) {
         setDeployStatus("deploying");
         try {
-          await dataProvider.triggerDeploy(".github/workflows/deploy.yml");
+          await triggerDeployMutation.mutateAsync(".github/workflows/deploy.yml");
           setDeployStatus("deployed");
         } catch {
           setDeployStatus("failed");
@@ -129,7 +131,7 @@ export function NewPostPage() {
   async function handleDeploy() {
     setDeployStatus("deploying");
     try {
-      await dataProvider.triggerDeploy(".github/workflows/deploy.yml");
+      await triggerDeployMutation.mutateAsync(".github/workflows/deploy.yml");
       setDeployStatus("deployed");
     } catch {
       setDeployStatus("failed");

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useDataProvider } from "../context/data-provider-context";
+import { useMediaFiles, useDeleteMedia } from "../hooks/use-media-query";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Alert } from "../components/ui/alert";
@@ -65,18 +66,18 @@ export function MediaPage() {
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeFilter, setActiveFilter] = useState("全部");
-  const [mediaItems, setMediaItems] = useState<Array<{ name: string; path: string; url: string; size?: number }>>([]);
-  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [copiedPath, setCopiedPath] = useState("");
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadMedia();
-  }, []);
+  const mediaQuery = useMediaFiles();
+  const deleteMediaMutation = useDeleteMedia();
+  const mediaItems = mediaQuery.data ?? [];
+  const loading = mediaQuery.isPending;
+  const error = mediaQuery.error?.message ?? "";
 
   useEffect(() => {
     if (!hasDocumentFilter && activeFilter === ATTACHMENT_FILTER_OPTION) {
@@ -87,29 +88,16 @@ export function MediaPage() {
     }
   }, [activeFilter, hasDocumentFilter, hasMediaSearch, search]);
 
-  async function loadMedia() {
-    setLoading(true);
-    setError("");
-    try {
-      const files = await dataProvider.getMediaFiles();
-      setMediaItems(files);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
 
     setUploading(true);
-    setError("");
+    setActionError("");
 
     try {
       const config = await dataProvider.getConfig();
       if (!config) {
-        setError("请先在设置页面配置 GitHub 仓库");
+        setActionError("请先在设置页面配置 GitHub 仓库");
         return;
       }
 
@@ -118,9 +106,9 @@ export function MediaPage() {
         const path = `${dir}/${file.name}`;
         await dataProvider.uploadMedia(file, path);
       }
-      await loadMedia();
+      await mediaQuery.refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "上传失败");
+      setActionError(err instanceof Error ? err.message : "上传失败");
     } finally {
       setUploading(false);
     }
@@ -128,15 +116,14 @@ export function MediaPage() {
 
   async function handleDelete(path: string) {
     try {
-      await dataProvider.deleteMedia(path);
-      setMediaItems((prev) => prev.filter((item) => item.path !== path));
+      await deleteMediaMutation.mutateAsync(path);
       setSelectedPaths((prev) => {
         const next = new Set(prev);
         next.delete(path);
         return next;
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "删除失败");
+      setActionError(err instanceof Error ? err.message : "删除失败");
     }
   }
 
@@ -161,15 +148,15 @@ export function MediaPage() {
   async function handleBatchDelete() {
     if (selectedPaths.size === 0) return;
     setBatchDeleting(true);
-    setError("");
+    setActionError("");
     try {
       for (const path of selectedPaths) {
         await dataProvider.deleteMedia(path);
       }
-      setMediaItems((prev) => prev.filter((item) => !selectedPaths.has(item.path)));
       setSelectedPaths(new Set());
+      await mediaQuery.refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "批量删除失败");
+      setActionError(err instanceof Error ? err.message : "批量删除失败");
     } finally {
       setBatchDeleting(false);
     }
@@ -223,9 +210,9 @@ export function MediaPage() {
       </div>
 
       {/* Error */}
-      {error && (
+      {(error || actionError) && (
         <Alert variant="destructive">
-          {error}
+          {error || actionError}
         </Alert>
       )}
 
