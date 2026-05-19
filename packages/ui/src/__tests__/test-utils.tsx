@@ -6,6 +6,7 @@ import {
   type DataProvider,
   type PluginConfigValue,
   type PluginConfigStoreValue,
+  type PluginDefinition,
   type PluginStateStoreValue,
   type PluginStorageStoreValue,
   type PluginSecretStoreValue,
@@ -56,7 +57,7 @@ export async function createTestPluginHost(
   dataProviderOverrides: Partial<DataProvider> = {},
 ): Promise<PluginHost<ComponentType<{ config?: PluginConfigValue }>>> {
   const catalog = await PluginCatalog.discover<ComponentType<{ config?: PluginConfigValue }>>([
-    new StaticPluginSourceResolver("official", officialPlugins),
+    new StaticPluginSourceResolver("official", officialPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[]),
   ]);
 
   return new PluginHost<ComponentType<{ config?: PluginConfigValue }>>({
