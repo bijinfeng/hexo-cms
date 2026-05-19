@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PermissionBroker, assertPluginHttpRequestAllowed } from "@hexo-cms/core";
+import { PermissionBroker, assertPluginHttpRequestAllowed, sanitizeHeaders } from "@hexo-cms/core";
 import { getWebPluginManifests } from "../../../lib/plugin-host";
 import { getAuth, json } from "../../../lib/server-utils";
 import { appendPluginNetworkAudit } from "../../../lib/plugin-network-audit-db";
@@ -23,18 +23,6 @@ interface PluginFetchResponseBody {
 
 const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
 const DEFAULT_TIMEOUT_MS = 10_000;
-
-function sanitizeRequestHeaders(headers: Record<string, string> | undefined): Record<string, string> {
-  if (!headers) return {};
-  const result: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    const normalized = key.toLowerCase();
-    if (normalized !== "cookie" && normalized !== "set-cookie") {
-      result[key] = value;
-    }
-  }
-  return result;
-}
 
 export const Route = createFileRoute("/api/plugin/fetch")({
   server: {
@@ -73,7 +61,7 @@ export const Route = createFileRoute("/api/plugin/fetch")({
         try {
           const response = await fetch(parsedUrl.toString(), {
             method: auditMethod,
-            headers: sanitizeRequestHeaders(req.headers),
+            headers: sanitizeHeaders(req.headers) ?? {},
             body: req.body,
             signal: controller.signal,
             credentials: "omit",

@@ -1,6 +1,7 @@
 import {
   PermissionBroker,
   assertPluginHttpRequestAllowed,
+  sanitizeHeaders,
   type PluginHttpPermissionBroker,
   type PluginManifest,
 } from "@hexo-cms/core";
@@ -91,7 +92,7 @@ async function executePluginFetch(
   try {
     const response = await fetchImpl(parsedUrl.toString(), {
       method: auditMethod,
-      headers: sanitizePluginFetchHeaders(req.headers),
+      headers: sanitizeHeaders(req.headers) ?? {},
       body: req.body,
       signal: controller.signal,
       credentials: "omit",
@@ -155,18 +156,6 @@ async function executePluginFetch(
   } finally {
     clearTimeout(timeout);
   }
-}
-
-export function sanitizePluginFetchHeaders(headers: Record<string, string> | undefined): Record<string, string> {
-  if (!headers) return {};
-  const result: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    const normalized = key.toLowerCase();
-    if (normalized !== "cookie" && normalized !== "set-cookie") {
-      result[key] = value;
-    }
-  }
-  return result;
 }
 
 const defaultFetch: typeof fetch = (input, init) => {

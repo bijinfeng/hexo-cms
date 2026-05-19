@@ -104,7 +104,7 @@ function hostMatches(hostname: string, allowedHost: string): boolean {
   return hostname === normalized;
 }
 
-function sanitizeHeaders(headers: Record<string, string> | undefined): Record<string, string> | undefined {
+export function sanitizeHeaders(headers: Record<string, string> | undefined): Record<string, string> | undefined {
   if (!headers) return undefined;
   return Object.fromEntries(
     Object.entries(headers).filter(([key]) => {

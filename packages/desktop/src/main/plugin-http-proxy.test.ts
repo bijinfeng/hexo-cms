@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PluginManifest } from "@hexo-cms/core";
-import { PermissionBroker } from "@hexo-cms/core";
-import { createPluginHttpProxy, sanitizePluginFetchHeaders } from "./plugin-http-proxy";
+import { PermissionBroker, sanitizeHeaders } from "@hexo-cms/core";
+import { createPluginHttpProxy } from "./plugin-http-proxy";
 import type { PluginNetworkAuditEntryInput } from "./desktop-persistence";
 
 const networkPlugin: PluginManifest = {
@@ -43,7 +43,7 @@ function createProxy(options: {
 
 describe("desktop plugin HTTP proxy", () => {
   it("removes cookie headers before forwarding plugin fetches", () => {
-    expect(sanitizePluginFetchHeaders({
+    expect(sanitizeHeaders({
       Authorization: "Bearer token",
       Cookie: "session=secret",
       "set-cookie": "next=secret",
