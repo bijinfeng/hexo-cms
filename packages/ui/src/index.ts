@@ -146,6 +146,7 @@ export type {
 
 // I18n
 export { I18nProvider, useI18n, zh, en } from "./i18n";
+export type { TranslationKey } from "./i18n";
 
 // Context
 export { DataProviderProvider, useDataProvider } from "./context/data-provider-context";
