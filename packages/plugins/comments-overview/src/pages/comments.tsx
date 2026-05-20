@@ -13,6 +13,7 @@ import {
   TabsList,
   TabsTrigger,
   useDataProvider,
+  useI18n,
   usePluginSystem,
 } from "@hexo-cms/ui";
 import {
@@ -59,26 +60,26 @@ interface DiscussionThread {
 
 const stateConfig: Record<string, { label: string; variant: "default" | "warning" | "success" }> = {
   OPEN: { label: "", variant: "default" },
-  LOCKED: { label: "已锁定", variant: "warning" },
-  ANSWERED: { label: "已解决", variant: "success" },
+  LOCKED: { label: "comments.state.locked", variant: "warning" },
+  ANSWERED: { label: "comments.state.answered", variant: "success" },
 };
 
 const filterOptions = [
-  { id: "all", label: "全部" },
-  { id: "OPEN", label: "开放" },
-  { id: "LOCKED", label: "已锁定" },
-  { id: "ANSWERED", label: "已解决" },
+  { id: "all", label: "comments.filter.all" },
+  { id: "OPEN", label: "comments.filter.open" },
+  { id: "LOCKED", label: "comments.filter.locked" },
+  { id: "ANSWERED", label: "comments.filter.answered" },
 ];
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: (key: string, vars?: Record<string, unknown>) => string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "刚刚";
-  if (mins < 60) return `${mins} 分钟前`;
+  if (mins < 1) return t("comments.time.justNow");
+  if (mins < 60) return t("comments.time.minutesAgo", { count: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} 小时前`;
+  if (hours < 24) return t("comments.time.hoursAgo", { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} 天前`;
+  if (days < 30) return t("comments.time.daysAgo", { count: days });
   return dateStr.slice(0, 10);
 }
 
@@ -111,6 +112,7 @@ async function fetchGitHubGraphQL(token: string, query: string, variables: Recor
 export function CommentsPage() {
   const dataProvider = useDataProvider();
   const { snapshot, enablePlugin } = usePluginSystem();
+  const { t } = useI18n();
 
   const commentsPlugin = snapshot.plugins.find((p) => p.manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
   const isPluginEnabled = commentsPlugin?.record.state === "enabled";
@@ -293,14 +295,14 @@ export function CommentsPage() {
               <Puzzle size={24} className="text-[var(--text-tertiary)]" />
             </div>
             <div>
-              <div className="text-lg font-semibold text-[var(--text-primary)] mb-1">评论插件未启用</div>
+              <div className="text-lg font-semibold text-[var(--text-primary)] mb-1">{t("comments.page.notEnabled")}</div>
               <p className="text-sm text-[var(--text-secondary)]">
-                评论管理功能由 Comments Overview 插件提供，请在插件设置中启用。
+                {t("comments.page.notEnabledDesc")}
               </p>
             </div>
             <Button onClick={() => enablePlugin(COMMENTS_OVERVIEW_PLUGIN_ID)}>
               <Puzzle size={16} />
-              启用评论插件
+              {t("comments.page.enablePlugin")}
             </Button>
           </CardContent>
         </Card>
@@ -317,15 +319,15 @@ export function CommentsPage() {
               <Settings size={24} className="text-[var(--text-tertiary)]" />
             </div>
             <div>
-              <div className="text-lg font-semibold text-[var(--text-primary)] mb-1">尚未配置评论系统</div>
+              <div className="text-lg font-semibold text-[var(--text-primary)] mb-1">{t("comments.page.notConfigured")}</div>
               <p className="text-sm text-[var(--text-secondary)]">
-                请在插件设置中配置 Giscus 参数（仓库、Repository ID、Category ID）后开始使用。
+                {t("comments.page.notConfiguredDesc")}
               </p>
             </div>
             <Link to="/settings" search={{ section: "plugins", plugin: COMMENTS_OVERVIEW_PLUGIN_ID }}>
               <Button variant="secondary">
                 <Settings size={16} />
-                配置评论系统
+                {t("comments.page.configureComments")}
               </Button>
             </Link>
           </CardContent>
@@ -338,14 +340,14 @@ export function CommentsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">评论管理</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("comments.page.title")}</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            共 {discussions.length} 个 Discussion
+            {t("comments.page.totalDiscussions", { count: discussions.length })}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => loadDiscussions()}>
           <RefreshCw size={14} />
-          刷新
+          {t("comments.page.refresh")}
         </Button>
       </div>
 
@@ -355,7 +357,7 @@ export function CommentsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索讨论..."
+            placeholder={t("comments.page.searchPlaceholder")}
             className="w-full h-9 pl-9 pr-3 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-base)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
           />
         </div>
@@ -363,7 +365,7 @@ export function CommentsPage() {
           <TabsList>
             {filterOptions.map((opt) => (
               <TabsTrigger key={opt.id} value={opt.id}>
-                {opt.label}
+                {t(opt.label)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -371,7 +373,7 @@ export function CommentsPage() {
       </div>
 
       {loading && (
-        <div className="text-center py-20 text-[var(--text-tertiary)]">加载中...</div>
+        <div className="text-center py-20 text-[var(--text-tertiary)]">{t("comments.page.loading")}</div>
       )}
 
       {error && (
@@ -379,7 +381,7 @@ export function CommentsPage() {
           <CardContent className="py-4 flex items-center gap-3">
             <AlertTriangle size={18} className="text-red-500" />
             <div>
-              <div className="text-sm font-medium text-red-700">加载失败</div>
+              <div className="text-sm font-medium text-red-700">{t("comments.page.loadFailed")}</div>
               <div className="text-xs text-red-500 mt-0.5">{error}</div>
             </div>
           </CardContent>
@@ -409,7 +411,7 @@ export function CommentsPage() {
                         </a>
                         {discussion.state !== "OPEN" && (
                           <Badge variant={stateConfig[discussion.state]?.variant ?? "default"}>
-                            {stateConfig[discussion.state]?.label}
+                            {t(stateConfig[discussion.state]?.label)}
                           </Badge>
                         )}
                       </div>
@@ -423,7 +425,7 @@ export function CommentsPage() {
                             {discussion.author.login}
                           </span>
                         )}
-                        <span>{timeAgo(discussion.createdAt)}</span>
+                        <span>{timeAgo(discussion.createdAt, t)}</span>
                         {discussion.category && <Badge variant="default" className="text-[10px]">{discussion.category}</Badge>}
                       </div>
                     </div>
@@ -450,10 +452,10 @@ export function CommentsPage() {
                 <CollapsibleContent>
                   <div className="border-t border-[var(--border-secondary)] px-4 py-2">
                     {loadingDiscussionComments && (
-                      <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">加载评论中...</div>
+                      <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">{t("comments.page.loadingComments")}</div>
                     )}
                     {!loadingDiscussionComments && comments.length === 0 && (
-                      <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">暂无评论</div>
+                      <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">{t("comments.page.noComments")}</div>
                     )}
                     {comments.map((comment: DiscussionComment) => (
                       <div key={comment.id} className="py-2.5 border-b border-[var(--border-secondary)] last:border-0">
@@ -462,12 +464,12 @@ export function CommentsPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs font-medium text-[var(--text-primary)]">{comment.author.login}</span>
-                              <span className="text-[10px] text-[var(--text-tertiary)]">{timeAgo(comment.createdAt)}</span>
+                              <span className="text-[10px] text-[var(--text-tertiary)]">{timeAgo(comment.createdAt, t)}</span>
                               {comment.isAnswer && (
-                                <Badge variant="success" className="text-[10px] h-4 px-1.5">已解决</Badge>
+                                <Badge variant="success" className="text-[10px] h-4 px-1.5">{t("comments.state.answered")}</Badge>
                               )}
                               {comment.isHidden && (
-                                <Badge variant="default" className="text-[10px] h-4 px-1.5">已隐藏</Badge>
+                                <Badge variant="default" className="text-[10px] h-4 px-1.5">{t("comments.comment.hidden")}</Badge>
                               )}
                             </div>
                             <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-3">{comment.body}</p>
@@ -477,7 +479,7 @@ export function CommentsPage() {
                               onClick={() => handleModerateComment(comment.id, comment.isHidden ? "unhide" : "hide")}
                               disabled={isModerating(comment.id)}
                               className="p-1 rounded hover:bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
-                              title={comment.isHidden ? "取消隐藏" : "隐藏"}
+                              title={comment.isHidden ? t("comments.comment.unhide") : t("comments.comment.hide")}
                             >
                               {comment.isHidden ? <Eye size={13} /> : <EyeOff size={13} />}
                             </button>
@@ -499,7 +501,7 @@ export function CommentsPage() {
             <MessageSquare size={20} className="text-[var(--text-tertiary)]" />
           </div>
           <div className="text-sm text-[var(--text-tertiary)]">
-            {search || activeFilter !== "all" ? "没有匹配的讨论" : "暂无评论"}
+            {search || activeFilter !== "all" ? t("comments.page.noMatch") : t("comments.page.noComments")}
           </div>
         </div>
       )}

@@ -77,5 +77,23 @@ export const attachmentsHelperManifest: PluginManifest = {
         order: 20,
       },
     ],
+    translations: {
+      zh: {
+        "attachments.widget.loading": "正在读取附件...",
+        "attachments.widget.attachmentCount": "附件数",
+        "attachments.widget.totalSize": "合计大小",
+        "attachments.widget.noAttachments": "暂无附件文件",
+        "attachments.widget.copyLink": "复制附件链接",
+        "attachments.widget.copied": "已复制",
+      },
+      en: {
+        "attachments.widget.loading": "Loading attachments...",
+        "attachments.widget.attachmentCount": "Attachments",
+        "attachments.widget.totalSize": "Total Size",
+        "attachments.widget.noAttachments": "No attachment files",
+        "attachments.widget.copyLink": "Copy attachment link",
+        "attachments.widget.copied": "Copied",
+      },
+    },
   },
 };

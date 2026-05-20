@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ATTACHMENTS_HELPER_PLUGIN_ID } from "../manifest";
 import { Copy, FileArchive, FileText, Loader2, Paperclip } from "lucide-react";
-import { Button, usePluginDataProvider, usePluginSystem } from "@hexo-cms/ui";
+import { Button, useI18n, usePluginDataProvider, usePluginSystem } from "@hexo-cms/ui";
 
 const ATTACHMENT_EXTS = new Set([
   "pdf",
@@ -36,6 +36,7 @@ function formatSize(bytes: number): string {
 export function AttachmentsSummaryWidget() {
   const dataProvider = usePluginDataProvider();
   const { executePluginCommand } = usePluginSystem();
+  const { t } = useI18n();
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -80,7 +81,7 @@ export function AttachmentsSummaryWidget() {
     return (
       <div className="flex items-center gap-2 py-6 text-sm text-[var(--text-secondary)]">
         <Loader2 size={16} className="animate-spin" />
-        正在读取附件...
+        {t("attachments.widget.loading")}
       </div>
     );
   }
@@ -99,14 +100,14 @@ export function AttachmentsSummaryWidget() {
         <div className="rounded-lg bg-[var(--bg-muted)] p-3">
           <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
             <Paperclip size={14} />
-            附件数
+            {t("attachments.widget.attachmentCount")}
           </div>
           <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{attachments.length}</div>
         </div>
         <div className="rounded-lg bg-[var(--bg-muted)] p-3">
           <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
             <FileArchive size={14} />
-            合计大小
+            {t("attachments.widget.totalSize")}
           </div>
           <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{formatSize(totalSize)}</div>
         </div>
@@ -115,7 +116,7 @@ export function AttachmentsSummaryWidget() {
       {attachments.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--border-default)] py-8 text-[var(--text-tertiary)]">
           <FileText size={28} className="mb-2 opacity-40" />
-          <p className="text-sm">暂无附件文件</p>
+          <p className="text-sm">{t("attachments.widget.noAttachments")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -128,8 +129,8 @@ export function AttachmentsSummaryWidget() {
                 <div className="truncate text-sm font-medium text-[var(--text-primary)]">{item.name}</div>
                 <div className="truncate text-xs text-[var(--text-tertiary)]">{item.path}</div>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => copyLink(item)} title="复制附件链接">
-                {copiedPath === item.path ? <span className="text-xs text-[var(--status-success)]">已复制</span> : <Copy size={14} />}
+              <Button size="icon" variant="ghost" onClick={() => copyLink(item)} title={t("attachments.widget.copyLink")}>
+                {copiedPath === item.path ? <span className="text-xs text-[var(--status-success)]">{t("attachments.widget.copied")}</span> : <Copy size={14} />}
               </Button>
             </div>
           ))}

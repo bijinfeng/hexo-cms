@@ -3,7 +3,7 @@ import { AlertCircle, Calendar, FileText, Image as ImageIcon, Loader2, RefreshCw
 import { DRAFT_COACH_PLUGIN_ID } from "./manifest";
 import { checkDraft, type DraftIssue } from "./draft-checker";
 import type { HexoPost } from "@hexo-cms/core";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, useDataProvider, usePluginSystem } from "@hexo-cms/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, useDataProvider, useI18n, usePluginSystem } from "@hexo-cms/ui";
 
 interface DraftWithIssues {
   post: HexoPost;
@@ -13,6 +13,7 @@ interface DraftWithIssues {
 export function DraftCoachWidget() {
   const { snapshot } = usePluginSystem();
   const dataProvider = useDataProvider();
+  const { t } = useI18n();
   const [draftsWithIssues, setDraftsWithIssues] = useState<DraftWithIssues[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,11 +56,11 @@ export function DraftCoachWidget() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">草稿助手</CardTitle>
+          <CardTitle className="text-sm">{t("draft.widget.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-[var(--text-secondary)]">
-            插件未启用。前往设置启用草稿助手以获取草稿提醒。
+            {t("draft.widget.disabled")}
           </p>
         </CardContent>
       </Card>
@@ -70,12 +71,12 @@ export function DraftCoachWidget() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">草稿助手</CardTitle>
+          <CardTitle className="text-sm">{t("draft.widget.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
             <Loader2 className="h-4 w-4 animate-spin" />
-            检查草稿中...
+            {t("draft.widget.loading")}
           </div>
         </CardContent>
       </Card>
@@ -86,10 +87,10 @@ export function DraftCoachWidget() {
     <Card>
       <CardHeader>
         <CardTitle className="text-sm flex items-center justify-between">
-          <span>草稿助手</span>
+          <span>{t("draft.widget.title")}</span>
           <div className="flex items-center gap-2">
             {draftsWithIssues.length > 0 && (
-              <Badge variant="warning">{draftsWithIssues.length} 个提醒</Badge>
+              <Badge variant="warning">{t("draft.widget.reminders", { count: draftsWithIssues.length })}</Badge>
             )}
             <Button variant="ghost" size="sm" onClick={checkDrafts} disabled={loading}>
               <RefreshCw className="h-3.5 w-3.5" />
@@ -99,7 +100,7 @@ export function DraftCoachWidget() {
       </CardHeader>
       <CardContent>
         {draftsWithIssues.length === 0 ? (
-          <p className="text-sm text-[var(--text-secondary)]">所有草稿状态良好</p>
+          <p className="text-sm text-[var(--text-secondary)]">{t("draft.widget.allGood")}</p>
         ) : (
           <div className="space-y-3">
             {draftsWithIssues.map((item) => (
@@ -108,7 +109,7 @@ export function DraftCoachWidget() {
                 className="rounded-lg border border-[var(--border-default)] p-3 space-y-2"
               >
                 <h4 className="text-sm font-medium text-[var(--text-primary)] line-clamp-1">
-                  {item.post.title || "未命名草稿"}
+                  {item.post.title || t("draft.widget.unnamed")}
                 </h4>
                 <ul className="space-y-1.5">
                   {item.issues.map((issue) => (

@@ -2,7 +2,7 @@ import type { ComponentType } from "react";
 import { COMMENTS_OVERVIEW_PLUGIN_ID } from "../manifest";
 import type { PluginConfigValue } from "@hexo-cms/core";
 import { AlertTriangle, CheckCircle2, MessageSquare, ShieldAlert } from "lucide-react";
-import { Button, usePluginSystem } from "@hexo-cms/ui";
+import { Button, useI18n, usePluginSystem } from "@hexo-cms/ui";
 
 const summary = {
   total: 6,
@@ -13,6 +13,7 @@ const summary = {
 
 export function CommentsOverviewWidget({ config = {} }: { config?: PluginConfigValue }) {
   const { executePluginCommand } = usePluginSystem();
+  const { t } = useI18n();
   const showPendingAlert = config.showPendingAlert !== false;
   const moderationUrl = typeof config.moderationUrl === "string" && config.moderationUrl ? config.moderationUrl : "/comments";
 
@@ -23,14 +24,14 @@ export function CommentsOverviewWidget({ config = {} }: { config?: PluginConfigV
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2">
-        {showPendingAlert && <SummaryTile icon={AlertTriangle} label="待审核" value={summary.pending} tone="warning" />}
-        <SummaryTile icon={CheckCircle2} label="已通过" value={summary.approved} tone="success" />
-        <SummaryTile icon={ShieldAlert} label="垃圾" value={summary.spam} tone="error" />
+        {showPendingAlert && <SummaryTile icon={AlertTriangle} label={t("comments.widget.pending")} value={summary.pending} tone="warning" />}
+        <SummaryTile icon={CheckCircle2} label={t("comments.widget.approved")} value={summary.approved} tone="success" />
+        <SummaryTile icon={ShieldAlert} label={t("comments.widget.spam")} value={summary.spam} tone="error" />
       </div>
       <div className="flex items-center justify-between rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3">
         <div className="min-w-0">
-          <div className="text-sm font-medium text-[var(--text-primary)]">评论管理</div>
-          <div className="text-xs text-[var(--text-secondary)]">共 {summary.total} 条示例评论</div>
+          <div className="text-sm font-medium text-[var(--text-primary)]">{t("comments.widget.manageComments")}</div>
+          <div className="text-xs text-[var(--text-secondary)]">{t("comments.widget.totalComments", { count: summary.total })}</div>
         </div>
         <Button
           variant="outline"
@@ -39,7 +40,7 @@ export function CommentsOverviewWidget({ config = {} }: { config?: PluginConfigV
           data-plugin-href={moderationUrl}
         >
           <MessageSquare size={14} />
-          打开评论管理
+          {t("comments.widget.openModeration")}
         </Button>
       </div>
     </div>
