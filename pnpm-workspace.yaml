@@ -30,7 +30,7 @@ catalogs:
     octokit: ^5.0.5
 
   lint:
-    '@biomejs/biome': ^1.9.4
+    '@biomejs/biome': ^2.4.15
 
   react:
     react: ^19.2.0
