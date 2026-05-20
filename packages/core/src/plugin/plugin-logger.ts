@@ -1,7 +1,7 @@
 import { cloneValue } from "../utils";
 import { redactPluginRuntimeText, redactPluginRuntimeValue } from "./redaction";
 import { BrowserJsonStore, MemoryStore } from "./stores";
-import type { PluginLogEntry, PluginLogLevel, PluginLogStoreValue, PluginLogger } from "./types";
+import type { PluginLogEntry, PluginLogger, PluginLogLevel, PluginLogStoreValue } from "./types";
 
 export interface PluginLogStore {
   load(): PluginLogStoreValue;

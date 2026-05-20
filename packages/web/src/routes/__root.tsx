@@ -5,17 +5,17 @@ import {
   CMSLayout,
   DataProviderProvider,
   ErrorBoundary,
-  I18nProvider,
-  PluginProvider,
   getAuthRedirect,
+  I18nProvider,
   isOnboardingRoute,
   isPublicAuthRoute,
+  PluginProvider,
 } from "@hexo-cms/ui/app-shell";
 import {
+  createRootRoute,
   HeadContent,
   Outlet,
   Scripts,
-  createRootRoute,
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
@@ -204,6 +204,7 @@ function RootComponent() {
       onLocaleChange={(newLocale) => {
         localStorage.setItem("hexo-cms-locale", newLocale);
         if (typeof document !== "undefined") {
+          // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API lacks universal browser support
           document.cookie = `hexo-cms-locale=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
         }
         pluginHost?.setCurrentLocale(newLocale);

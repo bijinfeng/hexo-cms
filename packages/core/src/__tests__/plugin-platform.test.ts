@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  definePlugin,
   PluginCatalog,
   PluginManifestError,
   StaticPluginSourceResolver,
-  definePlugin,
   validatePluginManifest,
 } from "../plugin";
 

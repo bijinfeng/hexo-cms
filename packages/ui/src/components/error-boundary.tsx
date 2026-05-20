@@ -1,6 +1,6 @@
 import { AlertCircle } from "lucide-react";
-import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import { Component } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "./ui/button";

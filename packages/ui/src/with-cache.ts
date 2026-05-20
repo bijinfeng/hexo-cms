@@ -56,7 +56,9 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
     if (keys.length === 0) {
       cache.clear();
     } else {
-      keys.forEach((k) => cache.delete(k));
+      keys.forEach((k) => {
+        cache.delete(k);
+      });
     }
   }
 

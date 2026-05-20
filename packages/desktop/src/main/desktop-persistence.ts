@@ -134,8 +134,7 @@ export function createDesktopPersistence({
       return typeof secrets[pluginId]?.[key] === "string";
     },
     async mutatePluginSecret(mutation) {
-      if (!mutation || !mutation.pluginId || !mutation.key)
-        throw new Error("Invalid secret target");
+      if (!mutation?.pluginId || !mutation.key) throw new Error("Invalid secret target");
       const secrets = await loadPluginSecrets();
       const namespace = { ...(secrets[mutation.pluginId] ?? {}) };
 

@@ -1,6 +1,6 @@
 import {
-  type OctokitLike,
   getRepositoryValidationHttpStatus,
+  type OctokitLike,
   validateHexoRepository,
 } from "@hexo-cms/core";
 import { createFileRoute } from "@tanstack/react-router";

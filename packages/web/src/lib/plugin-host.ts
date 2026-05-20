@@ -12,8 +12,9 @@ import {
   createPlatformPluginSecretStore,
   createPlatformPluginStateStore,
   createPlatformPluginStorageStore,
+  en,
+  zh,
 } from "@hexo-cms/ui";
-import { en, zh } from "@hexo-cms/ui";
 import type { ComponentType } from "react";
 import { webDataProvider } from "./web-data-provider-instance";
 

@@ -127,7 +127,7 @@ export function usePostsFilter(options: { enabled?: boolean } = {}) {
           if (dateRange === "all") return true;
           const postDate = new Date(p.date);
           const cutoffDate = new Date(
-            Date.now() - Number.parseInt(dateRange) * 24 * 60 * 60 * 1000,
+            Date.now() - Number.parseInt(dateRange, 10) * 24 * 60 * 60 * 1000,
           );
           return postDate >= cutoffDate;
         })();

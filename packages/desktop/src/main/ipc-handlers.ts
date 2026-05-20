@@ -1,5 +1,6 @@
 import type {
   GitHubConfig,
+  GitHubService,
   HexoPost,
   PluginConfigStoreValue,
   PluginLogStoreValue,
@@ -7,20 +8,25 @@ import type {
   PluginStateStoreValue,
   PluginStorageStoreValue,
 } from "@hexo-cms/core";
-import { GITHUB_API_VERSION, parseYamlScalar, setYamlScalar } from "@hexo-cms/core";
-import { type OctokitLike, listWritableRepositories, validateHexoRepository } from "@hexo-cms/core";
-import type { GitHubService } from "@hexo-cms/core";
+import {
+  GITHUB_API_VERSION,
+  listWritableRepositories,
+  type OctokitLike,
+  parseYamlScalar,
+  setYamlScalar,
+  validateHexoRepository,
+} from "@hexo-cms/core";
 import { ipcMain } from "electron";
 import type { PluginSecretMutation } from "./desktop-persistence";
 import type { PluginFetchRequest } from "./plugin-http-proxy";
 import {
-  type TaxonomyDeleteInput,
-  type TaxonomyMergeInput,
-  type TaxonomyMutation,
   deleteTaxonomy,
   getTaxonomySummary,
   mergeTaxonomy,
   renameTaxonomy,
+  type TaxonomyDeleteInput,
+  type TaxonomyMergeInput,
+  type TaxonomyMutation,
 } from "./taxonomy-operations";
 
 interface Dependencies {

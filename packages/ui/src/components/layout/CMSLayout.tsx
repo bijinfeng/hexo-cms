@@ -58,8 +58,9 @@ export function CMSLayout({
       <div className="flex flex-1 overflow-hidden">
         {/* Mobile overlay */}
         {mobileSidebarOpen && (
-          <div
-            className="fixed inset-0 z-20 bg-black/50 lg:hidden"
+          <button
+            type="button"
+            className="fixed inset-0 z-20 bg-black/50 lg:hidden border-none p-0 cursor-pointer"
             onClick={() => setMobileSidebarOpen(false)}
           />
         )}

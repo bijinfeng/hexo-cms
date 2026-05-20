@@ -1,5 +1,4 @@
-import type { DataProvider } from "@hexo-cms/core";
-import type { GitHubConfig, HexoPost } from "@hexo-cms/core";
+import type { DataProvider, GitHubConfig, HexoPost } from "@hexo-cms/core";
 import { requireElectronAPI } from "@hexo-cms/ui/lib/electron-api";
 
 /**

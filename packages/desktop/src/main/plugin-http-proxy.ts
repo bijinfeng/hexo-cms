@@ -1,10 +1,10 @@
 import {
+  assertPluginHttpRequestAllowed,
+  PermissionBroker,
   PLUGIN_HTTP_DEFAULT_TIMEOUT_MS,
   PLUGIN_HTTP_MAX_RESPONSE_SIZE,
-  PermissionBroker,
   type PluginHttpPermissionBroker,
   type PluginManifest,
-  assertPluginHttpRequestAllowed,
   sanitizeHeaders,
 } from "@hexo-cms/core";
 import type { PluginNetworkAuditEntryInput } from "./desktop-persistence";

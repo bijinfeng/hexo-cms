@@ -2,27 +2,27 @@ import type { DataProvider } from "../data-provider";
 import { CommandRegistry } from "./command-registry";
 import { DiagnosticsRegistry } from "./diagnostics-registry";
 import { PluginNotFoundError } from "./errors";
-import { EventBus, createPluginEventAPI } from "./event-bus";
+import { createPluginEventAPI, EventBus } from "./event-bus";
 import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
-import { type PluginFetch, createPluginHttpAPI } from "./plugin-http";
+import { createPluginHttpAPI, type PluginFetch } from "./plugin-http";
 import {
-  MemoryPluginLogStore,
-  type PluginLogStore,
   appendPluginLogEntry,
   createPluginLogger,
+  MemoryPluginLogStore,
+  type PluginLogStore,
   readPluginLogs,
 } from "./plugin-logger";
 import {
+  createPluginSecretAPI,
   MemoryPluginSecretStore,
   type PluginSecretStore,
-  createPluginSecretAPI,
 } from "./plugin-secret";
 import {
+  createPluginStorageAPI,
   MemoryPluginStorageStore,
   type PluginStorageStore,
-  createPluginStorageAPI,
 } from "./plugin-storage";
 import { redactPluginRuntimeText } from "./redaction";
 import { BrowserJsonStore, MemoryStore } from "./stores";
@@ -134,7 +134,9 @@ export class PluginManager {
     maxLogEntriesPerPlugin = 50,
   }: PluginManagerOptions) {
     this.manifests = validatePluginManifests(manifests);
-    this.manifests.forEach((manifest) => this.manifestsById.set(manifest.id, manifest));
+    this.manifests.forEach((manifest) => {
+      this.manifestsById.set(manifest.id, manifest);
+    });
     this.permissionBroker = new PermissionBroker(this.manifests);
     this.commandRegistry = new CommandRegistry(this.permissionBroker, commandHandlers);
     this.diagnosticsRegistry = new DiagnosticsRegistry({
@@ -445,8 +447,12 @@ export class PluginManager {
   }
 
   private rebuildExtensions(): void {
-    this.manifests.forEach((manifest) => this.extensionRegistry.unregisterPlugin(manifest.id));
-    this.manifests.forEach((manifest) => this.commandRegistry.unregisterPlugin(manifest.id));
+    this.manifests.forEach((manifest) => {
+      this.extensionRegistry.unregisterPlugin(manifest.id);
+    });
+    this.manifests.forEach((manifest) => {
+      this.commandRegistry.unregisterPlugin(manifest.id);
+    });
     this.manifests.forEach((manifest) => {
       if (this.records[manifest.id]?.state === "enabled") {
         this.extensionRegistry.registerPlugin(manifest);

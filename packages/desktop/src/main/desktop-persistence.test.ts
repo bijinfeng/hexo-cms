@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { type KeychainAdapter, createDesktopPersistence } from "./desktop-persistence";
+import { createDesktopPersistence, type KeychainAdapter } from "./desktop-persistence";
 
 let tempDir: string | null = null;
 

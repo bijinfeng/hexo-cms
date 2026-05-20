@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitHubService } from "../github";
-import { DataProviderError } from "../types";
 import type { HexoPost } from "../types";
+import { DataProviderError } from "../types";
 
 // Create mock functions
 const mockGetContent = vi.fn();

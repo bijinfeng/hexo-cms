@@ -1,6 +1,6 @@
 import type { AuthSession } from "@hexo-cms/ui/types/auth";
-import { type ComponentType, type ReactElement, type ReactNode, act } from "react";
-import { type Root, createRoot } from "react-dom/client";
+import { act, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigateMock = vi.fn();

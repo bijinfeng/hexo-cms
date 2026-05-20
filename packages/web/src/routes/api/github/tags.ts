@@ -1,11 +1,11 @@
-import { getErrorMessage } from "@hexo-cms/core";
 import {
-  type TaxonomyRepository,
-  type TaxonomyType,
   deleteTaxonomy,
+  getErrorMessage,
   mergeTaxonomy,
   renameTaxonomy,
   summarizeTaxonomies,
+  type TaxonomyRepository,
+  type TaxonomyType,
 } from "@hexo-cms/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";

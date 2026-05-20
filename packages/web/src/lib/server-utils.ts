@@ -1,5 +1,5 @@
-import { GITHUB_API_VERSION, GitHubService } from "@hexo-cms/core";
 import type { GitHubConfig } from "@hexo-cms/core";
+import { GITHUB_API_VERSION, GitHubService } from "@hexo-cms/core";
 import { and, desc, eq } from "drizzle-orm";
 import type { Octokit as OctokitType } from "octokit";
 import { db } from "./db";

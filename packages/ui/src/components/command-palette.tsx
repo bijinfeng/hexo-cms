@@ -104,13 +104,14 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" onClick={onClose}>
+    <button
+      type="button"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] w-full border-none bg-transparent p-0 cursor-pointer"
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/40" />
 
-      <div
-        className="relative w-full max-w-lg animate-fade-in"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative w-full max-w-lg animate-fade-in">
         <Command shouldFilter={false} className="shadow-2xl">
           <CommandInput
             ref={inputRef}
@@ -160,6 +161,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           </CommandList>
         </Command>
       </div>
-    </div>
+    </button>
   );
 }

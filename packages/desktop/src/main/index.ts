@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { officialPlugins } from "@hexo-cms/plugins";
-import { BrowserWindow, Menu, Tray, app, ipcMain, nativeImage, shell } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, shell, Tray } from "electron";
 import {
   downloadUpdate,
   getCurrentChannel,

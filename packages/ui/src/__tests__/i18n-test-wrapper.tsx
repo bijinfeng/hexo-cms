@@ -13,7 +13,10 @@ const defaultI18nConfig: I18nConfig = {
 export function I18nTestWrapper({
   children,
   locale = "zh",
-}: { children: ReactNode; locale?: string }) {
+}: {
+  children: ReactNode;
+  locale?: string;
+}) {
   return (
     <I18nProvider config={defaultI18nConfig} initialLocale={locale}>
       {children}

@@ -1,8 +1,8 @@
 import {
   type ElectronAPI,
+  isElectronIpcChannel,
   type UpdateChannel,
   type UpdateStatusPayload,
-  isElectronIpcChannel,
 } from "@hexo-cms/ui/types/electron-api";
 import { contextBridge, ipcRenderer } from "electron";
 

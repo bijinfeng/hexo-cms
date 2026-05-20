@@ -1,18 +1,17 @@
 import type { PluginConfigValue, PluginHost } from "@hexo-cms/core";
-import { en, zh } from "@hexo-cms/ui";
-import { getElectronAPI } from "@hexo-cms/ui";
+import { en, getElectronAPI, zh } from "@hexo-cms/ui";
 import {
   type AuthSession,
   CMSLayout,
   DataProviderProvider,
   ErrorBoundary,
-  I18nProvider,
-  PluginProvider,
   getAuthRedirect,
+  I18nProvider,
   isOnboardingRoute,
   isPublicAuthRoute,
+  PluginProvider,
 } from "@hexo-cms/ui/app-shell";
-import { Outlet, createRootRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createRootRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { UpdateBanner } from "../components/UpdateBanner";
 import { useUpdater } from "../hooks/useUpdater";

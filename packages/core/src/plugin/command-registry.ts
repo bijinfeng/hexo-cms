@@ -34,7 +34,9 @@ export class CommandRegistry {
     private readonly permissionBroker: PermissionBroker,
     handlers: Record<string, PluginCommandHandler> = {},
   ) {
-    Object.entries(handlers).forEach(([key, handler]) => this.handlers.set(key, handler));
+    Object.entries(handlers).forEach(([key, handler]) => {
+      this.handlers.set(key, handler);
+    });
   }
 
   registerPlugin(manifest: PluginManifest): void {

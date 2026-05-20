@@ -212,12 +212,13 @@ export function DashboardPage() {
                           statusConfig[post.status as keyof typeof statusConfig] ||
                           statusConfig.draft;
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={post.slug}
                             onClick={() =>
                               navigate({ to: "/posts/$slug", params: { slug: post.slug } })
                             }
-                            className="flex items-center gap-3 px-6 py-3.5 hover:bg-[var(--bg-muted)] transition-colors cursor-pointer group"
+                            className="flex items-center gap-3 px-6 py-3.5 hover:bg-[var(--bg-muted)] transition-colors cursor-pointer group w-full text-left border-none bg-transparent"
                           >
                             <div className="w-8 h-8 rounded-lg bg-[var(--brand-primary-subtle)] flex items-center justify-center flex-shrink-0">
                               <FileText size={14} className="text-[var(--brand-primary)]" />
@@ -231,7 +232,7 @@ export function DashboardPage() {
                               </div>
                             </div>
                             <Badge variant={status.variant}>{status.label}</Badge>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>

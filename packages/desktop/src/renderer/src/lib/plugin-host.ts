@@ -12,8 +12,10 @@ import {
   createPlatformPluginSecretStore,
   createPlatformPluginStateStore,
   createPlatformPluginStorageStore,
+  en,
+  getElectronAPI,
+  zh,
 } from "@hexo-cms/ui";
-import { en, getElectronAPI, zh } from "@hexo-cms/ui";
 import type { ComponentType } from "react";
 import { desktopDataProvider } from "./desktop-data-provider-instance";
 

@@ -1,38 +1,38 @@
 export { AuditLogPanel } from "./audit-log-panel";
-export { DashboardExtensionOutlet } from "./extension-outlet";
 export { DiagnosticsPanel } from "./diagnostics-panel";
+export { DashboardExtensionOutlet } from "./extension-outlet";
 export {
+  createPlatformPluginConfigStore,
   DesktopPluginConfigStore,
   WebPluginConfigStore,
-  createPlatformPluginConfigStore,
 } from "./platform-plugin-config";
 export {
   createPlatformPluginFetch,
   desktopPluginFetch,
-  webPluginFetch,
   getAuditLogStore,
+  webPluginFetch,
 } from "./platform-plugin-http";
 export {
+  createPlatformPluginLogStore,
   DesktopPluginLogStore,
   WebPluginLogStore,
-  createPlatformPluginLogStore,
 } from "./platform-plugin-log";
 export {
+  createPlatformPluginSecretStore,
   DesktopPluginSecretStore,
   WebPluginSecretStore,
-  createPlatformPluginSecretStore,
 } from "./platform-plugin-secret";
 export {
+  createPlatformPluginStateStore,
   DesktopPluginStateStore,
   WebPluginStateStore,
-  createPlatformPluginStateStore,
 } from "./platform-plugin-state";
 export {
+  createPlatformPluginStorageStore,
   DesktopPluginStorageStore,
   WebPluginStorageStore,
-  createPlatformPluginStorageStore,
 } from "./platform-plugin-storage";
 export { PluginErrorBoundary } from "./plugin-error-boundary";
-export { withPluginEvents, type PluginEventEmitter } from "./plugin-event-data-provider";
+export { type PluginEventEmitter, withPluginEvents } from "./plugin-event-data-provider";
 export { PluginProvider, usePluginDataProvider, usePluginSystem } from "./plugin-provider";
 export { PluginSettingsPanel } from "./plugin-settings";

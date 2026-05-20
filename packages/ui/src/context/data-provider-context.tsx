@@ -1,5 +1,4 @@
-import type { DataProvider } from "@hexo-cms/core";
-import type { HexoPost } from "@hexo-cms/core";
+import type { DataProvider, HexoPost } from "@hexo-cms/core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createContext, useContext, useRef } from "react";
 import { createQueryClient } from "../lib/query-client";

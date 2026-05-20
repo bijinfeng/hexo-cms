@@ -13,11 +13,9 @@ export type {
   RepositoryOption,
   RepositorySelection,
   RepositoryValidation,
-} from "@hexo-cms/core";
-export type {
+  RepositoryValidationCheck,
   RepositoryValidationCheckId,
   RepositoryValidationError,
-  RepositoryValidationCheck,
 } from "@hexo-cms/core";
 
 export interface OnboardingUser {

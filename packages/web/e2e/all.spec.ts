@@ -1,9 +1,9 @@
 import {
   type Browser,
   type BrowserContext,
+  chromium,
   type Locator,
   type Page,
-  chromium,
 } from "@playwright/test";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setupAnonymousApp, setupAuthenticatedApp } from "./helpers";

@@ -1,6 +1,5 @@
 import type { AuthSession } from "@hexo-cms/ui/types/auth";
 import {
-  type StoredOAuthSession,
   createAnonymousSession,
   createAuthenticatedSession,
   createDeviceFlowSession,
@@ -8,6 +7,7 @@ import {
   pollGitHubDeviceFlowToken as defaultPollGitHubDeviceFlowToken,
   startGitHubDeviceFlow as defaultStartGitHubDeviceFlow,
   parseStoredOAuthSession,
+  type StoredOAuthSession,
   serializeStoredOAuthSession,
 } from "./auth";
 import type { KeychainAdapter } from "./desktop-persistence";

@@ -10,14 +10,14 @@
     "includes": [
       "**/*.ts",
       "**/*.tsx",
-      "!**/node_modules/**",
-      "!**/dist/**",
-      "!**/.output/**",
-      "!**/build/**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.output",
+      "!**/build",
       "!**/*.gen.ts",
       "!**/*.config.js",
       "!**/*.config.ts",
-      "!**/out/**"
+      "!**/out"
     ]
   },
   "formatter": {
@@ -116,6 +116,10 @@
     ]
   },
   "overrides": [
+    {
+      "includes": ["package.json"],
+      "json": { "formatter": { "expand": "auto" } }
+    },
     {
       "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
       "javascript": {

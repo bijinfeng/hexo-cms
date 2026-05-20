@@ -1,5 +1,5 @@
-import { DataProviderError, DataProviderErrorCode } from "@hexo-cms/core";
 import type { DataProvider, GitHubConfig, HexoPost } from "@hexo-cms/core";
+import { DataProviderError, DataProviderErrorCode } from "@hexo-cms/core";
 
 class WebDataProviderError extends DataProviderError {
   constructor(

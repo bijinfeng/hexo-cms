@@ -1,6 +1,6 @@
 import { Bell, CheckCircle2, Globe, Puzzle, Save, Shield, User } from "lucide-react";
-import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { GithubIcon } from "../components/ui/github-icon";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";

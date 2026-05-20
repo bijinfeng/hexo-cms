@@ -5,7 +5,7 @@ import type {
   PluginStorageAPI,
   PluginStorageJsonValue,
 } from "@hexo-cms/core";
-import { type DraftIssue, checkDraft } from "./draft-checker";
+import { checkDraft, type DraftIssue } from "./draft-checker";
 
 export interface DraftAlert {
   postPath: string;
@@ -26,7 +26,7 @@ export function createDraftCoachEventHandler(
     if (config.enableNotifications === false) return;
 
     const post = (payload as { post?: HexoPost } | undefined)?.post;
-    if (!post || !post.frontmatter?.draft) {
+    if (!post?.frontmatter?.draft) {
       if (post?.path) {
         const alerts = (await storage.get("alerts")) as unknown as DraftAlert[] | null;
         if (alerts) {

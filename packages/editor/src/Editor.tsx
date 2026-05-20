@@ -2,8 +2,8 @@ import type { Extension } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BubbleMenu } from "./BubbleMenu";
-import { Toolbar } from "./Toolbar";
 import { getBuiltinExtensions } from "./extensions";
+import { Toolbar } from "./Toolbar";
 
 export interface EditorProps {
   value: string;

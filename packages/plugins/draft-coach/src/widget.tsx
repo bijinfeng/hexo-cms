@@ -19,7 +19,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { type DraftIssue, checkDraft } from "./draft-checker";
+import { checkDraft, type DraftIssue } from "./draft-checker";
 import { DRAFT_COACH_PLUGIN_ID } from "./manifest";
 
 interface DraftWithIssues {

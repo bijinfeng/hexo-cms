@@ -1,5 +1,5 @@
-import { GitHubService } from "@hexo-cms/core";
 import type { GitHubConfig } from "@hexo-cms/core";
+import { GitHubService } from "@hexo-cms/core";
 
 export interface GitHubServiceProvider<TService = GitHubService> {
   getGitHubService(): Promise<TService | null>;

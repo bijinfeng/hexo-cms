@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   type DataProvider,
+  definePlugin,
   MemoryPluginConfigStore,
   MemoryPluginLogStore,
   MemoryPluginSecretStore,
@@ -8,7 +9,6 @@ import {
   MemoryPluginStorageStore,
   PluginCatalog,
   PluginHost,
-  definePlugin,
 } from "../index";
 
 function createDataProvider(): DataProvider {

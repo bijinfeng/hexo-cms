@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DataProvider } from "../data-provider";
 import {
+  assertPluginHttpRequestAllowed,
   type DiagnosticsHandler,
   MemoryPluginConfigStore,
   MemoryPluginLogStore,
@@ -15,7 +16,6 @@ import {
   PluginPermissionError,
   type PluginSecretStoreValue,
   type PluginStorageStoreValue,
-  assertPluginHttpRequestAllowed,
   validatePluginManifest,
 } from "../plugin";
 

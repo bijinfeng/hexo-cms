@@ -5,7 +5,9 @@ export class PermissionBroker {
   private readonly permissionsByPlugin = new Map<string, Set<PluginPermission>>();
 
   constructor(manifests: PluginManifest[] = []) {
-    manifests.forEach((manifest) => this.register(manifest));
+    manifests.forEach((manifest) => {
+      this.register(manifest);
+    });
   }
 
   register(manifest: PluginManifest): void {
