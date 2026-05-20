@@ -5,7 +5,7 @@ import { seoInspectorManifest } from "./manifest";
 export const seoInspectorPlugin = definePlugin({
   manifest: seoInspectorManifest,
   diagnostics: {
-    "seo.post-checks": ({ getConfig }) => createSeoPostDiagnosticsHandler(getConfig),
-    "seo.site-checks": ({ getConfig }) => createSeoSiteDiagnosticsHandler(getConfig),
+    "seo.post-checks": ({ getConfig, t }) => createSeoPostDiagnosticsHandler(getConfig, t),
+    "seo.site-checks": ({ getConfig, t }) => createSeoSiteDiagnosticsHandler(getConfig, t),
   },
 });

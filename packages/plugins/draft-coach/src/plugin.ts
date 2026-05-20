@@ -9,6 +9,6 @@ export const draftCoachPlugin = definePlugin({
     "draft.overview": DraftCoachWidget,
   },
   events: {
-    "post.afterSave": ({ getConfig, storage }) => createDraftCoachEventHandler(getConfig, storage),
+    "post.afterSave": ({ getConfig, storage, t }) => createDraftCoachEventHandler(getConfig, storage, t),
   },
 });

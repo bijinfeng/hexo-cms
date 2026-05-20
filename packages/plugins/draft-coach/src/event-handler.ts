@@ -11,6 +11,7 @@ export interface DraftAlert {
 export function createDraftCoachEventHandler(
   getConfig: () => PluginConfigValue,
   storage: PluginStorageAPI,
+  t: (key: string, params?: Record<string, string | number>) => string,
 ): PluginEventHandler {
   return async ({ name, payload }) => {
     if (name !== "post.afterSave") return;
@@ -20,7 +21,6 @@ export function createDraftCoachEventHandler(
 
     const post = (payload as { post?: HexoPost } | undefined)?.post;
     if (!post || !post.frontmatter?.draft) {
-      // 如果不是草稿，清除该文章的提醒
       if (post?.path) {
         const alerts = (await storage.get("alerts")) as unknown as DraftAlert[] | null;
         if (alerts) {
@@ -31,16 +31,14 @@ export function createDraftCoachEventHandler(
       return;
     }
 
-    // 检查草稿问题
-    const issues = checkDraft(post, config);
+    const issues = checkDraft(post, config, t);
 
-    // 更新或添加提醒
     const alerts = ((await storage.get("alerts")) as unknown as DraftAlert[] | null) || [];
     const existingIndex = alerts.findIndex((a) => a.postPath === post.path);
 
     const alert: DraftAlert = {
       postPath: post.path,
-      postTitle: post.title || "未命名草稿",
+      postTitle: post.title || t("draft.widget.unnamed"),
       issues,
       lastChecked: new Date().toISOString(),
     };

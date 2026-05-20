@@ -38,7 +38,7 @@ export function DraftCoachWidget() {
 
       const withIssues: DraftWithIssues[] = [];
       for (const draft of drafts) {
-        const issues = checkDraft(draft, config);
+        const issues = checkDraft(draft, config, t);
         if (issues.length > 0) {
           withIssues.push({ post: draft, issues });
         }

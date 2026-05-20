@@ -41,7 +41,11 @@ function countWords(content: string): number {
   return chineseChars + englishWords;
 }
 
-export function checkDraft(post: HexoPost, config: PluginConfigValue): DraftIssue[] {
+export function checkDraft(
+  post: HexoPost,
+  config: PluginConfigValue,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): DraftIssue[] {
   const issues: DraftIssue[] = [];
 
   // 只检查草稿
@@ -53,31 +57,28 @@ export function checkDraft(post: HexoPost, config: PluginConfigValue): DraftIssu
   const wordCountTarget = parsePositiveInt(config.wordCountTarget, 800);
   const requireCover = config.requireCover !== false;
 
-  // 检查草稿超期
   const daysOld = getDaysOld(post.date);
   if (daysOld > draftAgeThreshold) {
     issues.push({
       id: "draft.overdue",
       type: "overdue",
       severity: "warn",
-      message: `草稿已创建 ${daysOld} 天，超过阈值 ${draftAgeThreshold} 天`,
-      hint: "考虑完成并发布，或删除不再需要的草稿",
+      message: t("draft.check.overdue", { days: daysOld, threshold: draftAgeThreshold }),
+      hint: t("draft.check.overdueHint"),
     });
   }
 
-  // 检查字数
   const wordCount = countWords(post.content);
   if (wordCount < wordCountTarget) {
     issues.push({
       id: "draft.word-count",
       type: "word-count",
       severity: "info",
-      message: `当前字数 ${wordCount}，目标 ${wordCountTarget}`,
-      hint: `还需 ${wordCountTarget - wordCount} 字`,
+      message: t("draft.check.wordCount", { current: wordCount, target: wordCountTarget }),
+      hint: t("draft.check.wordCountHint", { remaining: wordCountTarget - wordCount }),
     });
   }
 
-  // 检查封面图
   if (requireCover) {
     const cover = post.frontmatter?.cover;
     if (!cover || (typeof cover === "string" && cover.trim() === "")) {
@@ -85,8 +86,8 @@ export function checkDraft(post: HexoPost, config: PluginConfigValue): DraftIssu
         id: "draft.cover",
         type: "cover",
         severity: "info",
-        message: "缺少封面图",
-        hint: "在 frontmatter 添加 cover 字段",
+        message: t("draft.check.missingCover"),
+        hint: t("draft.check.missingCoverHint"),
       });
     }
   }
