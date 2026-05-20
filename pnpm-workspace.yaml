@@ -31,6 +31,7 @@ catalogs:
 
   lint:
     '@biomejs/biome': ^1.9.4
+
   react:
     react: ^19.2.0
     react-dom: ^19.2.0
