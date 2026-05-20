@@ -11,6 +11,7 @@ let mountedRoot: Root | null = null;
 
 vi.mock("@tanstack/react-router", () => ({
   createRootRoute: (options: { component: ComponentType }) => ({ options }),
+  Link: ({ children }: { children: ReactNode }) => <>{children}</>,
   Outlet: () => <div data-testid="outlet" />,
   useNavigate: () => navigateMock,
   useRouterState: () => ({ location: { pathname } }),
@@ -65,6 +66,7 @@ vi.mock("../lib/plugin-host", () => ({
           uiFlags: [],
         },
       }),
+      collectPluginTranslations: () => ({}),
     }),
   ),
 }));

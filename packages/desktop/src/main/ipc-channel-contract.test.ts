@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 function scanIpcChannels(filePath: string): string[] {
   const source = readFileSync(filePath, "utf-8");
-  return Array.from(source.matchAll(/ipcMain\.handle\("([^"]+)"/g), (match) => match[1]);
+  return Array.from(source.matchAll(/ipcMain\.handle\(\s*"([^"]+)"/g), (match) => match[1]);
 }
 
 describe("desktop IPC channel contract", () => {

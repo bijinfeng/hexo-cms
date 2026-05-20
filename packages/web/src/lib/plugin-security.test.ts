@@ -32,6 +32,10 @@ vi.mock("./plugin-log-db", () => ({
   savePluginLogs: vi.fn(),
 }));
 
+vi.mock("./plugin-host", () => ({
+  getWebPluginManifests: vi.fn(() => Promise.resolve([])),
+}));
+
 const session = {
   session: {
     id: "session-1",
