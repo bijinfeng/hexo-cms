@@ -277,6 +277,7 @@ export const zh = {
     tabs: {
       siteInfo: "站点信息",
       githubIntegration: "GitHub 集成",
+      editorPreferences: "编辑器偏好",
       profile: "个人资料",
       notifications: "通知设置",
       pluginManagement: "插件管理",

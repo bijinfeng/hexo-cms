@@ -1,4 +1,4 @@
-import { Bell, CheckCircle2, Globe, Puzzle, Save, Shield, User } from "lucide-react";
+import { Bell, CheckCircle2, Globe, Pen, Puzzle, Save, Shield, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
@@ -23,6 +23,7 @@ export interface SettingsSectionDef {
 const baseSections = [
   { id: "site", label: "settings.tabs.siteInfo", icon: Globe },
   { id: "github", label: "settings.tabs.githubIntegration", icon: GithubIcon },
+  { id: "editor", label: "settings.tabs.editorPreferences", icon: Pen },
   { id: "profile", label: "settings.tabs.profile", icon: User },
   { id: "notifications", label: "settings.tabs.notifications", icon: Bell },
   { id: "plugins", label: "settings.tabs.pluginManagement", icon: Puzzle },

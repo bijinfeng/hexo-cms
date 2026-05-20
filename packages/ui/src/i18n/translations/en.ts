@@ -279,6 +279,7 @@ export const en = {
     tabs: {
       siteInfo: "Site Info",
       githubIntegration: "GitHub Integration",
+      editorPreferences: "Editor",
       profile: "Profile",
       notifications: "Notifications",
       pluginManagement: "Plugin Management",
