@@ -112,6 +112,11 @@ export class PluginHost<TRenderer = unknown> {
     return this.renderers.get(`${widget.pluginId}:${widget.renderer}`);
   }
 
+  setCurrentLocale(locale: string): void {
+    this.options.currentLocale = locale;
+    this.syncRuntimeContributions();
+  }
+
   collectPluginTranslations(): Record<string, Record<string, string>> {
     const translations: Record<string, Record<string, string>> = {};
     for (const { manifest, record } of this.snapshot().plugins) {

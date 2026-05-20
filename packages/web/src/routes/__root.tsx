@@ -187,6 +187,7 @@ function RootComponent() {
       initialLocale={locale}
       onLocaleChange={(newLocale) => {
         localStorage.setItem("hexo-cms-locale", newLocale);
+        pluginHost?.setCurrentLocale(newLocale);
       }}
     >
       <DataProviderProvider provider={webDataProvider}>

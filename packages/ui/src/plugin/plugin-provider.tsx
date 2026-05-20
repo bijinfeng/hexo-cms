@@ -22,6 +22,7 @@ interface PluginContextValue {
   executePluginCommand: (pluginId: string, commandId: string, args?: unknown[]) => Promise<PluginCommandExecutionResult>;
   runDiagnostics: (target: DiagnosticsTarget) => Promise<DiagnosticsReport[]>;
   getDashboardWidgetRenderer: (widget: RegisteredDashboardWidget) => ComponentType<{ config?: PluginConfigValue }> | undefined;
+  setPluginLocale: (locale: string) => void;
 }
 
 const PluginContext = createContext<PluginContextValue | null>(null);
@@ -89,6 +90,11 @@ export function PluginProvider({
     [host],
   );
 
+  const setPluginLocale = useCallback((locale: string) => {
+    host.setCurrentLocale(locale);
+    setSnapshot(host.snapshot());
+  }, [host]);
+
   const contextValue = useMemo(() => ({
     host,
     snapshot,
@@ -99,7 +105,8 @@ export function PluginProvider({
     executePluginCommand,
     runDiagnostics,
     getDashboardWidgetRenderer,
-  }), [host, snapshot, enablePlugin, disablePlugin, updatePluginConfig, recordPluginError, executePluginCommand, runDiagnostics, getDashboardWidgetRenderer]);
+    setPluginLocale,
+  }), [host, snapshot, enablePlugin, disablePlugin, updatePluginConfig, recordPluginError, executePluginCommand, runDiagnostics, getDashboardWidgetRenderer, setPluginLocale]);
 
   return (
     <PluginContext.Provider value={contextValue}>

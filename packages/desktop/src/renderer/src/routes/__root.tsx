@@ -150,6 +150,7 @@ function RootComponent() {
       initialLocale={locale}
       onLocaleChange={(newLocale) => {
         getElectronAPI()?.setLocale(newLocale);
+        pluginHost?.setCurrentLocale(newLocale);
       }}
     >
       <DataProviderProvider provider={desktopDataProvider}>

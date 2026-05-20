@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { I18nConfig, I18nContextValue, Locale, TranslationMap } from "@hexo-cms/core";
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -75,6 +75,12 @@ export function I18nProvider({
     },
     [onLocaleChange],
   );
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = locale === "en" ? "en" : "zh-CN";
+    }
+  }, [locale]);
 
   const value = useMemo<I18nContextValue>(
     () => ({ locale, locales: config.locales, setLocale, t }),
