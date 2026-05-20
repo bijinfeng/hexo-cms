@@ -105,11 +105,13 @@ export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, aut
         {/* Language toggle */}
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
           title={t("topbar.language")}
+          className="gap-1 text-xs font-medium"
         >
-          <Globe size={18} />
+          <Globe size={14} />
+          <span className="uppercase">{locale === "zh" ? "EN" : "中文"}</span>
         </Button>
 
         {/* User avatar / menu */}

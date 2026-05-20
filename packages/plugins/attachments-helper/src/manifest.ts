@@ -79,6 +79,7 @@ export const attachmentsHelperManifest: PluginManifest = {
     ],
     translations: {
       zh: {
+        "attachments.name": "附件助手",
         "attachments.widget.loading": "正在读取附件...",
         "attachments.widget.attachmentCount": "附件数",
         "attachments.widget.totalSize": "合计大小",
@@ -87,6 +88,7 @@ export const attachmentsHelperManifest: PluginManifest = {
         "attachments.widget.copied": "已复制",
       },
       en: {
+        "attachments.name": "Attachments",
         "attachments.widget.loading": "Loading attachments...",
         "attachments.widget.attachmentCount": "Attachments",
         "attachments.widget.totalSize": "Total Size",

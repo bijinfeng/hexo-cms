@@ -56,6 +56,7 @@ export const commentsOverviewManifest: PluginManifest = {
     ],
     translations: {
       zh: {
+        "comments.name": "评论管理",
         "comments.widget.pending": "待审核",
         "comments.widget.approved": "已通过",
         "comments.widget.spam": "垃圾",
@@ -92,6 +93,7 @@ export const commentsOverviewManifest: PluginManifest = {
         "comments.comment.hide": "隐藏",
       },
       en: {
+        "comments.name": "Comments",
         "comments.widget.pending": "Pending",
         "comments.widget.approved": "Approved",
         "comments.widget.spam": "Spam",

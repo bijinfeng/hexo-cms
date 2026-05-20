@@ -32,6 +32,7 @@ export const seoInspectorManifest: PluginManifest = {
     ],
     translations: {
       zh: {
+        "seo.name": "SEO 检查器",
         "seo.post.title": "SEO 检查",
         "seo.post.missingTitle": "缺少标题",
         "seo.post.titleHint": "在 frontmatter 中添加 title 字段",
@@ -54,6 +55,7 @@ export const seoInspectorManifest: PluginManifest = {
         "seo.diag.siteTitleCount": "有 {{count}} 篇文章标题过短",
       },
       en: {
+        "seo.name": "SEO Inspector",
         "seo.post.title": "SEO Check",
         "seo.post.missingTitle": "Missing title",
         "seo.post.titleHint": "Add a title field in frontmatter",

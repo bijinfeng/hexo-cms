@@ -120,6 +120,8 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
             const isCommentsPage = item.target === "/comments";
             const isActive = isCommentsPage ? pathname === "/comments" : pathname === "/settings";
             const linkProps = isCommentsPage ? {} : { search: { section: "plugins", plugin: item.pluginId } };
+            const prefix = item.pluginId.replace("hexo-cms-", "").split("-")[0];
+            const displayName = t(`${prefix}.name`) !== `${prefix}.name` ? t(`${prefix}.name`) : item.title;
             return (
               <Link
                 key={`${item.pluginId}:${item.id}`}
@@ -132,7 +134,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
                   collapsed && "justify-center px-2"
                 )}
-                title={collapsed ? item.title : undefined}
+                title={collapsed ? displayName : undefined}
                 aria-current={isActive ? "page" : undefined}
               >
                 {isCommentsPage ? (
@@ -152,7 +154,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                     )}
                   />
                 )}
-                {!collapsed && <span className="truncate">{item.title}</span>}
+                {!collapsed && <span className="truncate">{displayName}</span>}
                 {isActive && !collapsed && (
                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)]" />
                 )}

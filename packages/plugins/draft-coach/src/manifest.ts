@@ -32,6 +32,7 @@ export const draftCoachManifest: PluginManifest = {
     events: [{ name: "post.afterSave", description: "Check draft state after save" }],
     translations: {
       zh: {
+        "draft.name": "草稿助手",
         "draft.widget.title": "草稿助手",
         "draft.widget.disabled": "插件未启用。前往设置启用草稿助手以获取草稿提醒。",
         "draft.widget.loading": "检查草稿中...",
@@ -46,6 +47,7 @@ export const draftCoachManifest: PluginManifest = {
         "draft.check.missingCoverHint": "在 frontmatter 添加 cover 字段",
       },
       en: {
+        "draft.name": "Draft Coach",
         "draft.widget.title": "Draft Coach",
         "draft.widget.disabled": "Plugin is disabled. Go to settings to enable Draft Coach for draft reminders.",
         "draft.widget.loading": "Checking drafts...",
