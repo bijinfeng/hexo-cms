@@ -1,0 +1,137 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "include": ["**/*.ts", "**/*.tsx"],
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.output/**",
+      "**/build/**",
+      "**/*.gen.ts",
+      "**/*.config.js",
+      "**/*.config.ts",
+      "**/out/**"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noForEach": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        "noConsole": {
+          "level": "warn",
+          "options": { "allow": ["warn", "error", "info", "debug"] }
+        },
+        "noDebugger": "warn",
+        "noExplicitAny": "off"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "off",
+        "useButtonType": "off",
+        "useKeyWithClickEvents": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      },
+      "correctness": {
+        "noChildrenProp": "off",
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "useExhaustiveDependencies": "off",
+        "useHookAtTopLevel": "error"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    },
+    "globals": [
+      "FormData",
+      "clearTimeout",
+      "HTMLElement",
+      "HTMLParagraphElement",
+      "HTMLInputElement",
+      "Blob",
+      "Request",
+      "clearInterval",
+      "fetch",
+      "Event",
+      "require",
+      "prompt",
+      "localStorage",
+      "MouseEvent",
+      "Buffer",
+      "File",
+      "HTMLButtonElement",
+      "Response",
+      "document",
+      "HTMLHeadingElement",
+      "confirm",
+      "HTMLTextAreaElement",
+      "module",
+      "React",
+      "__dirname",
+      "setTimeout",
+      "__filename",
+      "process",
+      "sessionStorage",
+      "console",
+      "FileList",
+      "URL",
+      "CustomEvent",
+      "HTMLDivElement",
+      "window",
+      "navigator",
+      "alert",
+      "URLSearchParams",
+      "KeyboardEvent",
+      "Node",
+      "JSX",
+      "setInterval",
+      "Headers"
+    ]
+  },
+  "overrides": [
+    {
+      "include": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+      "javascript": {
+        "globals": [
+          "describe",
+          "it",
+          "expect",
+          "beforeEach",
+          "afterEach",
+          "beforeAll",
+          "afterAll",
+          "vi",
+          "test"
+        ]
+      }
+    }
+  ]
+}

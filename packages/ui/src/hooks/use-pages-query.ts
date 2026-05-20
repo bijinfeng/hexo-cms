@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { HexoPost } from "@hexo-cms/core";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDataProvider } from "../context/data-provider-context";
 import { queryKeys } from "../lib/query-keys";
-import type { HexoPost } from "@hexo-cms/core";
 
 export function usePages(options: { enabled?: boolean } = {}) {
   const dataProvider = useDataProvider();

@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
 import type { PluginManifest } from "@hexo-cms/core";
 import { PermissionBroker, sanitizeHeaders } from "@hexo-cms/core";
-import { createPluginHttpProxy } from "./plugin-http-proxy";
+import { describe, expect, it, vi } from "vitest";
 import type { PluginNetworkAuditEntryInput } from "./desktop-persistence";
+import { createPluginHttpProxy } from "./plugin-http-proxy";
 
 const networkPlugin: PluginManifest = {
   id: "hexo-cms-network-plugin",
@@ -15,7 +15,10 @@ const networkPlugin: PluginManifest = {
   network: { allowedHosts: ["api.example.com"] },
 };
 
-function createJsonResponse(body: string, init: { status?: number; statusText?: string; headers?: Record<string, string> } = {}): Response {
+function createJsonResponse(
+  body: string,
+  init: { status?: number; statusText?: string; headers?: Record<string, string> } = {},
+): Response {
   return new Response(body, {
     status: 200,
     statusText: "OK",
@@ -24,15 +27,19 @@ function createJsonResponse(body: string, init: { status?: number; statusText?: 
   });
 }
 
-function createProxy(options: {
-  fetchImpl?: typeof fetch;
-  maxResponseSize?: number;
-  appendAudit?: (entry: PluginNetworkAuditEntryInput) => void;
-} = {}) {
+function createProxy(
+  options: {
+    fetchImpl?: typeof fetch;
+    maxResponseSize?: number;
+    appendAudit?: (entry: PluginNetworkAuditEntryInput) => void;
+  } = {},
+) {
   const appendAudit = options.appendAudit ?? vi.fn();
   const proxy = createPluginHttpProxy({
     appendAudit,
-    fetchImpl: options.fetchImpl ?? vi.fn<typeof fetch>().mockResolvedValue(createJsonResponse("{\"ok\":true}")),
+    fetchImpl:
+      options.fetchImpl ??
+      vi.fn<typeof fetch>().mockResolvedValue(createJsonResponse('{"ok":true}')),
     manifests: [networkPlugin],
     permissionBroker: new PermissionBroker([networkPlugin]),
     maxResponseSize: options.maxResponseSize,
@@ -43,39 +50,48 @@ function createProxy(options: {
 
 describe("desktop plugin HTTP proxy", () => {
   it("removes cookie headers before forwarding plugin fetches", () => {
-    expect(sanitizeHeaders({
-      Authorization: "Bearer token",
-      Cookie: "session=secret",
-      "set-cookie": "next=secret",
-    })).toEqual({ Authorization: "Bearer token" });
+    expect(
+      sanitizeHeaders({
+        Authorization: "Bearer token",
+        Cookie: "session=secret",
+        "set-cookie": "next=secret",
+      }),
+    ).toEqual({ Authorization: "Bearer token" });
   });
 
   it("fetches allowed HTTPS URLs and records successful audit entries", async () => {
-    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(createJsonResponse("{\"ok\":true}", {
-      headers: { "x-plugin": "yes" },
-    }));
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      createJsonResponse('{"ok":true}', {
+        headers: { "x-plugin": "yes" },
+      }),
+    );
     const { proxy, appendAudit } = createProxy({ fetchImpl });
 
-    await expect(proxy.fetch({
-      pluginId: networkPlugin.id,
-      url: "https://api.example.com/status",
-      method: "POST",
-      headers: { Cookie: "secret", "X-Request": "1" },
-      body: "{\"ping\":true}",
-    })).resolves.toEqual({
+    await expect(
+      proxy.fetch({
+        pluginId: networkPlugin.id,
+        url: "https://api.example.com/status",
+        method: "POST",
+        headers: { Cookie: "secret", "X-Request": "1" },
+        body: '{"ping":true}',
+      }),
+    ).resolves.toEqual({
       ok: true,
       status: 200,
       statusText: "OK",
       headers: expect.objectContaining({ "x-plugin": "yes" }),
-      body: "{\"ok\":true}",
+      body: '{"ok":true}',
     });
 
-    expect(fetchImpl).toHaveBeenCalledWith("https://api.example.com/status", expect.objectContaining({
-      method: "POST",
-      headers: { "X-Request": "1" },
-      body: "{\"ping\":true}",
-      credentials: "omit",
-    }));
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.example.com/status",
+      expect.objectContaining({
+        method: "POST",
+        headers: { "X-Request": "1" },
+        body: '{"ping":true}',
+        credentials: "omit",
+      }),
+    );
     expect(appendAudit).toHaveBeenCalledWith({
       pluginId: networkPlugin.id,
       url: "https://api.example.com/status",
@@ -88,10 +104,12 @@ describe("desktop plugin HTTP proxy", () => {
     const fetchImpl = vi.fn<typeof fetch>();
     const { proxy, appendAudit } = createProxy({ fetchImpl });
 
-    await expect(proxy.fetch({
-      pluginId: networkPlugin.id,
-      url: "https://evil.example.com/status",
-    })).rejects.toThrow(/not allowed/);
+    await expect(
+      proxy.fetch({
+        pluginId: networkPlugin.id,
+        url: "https://evil.example.com/status",
+      }),
+    ).rejects.toThrow(/not allowed/);
 
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(appendAudit).not.toHaveBeenCalled();
@@ -103,10 +121,12 @@ describe("desktop plugin HTTP proxy", () => {
       fetchImpl: vi.fn<typeof fetch>().mockResolvedValue(createJsonResponse("too-large-body")),
     });
 
-    await expect(proxy.fetch({
-      pluginId: networkPlugin.id,
-      url: "https://api.example.com/status",
-    })).rejects.toThrow("Response too large");
+    await expect(
+      proxy.fetch({
+        pluginId: networkPlugin.id,
+        url: "https://api.example.com/status",
+      }),
+    ).rejects.toThrow("Response too large");
 
     expect(appendAudit).toHaveBeenCalledTimes(1);
     expect(appendAudit).toHaveBeenCalledWith({
@@ -123,10 +143,12 @@ describe("desktop plugin HTTP proxy", () => {
       fetchImpl: vi.fn<typeof fetch>().mockRejectedValue(new Error("network down")),
     });
 
-    await expect(proxy.fetch({
-      pluginId: networkPlugin.id,
-      url: "https://api.example.com/status",
-    })).rejects.toThrow("network down");
+    await expect(
+      proxy.fetch({
+        pluginId: networkPlugin.id,
+        url: "https://api.example.com/status",
+      }),
+    ).rejects.toThrow("network down");
 
     expect(appendAudit).toHaveBeenCalledWith({
       pluginId: networkPlugin.id,

@@ -1,26 +1,22 @@
 import {
   DndContext,
-  closestCenter,
+  type DragEndEvent,
   PointerSensor,
+  closestCenter,
   useSensor,
   useSensors,
-  type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Settings2 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuContent,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Button } from "./ui/button";
 
 const STORAGE_KEY = "hexo-cms:dashboard-layout";
 
@@ -45,7 +41,9 @@ function loadLayout(): DashboardLayout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return {
     order: AVAILABLE_WIDGETS.filter((w) => w.defaultVisible).map((w) => w.id),
     hidden: AVAILABLE_WIDGETS.filter((w) => !w.defaultVisible).map((w) => w.id),
@@ -62,7 +60,9 @@ interface DraggableWidgetProps {
 }
 
 function DraggableWidget({ id, children }: DraggableWidgetProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -95,9 +95,7 @@ export function DashboardWidgetGrid({ children }: DashboardWidgetGridProps) {
     saveLayout(layout);
   }, [layout]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -135,9 +133,7 @@ export function DashboardWidgetGrid({ children }: DashboardWidgetGridProps) {
   function toggleWidget(id: string) {
     setLayout((prev) => ({
       ...prev,
-      hidden: prev.hidden.includes(id)
-        ? prev.hidden.filter((h) => h !== id)
-        : [...prev.hidden, id],
+      hidden: prev.hidden.includes(id) ? prev.hidden.filter((h) => h !== id) : [...prev.hidden, id],
     }));
   }
 

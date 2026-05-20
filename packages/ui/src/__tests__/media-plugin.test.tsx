@@ -1,13 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import type { DataProvider } from "@hexo-cms/core";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { DataProviderProvider } from "../context/data-provider-context";
+import { MediaPage } from "../pages/media";
 import { PluginProvider } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
-import { MediaPage } from "../pages/media";
-import type { DataProvider } from "@hexo-cms/core";
-import { createTestPluginHost } from "./test-utils";
 import { I18nTestWrapper } from "./i18n-test-wrapper";
+import { createTestPluginHost } from "./test-utils";
 
 function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider {
   return {
@@ -31,7 +31,9 @@ function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider
     getMediaFiles: vi.fn().mockResolvedValue([]),
     uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
     deleteMedia: vi.fn().mockResolvedValue(undefined),
-    getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+    getStats: vi
+      .fn()
+      .mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
     getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),

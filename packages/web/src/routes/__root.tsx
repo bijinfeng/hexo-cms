@@ -1,7 +1,7 @@
-import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import type { PluginConfigValue, PluginHost } from "@hexo-cms/core";
+import { en, zh } from "@hexo-cms/ui";
 import {
+  type AuthSession,
   CMSLayout,
   DataProviderProvider,
   ErrorBoundary,
@@ -10,12 +10,19 @@ import {
   getAuthRedirect,
   isOnboardingRoute,
   isPublicAuthRoute,
-  type AuthSession,
 } from "@hexo-cms/ui/app-shell";
-import { zh, en } from "@hexo-cms/ui";
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
+import { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { webAuthClient } from "../lib/auth-client";
-import { webDataProvider } from "../lib/web-data-provider-instance";
 import { createWebPluginHost } from "../lib/plugin-host";
+import { webDataProvider } from "../lib/web-data-provider-instance";
 import appCss from "../styles.css?url";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
@@ -28,7 +35,10 @@ function NotFound() {
 
 function detectWebLocale(): "zh" | "en" {
   if (typeof document !== "undefined") {
-    const fromCookie = document.cookie.split("; ").find(r => r.startsWith("hexo-cms-locale="))?.split("=")[1];
+    const fromCookie = document.cookie
+      .split("; ")
+      .find((r) => r.startsWith("hexo-cms-locale="))
+      ?.split("=")[1];
     if (fromCookie === "zh" || fromCookie === "en") return fromCookie;
   }
   const stored = typeof window !== "undefined" ? localStorage.getItem("hexo-cms-locale") : null;
@@ -83,7 +93,9 @@ function RootComponent() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [hasConfig, setHasConfig] = useState<boolean | null>(null);
   const [isPending, setIsPending] = useState(true);
-  const [pluginHost, setPluginHost] = useState<PluginHost<ComponentType<{ config?: PluginConfigValue }>> | null>(null);
+  const [pluginHost, setPluginHost] = useState<PluginHost<
+    ComponentType<{ config?: PluginConfigValue }>
+  > | null>(null);
   const loadingRef = useRef(false);
   const [locale] = useState<"zh" | "en">(() => detectWebLocale());
   const [pluginTranslationVersion, setPluginTranslationVersion] = useState(0);
@@ -200,7 +212,7 @@ function RootComponent() {
       <DataProviderProvider provider={webDataProvider}>
         <PluginProvider
           host={pluginHost}
-          onStateChange={() => setPluginTranslationVersion(v => v + 1)}
+          onStateChange={() => setPluginTranslationVersion((v) => v + 1)}
         >
           <ErrorBoundary>
             <CMSLayout

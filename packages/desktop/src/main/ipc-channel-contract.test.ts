@@ -1,7 +1,7 @@
-import { readFileSync } from "fs";
-import { join } from "path";
-import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ELECTRON_IPC_CHANNELS } from "@hexo-cms/ui/types/electron-api";
+import { describe, expect, it } from "vitest";
 
 function scanIpcChannels(filePath: string): string[] {
   const source = readFileSync(filePath, "utf-8");

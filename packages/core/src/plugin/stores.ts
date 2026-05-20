@@ -17,7 +17,7 @@ export class BrowserJsonStore<T> {
     if (typeof window === "undefined") return {} as T;
     try {
       const raw = window.localStorage.getItem(this.key);
-      return raw ? JSON.parse(raw) : {} as T;
+      return raw ? JSON.parse(raw) : ({} as T);
     } catch {
       return {} as T;
     }

@@ -1,13 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { getErrorMessage } from "@hexo-cms/core";
 import {
-  summarizeTaxonomies,
-  renameTaxonomy,
+  type TaxonomyRepository,
+  type TaxonomyType,
   deleteTaxonomy,
   mergeTaxonomy,
-  type TaxonomyType,
-  type TaxonomyRepository,
+  renameTaxonomy,
+  summarizeTaxonomies,
 } from "@hexo-cms/core";
+import { createFileRoute } from "@tanstack/react-router";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/github/tags")({
@@ -30,7 +30,11 @@ export const Route = createFileRoute("/api/github/tags")({
         const ctx = await getGitHubCtx(request);
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
 
-        const body = (await request.json()) as { type?: TaxonomyType; oldName?: string; newName?: string };
+        const body = (await request.json()) as {
+          type?: TaxonomyType;
+          oldName?: string;
+          newName?: string;
+        };
         if ((body.type !== "tag" && body.type !== "category") || !body.oldName || !body.newName) {
           return json({ error: "INVALID_TAXONOMY_RENAME" }, 400);
         }
@@ -40,7 +44,11 @@ export const Route = createFileRoute("/api/github/tags")({
             getPosts: () => ctx.github.getPosts(ctx.config.postsDir),
             savePost: (post) => ctx.github.savePost(post),
           };
-          const result = await renameTaxonomy(repo, { type: body.type, oldName: body.oldName, newName: body.newName });
+          const result = await renameTaxonomy(repo, {
+            type: body.type,
+            oldName: body.oldName,
+            newName: body.newName,
+          });
           return json(result);
         } catch (error) {
           return json({ error: getErrorMessage(error) }, 500);
@@ -72,8 +80,16 @@ export const Route = createFileRoute("/api/github/tags")({
         const ctx = await getGitHubCtx(request);
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
 
-        const body = (await request.json()) as { type?: TaxonomyType; sourceName?: string; targetName?: string };
-        if ((body.type !== "tag" && body.type !== "category") || !body.sourceName || !body.targetName) {
+        const body = (await request.json()) as {
+          type?: TaxonomyType;
+          sourceName?: string;
+          targetName?: string;
+        };
+        if (
+          (body.type !== "tag" && body.type !== "category") ||
+          !body.sourceName ||
+          !body.targetName
+        ) {
           return json({ error: "INVALID_TAXONOMY_MERGE" }, 400);
         }
 
@@ -82,7 +98,11 @@ export const Route = createFileRoute("/api/github/tags")({
             getPosts: () => ctx.github.getPosts(ctx.config.postsDir),
             savePost: (post) => ctx.github.savePost(post),
           };
-          const result = await mergeTaxonomy(repo, { type: body.type, sourceName: body.sourceName, targetName: body.targetName });
+          const result = await mergeTaxonomy(repo, {
+            type: body.type,
+            sourceName: body.sourceName,
+            targetName: body.targetName,
+          });
           return json(result);
         } catch (error) {
           return json({ error: getErrorMessage(error) }, 500);

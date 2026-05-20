@@ -1,5 +1,5 @@
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps, cva } from "class-variance-authority";
+import type * as React from "react";
 import { cn } from "../../utils";
 
 const badgeVariants = cva(
@@ -7,8 +7,7 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-secondary)]",
+        default: "border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-secondary)]",
         orange:
           "border-[var(--brand-primary-muted)] bg-[var(--brand-primary-subtle)] text-[var(--brand-primary)]",
         green:
@@ -24,7 +23,7 @@ const badgeVariants = cva(
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 );
 
 export interface BadgeProps

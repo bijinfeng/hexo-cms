@@ -21,7 +21,12 @@ export type OctokitLike = {
   rest: {
     repos: {
       getBranch: (options: { owner: string; repo: string; branch: string }) => Promise<unknown>;
-      getContent: (options: { owner: string; repo: string; path: string; ref?: string }) => Promise<unknown>;
+      getContent: (options: {
+        owner: string;
+        repo: string;
+        path: string;
+        ref?: string;
+      }) => Promise<unknown>;
     };
   };
 };
@@ -59,13 +64,16 @@ function isGitHubForbidden(error: unknown) {
 export function getRepositoryValidationHttpStatus(validation: RepositoryValidation): number {
   if (validation.ok) return 200;
   switch (validation.error) {
-    case "REAUTH_REQUIRED": return 401;
-    case "PERMISSION_REQUIRED": return 403;
-    case "REPO_NOT_FOUND": return 404;
-    case "NETWORK_ERROR": return 502;
-    case "BRANCH_NOT_FOUND":
-    case "NOT_HEXO_REPO":
-    default: return 400;
+    case "REAUTH_REQUIRED":
+      return 401;
+    case "PERMISSION_REQUIRED":
+      return 403;
+    case "REPO_NOT_FOUND":
+      return 404;
+    case "NETWORK_ERROR":
+      return 502;
+    default:
+      return 400;
   }
 }
 
@@ -144,8 +152,12 @@ export async function validateHexoRepository(
 
     if (!repository.permissions.push) {
       return {
-        ok: false, repository,
-        checks: [...checks, { id: "permission", status: "error", message: CHECK_MESSAGES.permissionError }],
+        ok: false,
+        repository,
+        checks: [
+          ...checks,
+          { id: "permission", status: "error", message: CHECK_MESSAGES.permissionError },
+        ],
         error: "PERMISSION_REQUIRED",
       };
     }
@@ -157,7 +169,8 @@ export async function validateHexoRepository(
     } catch (error) {
       if (!isGitHubNotFound(error)) throw error;
       return {
-        ok: false, repository,
+        ok: false,
+        repository,
         checks: [...checks, { id: "branch", status: "error", message: CHECK_MESSAGES.branchError }],
         error: "BRANCH_NOT_FOUND",
       };
@@ -165,9 +178,10 @@ export async function validateHexoRepository(
 
     checks.push({ id: "branch", status: "success", message: CHECK_MESSAGES.branchSuccess });
 
-    if (!await hasHexoStructure(octokit, normalizedSelection)) {
+    if (!(await hasHexoStructure(octokit, normalizedSelection))) {
       return {
-        ok: false, repository,
+        ok: false,
+        repository,
         checks: [...checks, { id: "hexo", status: "error", message: CHECK_MESSAGES.hexoError }],
         error: "NOT_HEXO_REPO",
       };
@@ -176,25 +190,46 @@ export async function validateHexoRepository(
     checks.push({ id: "hexo", status: "success", message: CHECK_MESSAGES.hexoSuccess });
 
     return {
-      ok: true, repository,
+      ok: true,
+      repository,
       defaultConfig: {
-        owner: selection.owner, repo: selection.repo, branch,
-        postsDir: "source/_posts", mediaDir: "source/images",
+        owner: selection.owner,
+        repo: selection.repo,
+        branch,
+        postsDir: "source/_posts",
+        mediaDir: "source/images",
         workflowFile: ".github/workflows/deploy.yml",
-        autoDeploy: true, deployNotifications: true,
+        autoDeploy: true,
+        deployNotifications: true,
       },
       checks,
     };
   } catch (error) {
     if (isGitHubNotFound(error)) {
-      return { ok: false, checks: [{ id: "access", status: "error", message: CHECK_MESSAGES.accessError }], error: "REPO_NOT_FOUND" };
+      return {
+        ok: false,
+        checks: [{ id: "access", status: "error", message: CHECK_MESSAGES.accessError }],
+        error: "REPO_NOT_FOUND",
+      };
     }
     if (isGitHubUnauthorized(error)) {
-      return { ok: false, checks: [{ id: "access", status: "error", message: CHECK_MESSAGES.permissionError }], error: "REAUTH_REQUIRED" };
+      return {
+        ok: false,
+        checks: [{ id: "access", status: "error", message: CHECK_MESSAGES.permissionError }],
+        error: "REAUTH_REQUIRED",
+      };
     }
     if (isGitHubForbidden(error)) {
-      return { ok: false, checks: [{ id: "permission", status: "error", message: CHECK_MESSAGES.permissionError }], error: "PERMISSION_REQUIRED" };
+      return {
+        ok: false,
+        checks: [{ id: "permission", status: "error", message: CHECK_MESSAGES.permissionError }],
+        error: "PERMISSION_REQUIRED",
+      };
     }
-    return { ok: false, checks: [{ id: "access", status: "error", message: CHECK_MESSAGES.networkError }], error: "NETWORK_ERROR" };
+    return {
+      ok: false,
+      checks: [{ id: "access", status: "error", message: CHECK_MESSAGES.networkError }],
+      error: "NETWORK_ERROR",
+    };
   }
 }

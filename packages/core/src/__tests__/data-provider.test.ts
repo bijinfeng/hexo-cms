@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DataProvider } from "../data-provider";
-import type { HexoPost, GitHubConfig } from "../types";
+import type { GitHubConfig, HexoPost } from "../types";
 
 // A minimal mock implementation to verify the interface contract
 function createMockDataProvider(): DataProvider {
@@ -11,11 +11,15 @@ function createMockDataProvider(): DataProvider {
     saveToken: vi.fn().mockResolvedValue(undefined),
     deleteToken: vi.fn().mockResolvedValue(undefined),
     getPosts: vi.fn().mockResolvedValue([]),
-    getPost: vi.fn().mockResolvedValue({ path: "", title: "", date: "", content: "", frontmatter: {} }),
+    getPost: vi
+      .fn()
+      .mockResolvedValue({ path: "", title: "", date: "", content: "", frontmatter: {} }),
     savePost: vi.fn().mockResolvedValue(undefined),
     deletePost: vi.fn().mockResolvedValue(undefined),
     getPages: vi.fn().mockResolvedValue([]),
-    getPage: vi.fn().mockResolvedValue({ path: "", title: "", date: "", content: "", frontmatter: {} }),
+    getPage: vi
+      .fn()
+      .mockResolvedValue({ path: "", title: "", date: "", content: "", frontmatter: {} }),
     savePage: vi.fn().mockResolvedValue(undefined),
     deletePage: vi.fn().mockResolvedValue(undefined),
     getTags: vi.fn().mockResolvedValue({ tags: [], categories: [], total: 0 }),
@@ -25,7 +29,9 @@ function createMockDataProvider(): DataProvider {
     getMediaFiles: vi.fn().mockResolvedValue([]),
     uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
     deleteMedia: vi.fn().mockResolvedValue(undefined),
-    getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+    getStats: vi
+      .fn()
+      .mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
     getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),

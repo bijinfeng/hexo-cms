@@ -1,14 +1,20 @@
+import {
+  getRepositoryValidationHttpStatus,
+  listWritableRepositories,
+  validateHexoRepository,
+} from "@hexo-cms/core";
 import { describe, expect, it, vi } from "vitest";
-import { getRepositoryValidationHttpStatus, listWritableRepositories, validateHexoRepository } from "@hexo-cms/core";
 
 type MockOctokit = Parameters<typeof listWritableRepositories>[0];
 
-function createOctokit(overrides: Partial<{
-  request: ReturnType<typeof vi.fn>;
-  paginate: ReturnType<typeof vi.fn>;
-  getBranch: ReturnType<typeof vi.fn>;
-  getContent: ReturnType<typeof vi.fn>;
-}> = {}): MockOctokit {
+function createOctokit(
+  overrides: Partial<{
+    request: ReturnType<typeof vi.fn>;
+    paginate: ReturnType<typeof vi.fn>;
+    getBranch: ReturnType<typeof vi.fn>;
+    getContent: ReturnType<typeof vi.fn>;
+  }> = {},
+): MockOctokit {
   return {
     request: overrides.request ?? vi.fn(),
     paginate: overrides.paginate,
@@ -109,10 +115,13 @@ describe("listWritableRepositories", () => {
       },
     ]);
 
-    const repositories = await listWritableRepositories({
-      ...createOctokit({ request }),
-      paginate,
-    }, { query: "archive" });
+    const repositories = await listWritableRepositories(
+      {
+        ...createOctokit({ request }),
+        paginate,
+      },
+      { query: "archive" },
+    );
 
     expect(paginate).toHaveBeenCalledWith("GET /user/repos", {
       affiliation: "owner,collaborator,organization_member",
@@ -121,9 +130,7 @@ describe("listWritableRepositories", () => {
       per_page: 100,
     });
     expect(request).not.toHaveBeenCalled();
-    expect(repositories).toEqual([
-      expect.objectContaining({ fullName: "octo/archive" }),
-    ]);
+    expect(repositories).toEqual([expect.objectContaining({ fullName: "octo/archive" })]);
   });
 });
 
@@ -147,11 +154,14 @@ describe("validateHexoRepository", () => {
       return Promise.reject(githubError(404));
     });
 
-    const validation = await validateHexoRepository(createOctokit({ request, getBranch, getContent }), {
-      owner: "octo",
-      repo: "blog",
-      branch: "main",
-    });
+    const validation = await validateHexoRepository(
+      createOctokit({ request, getBranch, getContent }),
+      {
+        owner: "octo",
+        repo: "blog",
+        branch: "main",
+      },
+    );
 
     expect(validation).toEqual({
       ok: true,
@@ -200,10 +210,13 @@ describe("validateHexoRepository", () => {
     const getBranch = vi.fn().mockResolvedValue({ data: { name: "source" } });
     const getContent = vi.fn().mockResolvedValue({ data: { type: "dir" } });
 
-    const validation = await validateHexoRepository(createOctokit({ request, getBranch, getContent }), {
-      owner: "octo",
-      repo: "blog",
-    });
+    const validation = await validateHexoRepository(
+      createOctokit({ request, getBranch, getContent }),
+      {
+        owner: "octo",
+        repo: "blog",
+      },
+    );
 
     expect(getBranch).toHaveBeenCalledWith({
       owner: "octo",
@@ -244,10 +257,12 @@ describe("validateHexoRepository", () => {
       return Promise.reject(githubError(404));
     });
 
-    await expect(validateHexoRepository(createOctokit({ request, getBranch, getContent }), {
-      owner: "octo",
-      repo: "blog",
-    })).resolves.toMatchObject({
+    await expect(
+      validateHexoRepository(createOctokit({ request, getBranch, getContent }), {
+        owner: "octo",
+        repo: "blog",
+      }),
+    ).resolves.toMatchObject({
       ok: true,
       defaultConfig: {
         branch: "main",
@@ -271,10 +286,12 @@ describe("validateHexoRepository", () => {
     const getBranch = vi.fn().mockResolvedValue({ data: { name: "main" } });
     const getContent = vi.fn().mockRejectedValue(githubError(404));
 
-    await expect(validateHexoRepository(createOctokit({ request, getBranch, getContent }), {
-      owner: "octo",
-      repo: "blog",
-    })).resolves.toMatchObject({
+    await expect(
+      validateHexoRepository(createOctokit({ request, getBranch, getContent }), {
+        owner: "octo",
+        repo: "blog",
+      }),
+    ).resolves.toMatchObject({
       ok: false,
       error: "NOT_HEXO_REPO",
     });
@@ -295,11 +312,13 @@ describe("validateHexoRepository", () => {
     });
     const getBranch = vi.fn().mockRejectedValue(githubError(404));
 
-    await expect(validateHexoRepository(createOctokit({ request, getBranch }), {
-      owner: "octo",
-      repo: "blog",
-      branch: "drafts",
-    })).resolves.toMatchObject({
+    await expect(
+      validateHexoRepository(createOctokit({ request, getBranch }), {
+        owner: "octo",
+        repo: "blog",
+        branch: "drafts",
+      }),
+    ).resolves.toMatchObject({
       ok: false,
       error: "BRANCH_NOT_FOUND",
     });
@@ -319,10 +338,12 @@ describe("validateHexoRepository", () => {
       },
     });
 
-    await expect(validateHexoRepository(createOctokit({ request }), {
-      owner: "octo",
-      repo: "blog",
-    })).resolves.toMatchObject({
+    await expect(
+      validateHexoRepository(createOctokit({ request }), {
+        owner: "octo",
+        repo: "blog",
+      }),
+    ).resolves.toMatchObject({
       ok: false,
       error: "PERMISSION_REQUIRED",
     });
@@ -331,22 +352,36 @@ describe("validateHexoRepository", () => {
   it("maps GitHub authorization failures to reauthorization validation errors", async () => {
     const request = vi.fn().mockRejectedValue(githubError(401));
 
-    await expect(validateHexoRepository(createOctokit({ request }), {
-      owner: "octo",
-      repo: "blog",
-    })).resolves.toMatchObject({
+    await expect(
+      validateHexoRepository(createOctokit({ request }), {
+        owner: "octo",
+        repo: "blog",
+      }),
+    ).resolves.toMatchObject({
       ok: false,
       error: "REAUTH_REQUIRED",
     });
   });
 
   it("maps validation errors to HTTP statuses", () => {
-    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "REAUTH_REQUIRED" })).toBe(401);
-    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "PERMISSION_REQUIRED" })).toBe(403);
-    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "REPO_NOT_FOUND" })).toBe(404);
-    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "NETWORK_ERROR" })).toBe(502);
-    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "BRANCH_NOT_FOUND" })).toBe(400);
-    expect(getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "NOT_HEXO_REPO" })).toBe(400);
+    expect(
+      getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "REAUTH_REQUIRED" }),
+    ).toBe(401);
+    expect(
+      getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "PERMISSION_REQUIRED" }),
+    ).toBe(403);
+    expect(
+      getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "REPO_NOT_FOUND" }),
+    ).toBe(404);
+    expect(
+      getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "NETWORK_ERROR" }),
+    ).toBe(502);
+    expect(
+      getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "BRANCH_NOT_FOUND" }),
+    ).toBe(400);
+    expect(
+      getRepositoryValidationHttpStatus({ ok: false, checks: [], error: "NOT_HEXO_REPO" }),
+    ).toBe(400);
     expect(getRepositoryValidationHttpStatus({ ok: true, checks: [] })).toBe(200);
   });
 });

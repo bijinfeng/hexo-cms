@@ -1,4 +1,4 @@
-import type { DataProvider, HexoPost, GitHubConfig } from "@hexo-cms/core";
+import type { DataProvider, GitHubConfig, HexoPost } from "@hexo-cms/core";
 
 interface CacheEntry<T> {
   data: T;
@@ -17,7 +17,7 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
   function evictOldest(): void {
     if (cache.size <= MAX_CACHE_SIZE) return;
     let oldestKey: CacheKey | null = null;
-    let oldestTime = Infinity;
+    let oldestTime = Number.POSITIVE_INFINITY;
     for (const [k, entry] of cache) {
       if (entry.timestamp < oldestTime) {
         oldestTime = entry.timestamp;
@@ -61,27 +61,23 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
   }
 
   return {
-    getConfig: (): Promise<GitHubConfig | null> =>
-      getCached("config", () => provider.getConfig()),
+    getConfig: (): Promise<GitHubConfig | null> => getCached("config", () => provider.getConfig()),
 
     saveConfig: (config: GitHubConfig): Promise<void> => {
       invalidate("config");
       return provider.saveConfig(config);
     },
 
-    getToken: (): Promise<string | null> =>
-      provider.getToken(),
+    getToken: (): Promise<string | null> => provider.getToken(),
 
-    saveToken: (token: string): Promise<void> =>
-      provider.saveToken(token),
+    saveToken: (token: string): Promise<void> => provider.saveToken(token),
 
     deleteToken: (): Promise<void> => {
       invalidate("config");
       return provider.deleteToken();
     },
 
-    getPosts: (): Promise<HexoPost[]> =>
-      getCached("posts", () => provider.getPosts()),
+    getPosts: (): Promise<HexoPost[]> => getCached("posts", () => provider.getPosts()),
 
     getPost: (path: string): Promise<HexoPost> =>
       getCached(`post:${path}`, () => provider.getPost(path)),
@@ -96,8 +92,7 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
       return provider.deletePost(path);
     },
 
-    getPages: (): Promise<HexoPost[]> =>
-      getCached("pages", () => provider.getPages()),
+    getPages: (): Promise<HexoPost[]> => getCached("pages", () => provider.getPages()),
 
     getPage: (path: string): Promise<HexoPost> =>
       getCached(`page:${path}`, () => provider.getPage(path)),
@@ -118,7 +113,11 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
       total: number;
     }> => getCached("tags", () => provider.getTags()),
 
-    renameTag: (type: "tag" | "category", oldName: string, newName: string): Promise<{ updatedCount: number }> => {
+    renameTag: (
+      type: "tag" | "category",
+      oldName: string,
+      newName: string,
+    ): Promise<{ updatedCount: number }> => {
       invalidate("tags");
       return provider.renameTag(type, oldName, newName);
     },
@@ -128,11 +127,15 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
       return provider.deleteTag(type, name);
     },
 
-    mergeTag: (type: "tag" | "category", sourceName: string, targetName: string): Promise<{ updatedCount: number }> =>
-      provider.mergeTag(type, sourceName, targetName),
+    mergeTag: (
+      type: "tag" | "category",
+      sourceName: string,
+      targetName: string,
+    ): Promise<{ updatedCount: number }> => provider.mergeTag(type, sourceName, targetName),
 
-    getMediaFiles: (): Promise<Array<{ name: string; path: string; size: number; url: string; sha: string }>> =>
-      getCached("media", () => provider.getMediaFiles()),
+    getMediaFiles: (): Promise<
+      Array<{ name: string; path: string; size: number; url: string; sha: string }>
+    > => getCached("media", () => provider.getMediaFiles()),
 
     uploadMedia: (file: File, path: string): Promise<{ url: string }> => {
       invalidate("media");
@@ -151,17 +154,25 @@ export function withCache(provider: DataProvider, ttl: number = CACHE_TTL): Data
       totalViews: number;
     }> => getCached("stats", () => provider.getStats()),
 
-    getThemes: (): Promise<{ currentTheme: string; installedThemes: Array<{ name: string; path: string }> }> =>
-      getCached("themes", () => provider.getThemes()),
+    getThemes: (): Promise<{
+      currentTheme: string;
+      installedThemes: Array<{ name: string; path: string }>;
+    }> => getCached("themes", () => provider.getThemes()),
 
     switchTheme: (themeName: string): Promise<void> => {
       invalidate("themes");
       return provider.switchTheme(themeName);
     },
 
-    getDeployments: (): Promise<Array<{
-      id: string; status: string; createdAt: string; duration: number; conclusion: string;
-    }>> => getCached("deployments", () => provider.getDeployments()),
+    getDeployments: (): Promise<
+      Array<{
+        id: string;
+        status: string;
+        createdAt: string;
+        duration: number;
+        conclusion: string;
+      }>
+    > => getCached("deployments", () => provider.getDeployments()),
 
     triggerDeploy: (workflowFile: string): Promise<void> => {
       invalidate("deployments");

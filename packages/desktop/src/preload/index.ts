@@ -1,5 +1,10 @@
+import {
+  type ElectronAPI,
+  type UpdateChannel,
+  type UpdateStatusPayload,
+  isElectronIpcChannel,
+} from "@hexo-cms/ui/types/electron-api";
 import { contextBridge, ipcRenderer } from "electron";
-import { isElectronIpcChannel, type ElectronAPI, type UpdateChannel, type UpdateStatusPayload } from "@hexo-cms/ui/types/electron-api";
 
 const electronAPI: ElectronAPI = {
   getSession: () => ipcRenderer.invoke("auth:getSession"),
@@ -7,7 +12,8 @@ const electronAPI: ElectronAPI = {
   signOut: () => ipcRenderer.invoke("auth:signOut"),
   reauthorize: () => ipcRenderer.invoke("auth:reauthorize"),
   listOnboardingRepositories: (input) => ipcRenderer.invoke("onboarding:listRepositories", input),
-  validateOnboardingRepository: (input) => ipcRenderer.invoke("onboarding:validateRepository", input),
+  validateOnboardingRepository: (input) =>
+    ipcRenderer.invoke("onboarding:validateRepository", input),
 
   invoke: <T = unknown>(channel: string, ...args: unknown[]): Promise<T> => {
     if (!isElectronIpcChannel(channel)) {

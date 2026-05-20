@@ -1,3 +1,4 @@
+import { assertNonEmptyString } from "../utils";
 import type {
   PluginEvent,
   PluginEventAPI,
@@ -7,7 +8,6 @@ import type {
   PluginEventSubscription,
   PluginPermission,
 } from "./types";
-import { assertNonEmptyString } from "../utils";
 
 interface EventSubscriptionRecord {
   id: string;
@@ -20,7 +20,11 @@ export class EventBus {
   private readonly subscriptions = new Map<string, EventSubscriptionRecord>();
   private nextSubscriptionId = 0;
 
-  subscribe(pluginId: string, eventName: PluginEventName, handler: PluginEventHandler): PluginEventSubscription {
+  subscribe(
+    pluginId: string,
+    eventName: PluginEventName,
+    handler: PluginEventHandler,
+  ): PluginEventSubscription {
     const id = `${pluginId}:${eventName}:${this.nextSubscriptionId++}`;
     this.subscriptions.set(id, {
       id,
@@ -52,7 +56,9 @@ export class EventBus {
       payload,
       at,
     };
-    const subscriptions = [...this.subscriptions.values()].filter((subscription) => subscription.eventName === eventName);
+    const subscriptions = [...this.subscriptions.values()].filter(
+      (subscription) => subscription.eventName === eventName,
+    );
 
     return Promise.all(
       subscriptions.map(async (subscription) => {
@@ -70,7 +76,8 @@ export class EventBus {
             eventName,
             error: {
               code: "PLUGIN_EVENT_HANDLER_FAILED",
-              message: error instanceof Error ? error.message : `Event handler failed for ${eventName}`,
+              message:
+                error instanceof Error ? error.message : `Event handler failed for ${eventName}`,
               stack: error instanceof Error ? error.stack : undefined,
             },
           };
@@ -83,7 +90,9 @@ export class EventBus {
 export function createPluginEventAPI(
   pluginId: string,
   eventBus: EventBus,
-  permissionBroker: { assert(pluginId: string, permission: PluginPermission, operation: string): void },
+  permissionBroker: {
+    assert(pluginId: string, permission: PluginPermission, operation: string): void;
+  },
 ): PluginEventAPI {
   return {
     on<TPayload = unknown>(

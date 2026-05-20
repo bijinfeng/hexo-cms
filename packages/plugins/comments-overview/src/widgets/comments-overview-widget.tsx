@@ -1,8 +1,8 @@
+import type { PluginConfigValue } from "@hexo-cms/core";
+import { Button, useI18n, usePluginSystem } from "@hexo-cms/ui";
+import { AlertTriangle, CheckCircle2, MessageSquare, ShieldAlert } from "lucide-react";
 import type { ComponentType } from "react";
 import { COMMENTS_OVERVIEW_PLUGIN_ID } from "../manifest";
-import type { PluginConfigValue } from "@hexo-cms/core";
-import { AlertTriangle, CheckCircle2, MessageSquare, ShieldAlert } from "lucide-react";
-import { Button, useI18n, usePluginSystem } from "@hexo-cms/ui";
 
 const summary = {
   total: 6,
@@ -15,23 +15,49 @@ export function CommentsOverviewWidget({ config = {} }: { config?: PluginConfigV
   const { executePluginCommand } = usePluginSystem();
   const { t } = useI18n();
   const showPendingAlert = config.showPendingAlert !== false;
-  const moderationUrl = typeof config.moderationUrl === "string" && config.moderationUrl ? config.moderationUrl : "/comments";
+  const moderationUrl =
+    typeof config.moderationUrl === "string" && config.moderationUrl
+      ? config.moderationUrl
+      : "/comments";
 
   async function openModeration() {
-    await executePluginCommand(COMMENTS_OVERVIEW_PLUGIN_ID, "comments.openModeration", [moderationUrl]);
+    await executePluginCommand(COMMENTS_OVERVIEW_PLUGIN_ID, "comments.openModeration", [
+      moderationUrl,
+    ]);
   }
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2">
-        {showPendingAlert && <SummaryTile icon={AlertTriangle} label={t("comments.widget.pending")} value={summary.pending} tone="warning" />}
-        <SummaryTile icon={CheckCircle2} label={t("comments.widget.approved")} value={summary.approved} tone="success" />
-        <SummaryTile icon={ShieldAlert} label={t("comments.widget.spam")} value={summary.spam} tone="error" />
+        {showPendingAlert && (
+          <SummaryTile
+            icon={AlertTriangle}
+            label={t("comments.widget.pending")}
+            value={summary.pending}
+            tone="warning"
+          />
+        )}
+        <SummaryTile
+          icon={CheckCircle2}
+          label={t("comments.widget.approved")}
+          value={summary.approved}
+          tone="success"
+        />
+        <SummaryTile
+          icon={ShieldAlert}
+          label={t("comments.widget.spam")}
+          value={summary.spam}
+          tone="error"
+        />
       </div>
       <div className="flex items-center justify-between rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3">
         <div className="min-w-0">
-          <div className="text-sm font-medium text-[var(--text-primary)]">{t("comments.widget.manageComments")}</div>
-          <div className="text-xs text-[var(--text-secondary)]">{t("comments.widget.totalComments", { count: summary.total })}</div>
+          <div className="text-sm font-medium text-[var(--text-primary)]">
+            {t("comments.widget.manageComments")}
+          </div>
+          <div className="text-xs text-[var(--text-secondary)]">
+            {t("comments.widget.totalComments", { count: summary.total })}
+          </div>
         </div>
         <Button
           variant="outline"

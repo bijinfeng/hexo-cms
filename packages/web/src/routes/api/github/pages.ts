@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
 import type { HexoPost } from "@hexo-cms/core";
 import { getErrorMessage } from "@hexo-cms/core";
+import { createFileRoute } from "@tanstack/react-router";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 function resolvePagePath(page: Partial<HexoPost>): string | null {
@@ -29,7 +29,13 @@ export const Route = createFileRoute("/api/github/pages")({
           const entries = await ctx.github.listDirectory("source");
           const pages = await Promise.all(
             entries
-              .filter((entry) => entry.type === "dir" || (entry.type === "file" && entry.name.endsWith(".md") && entry.name !== "index.md"))
+              .filter(
+                (entry) =>
+                  entry.type === "dir" ||
+                  (entry.type === "file" &&
+                    entry.name.endsWith(".md") &&
+                    entry.name !== "index.md"),
+              )
               .map(async (entry) => {
                 const pagePath = entry.type === "dir" ? `${entry.path}/index.md` : entry.path;
                 return ctx.github.getPost(pagePath);
@@ -54,7 +60,8 @@ export const Route = createFileRoute("/api/github/pages")({
 
         const page: HexoPost = {
           path,
-          title: typeof body.title === "string" ? body.title : String(body.frontmatter?.title ?? ""),
+          title:
+            typeof body.title === "string" ? body.title : String(body.frontmatter?.title ?? ""),
           date: typeof body.date === "string" ? body.date : String(body.frontmatter?.date ?? ""),
           content: body.content,
           frontmatter: body.frontmatter ?? {},

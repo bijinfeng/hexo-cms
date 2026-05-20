@@ -1,10 +1,24 @@
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  GitBranch,
+  GitCommit,
+  Globe,
+  Loader2,
+  Play,
+  RefreshCw,
+  Server,
+  XCircle,
+  Zap,
+} from "lucide-react";
 import { useMemo, useState } from "react";
-import { useDeployments, useTriggerDeploy } from "../hooks/use-deployments-query";
-import { useConfig } from "../hooks/use-dashboard-queries";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Skeleton } from "../components/skeleton";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Skeleton } from "../components/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,22 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import {
-  Zap,
-  GitCommit,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  RefreshCw,
-  ExternalLink,
-  GitBranch,
-  Play,
-  Activity,
-  Globe,
-  Server,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { useConfig } from "../hooks/use-dashboard-queries";
+import { useDeployments, useTriggerDeploy } from "../hooks/use-deployments-query";
 import { useI18n } from "../i18n/I18nProvider";
 
 type DeployStatus = "success" | "failed" | "running" | "pending";
@@ -36,42 +36,49 @@ type DeployStatus = "success" | "failed" | "running" | "pending";
 export function DeployPage() {
   const { t } = useI18n();
 
-  const statusConfig = useMemo(() => ({
-    success: {
-      icon: CheckCircle2,
-      color: "var(--status-success)",
-      bg: "var(--status-success-bg)",
-      label: t("deploy.statusSuccess"),
-      variant: "success" as const,
-    },
-    failed: {
-      icon: XCircle,
-      color: "var(--status-error)",
-      bg: "var(--status-error-bg)",
-      label: t("deploy.statusFailed"),
-      variant: "error" as const,
-    },
-    running: {
-      icon: RefreshCw,
-      color: "var(--status-info)",
-      bg: "var(--status-info-bg)",
-      label: t("deploy.statusRunning2"),
-      variant: "default" as const,
-    },
-    pending: {
-      icon: Clock,
-      color: "var(--status-warning)",
-      bg: "var(--status-warning-bg)",
-      label: t("deploy.statusPending"),
-      variant: "warning" as const,
-    },
-  }) satisfies Record<DeployStatus, {
-    icon: typeof CheckCircle2;
-    color: string;
-    bg: string;
-    label: string;
-    variant: "success" | "error" | "default" | "warning";
-  }>, [t]);
+  const statusConfig = useMemo(
+    () =>
+      ({
+        success: {
+          icon: CheckCircle2,
+          color: "var(--status-success)",
+          bg: "var(--status-success-bg)",
+          label: t("deploy.statusSuccess"),
+          variant: "success" as const,
+        },
+        failed: {
+          icon: XCircle,
+          color: "var(--status-error)",
+          bg: "var(--status-error-bg)",
+          label: t("deploy.statusFailed"),
+          variant: "error" as const,
+        },
+        running: {
+          icon: RefreshCw,
+          color: "var(--status-info)",
+          bg: "var(--status-info-bg)",
+          label: t("deploy.statusRunning2"),
+          variant: "default" as const,
+        },
+        pending: {
+          icon: Clock,
+          color: "var(--status-warning)",
+          bg: "var(--status-warning-bg)",
+          label: t("deploy.statusPending"),
+          variant: "warning" as const,
+        },
+      }) satisfies Record<
+        DeployStatus,
+        {
+          icon: typeof CheckCircle2;
+          color: string;
+          bg: string;
+          label: string;
+          variant: "success" | "error" | "default" | "warning";
+        }
+      >,
+    [t],
+  );
 
   function formatRelativeTime(isoDate: string): string {
     const now = new Date();
@@ -169,7 +176,9 @@ export function DeployPage() {
       <div className="space-y-4 animate-fade-in">
         <Skeleton width={128} height={28} />
         <div className="grid sm:grid-cols-3 gap-4 mt-6">
-          {[1, 2, 3].map((i) => <Skeleton key={i} variant="card" height={100} />)}
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="card" height={100} />
+          ))}
         </div>
         <Skeleton variant="card" height={300} />
       </div>
@@ -191,9 +200,7 @@ export function DeployPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("deploy.title")}</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            {t("deploy.subtitle")}
-          </p>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">{t("deploy.subtitle")}</p>
         </div>
         <Button onClick={handleManualDeploy} disabled={deploying}>
           {deploying ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
@@ -239,7 +246,8 @@ export function DeployPage() {
             <div>
               <div className="text-xs text-[var(--text-tertiary)]">{t("deploy.successRate")}</div>
               <div className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">
-                {deployments.length > 0 ? Math.round((successCount / deployments.length) * 100) : 0}%
+                {deployments.length > 0 ? Math.round((successCount / deployments.length) * 100) : 0}
+                %
               </div>
             </div>
           </div>
@@ -260,7 +268,9 @@ export function DeployPage() {
               </div>
             </div>
           </div>
-          <div className="text-xs text-[var(--text-tertiary)]">{t("deploy.recentDeploys", { count: deployments.length })}</div>
+          <div className="text-xs text-[var(--text-tertiary)]">
+            {t("deploy.recentDeploys", { count: deployments.length })}
+          </div>
         </div>
       </div>
 
@@ -268,7 +278,7 @@ export function DeployPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2">
               <Zap size={16} className="text-[var(--brand-accent)]" />
               {t("deploy.deployHistory")}
             </CardTitle>

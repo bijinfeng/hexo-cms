@@ -1,13 +1,13 @@
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { usePage, useSavePage, useDeletePage } from "../hooks/use-pages-query";
-import { useI18n } from "../i18n/I18nProvider";
 import type { Frontmatter, HexoPost } from "@hexo-cms/core";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Alert } from "../components/ui/alert";
-import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { ArrowLeft, Eye, EyeOff, FileText, Globe, Info, Loader2, Save, Trash2 } from "lucide-react";
+import { marked } from "marked";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 import { SidebarSection } from "../components/SidebarSection";
+import { Alert } from "../components/ui/alert";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -16,21 +16,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import { MarkdownEditor } from "../components/MarkdownEditor";
-import { marked } from "marked";
-import { sanitizeHtml } from "../sanitize";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { useAutoSave } from "../hooks/use-autosave";
-import {
-  ArrowLeft,
-  Save,
-  Eye,
-  EyeOff,
-  Globe,
-  FileText,
-  Loader2,
-  Trash2,
-  Info,
-} from "lucide-react";
+import { useDeletePage, usePage, useSavePage } from "../hooks/use-pages-query";
+import { useI18n } from "../i18n/I18nProvider";
+import { sanitizeHtml } from "../sanitize";
 
 export function EditPagePage() {
   const { t } = useI18n();
@@ -100,7 +90,13 @@ export function EditPagePage() {
       };
       if (status === "draft") frontmatter.draft = true;
 
-      const page: HexoPost = { path: postPath, title, date: frontmatter.date ?? "", content, frontmatter };
+      const page: HexoPost = {
+        path: postPath,
+        title,
+        date: frontmatter.date ?? "",
+        content,
+        frontmatter,
+      };
       await savePageMutation.mutateAsync(page);
       autosave.clear();
       navigate({ to: "/pages" });
@@ -148,10 +144,12 @@ export function EditPagePage() {
           className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           <ArrowLeft size={16} />
-            {t("common.back")}
+          {t("common.back")}
         </button>
         <div className="w-px h-4 bg-[var(--border-default)]" />
-        <span className="text-sm font-medium text-[var(--text-primary)]">{t("pages.editor.editTitle")}</span>
+        <span className="text-sm font-medium text-[var(--text-primary)]">
+          {t("pages.editor.editTitle")}
+        </span>
         <Badge variant={status === "published" ? "success" : "default"}>
           {status === "published" ? t("pages.list.published") : t("pages.list.draft")}
         </Badge>
@@ -189,7 +187,9 @@ export function EditPagePage() {
 
       {autosave.saved && (
         <div className="flex items-center justify-center py-1 bg-[var(--bg-muted)]">
-          <span className="text-xs text-[var(--text-tertiary)]">{t("pages.editor.autoSaveNotice")}</span>
+          <span className="text-xs text-[var(--text-tertiary)]">
+            {t("pages.editor.autoSaveNotice")}
+          </span>
         </div>
       )}
       {autosave.error && (
@@ -229,16 +229,23 @@ export function EditPagePage() {
         <div className="w-64 flex-shrink-0 border-l border-[var(--border-default)] overflow-y-auto bg-[var(--bg-surface)]">
           <div className="p-4 space-y-5">
             <SidebarSection title={t("pages.editor.statusLabel")} icon={Globe}>
-              <ToggleGroup type="single" value={status} onValueChange={(v) => v && setStatus(v as "draft" | "published")} className="w-full">
-                <ToggleGroupItem value="draft" className="flex-1 text-xs">{t("pages.list.draft")}</ToggleGroupItem>
-                <ToggleGroupItem value="published" className="flex-1 text-xs">{t("pages.editor.publishBtn")}</ToggleGroupItem>
+              <ToggleGroup
+                type="single"
+                value={status}
+                onValueChange={(v) => v && setStatus(v as "draft" | "published")}
+                className="w-full"
+              >
+                <ToggleGroupItem value="draft" className="flex-1 text-xs">
+                  {t("pages.list.draft")}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="published" className="flex-1 text-xs">
+                  {t("pages.editor.publishBtn")}
+                </ToggleGroupItem>
               </ToggleGroup>
             </SidebarSection>
 
             <SidebarSection title={t("pages.editor.urlLabel")} icon={FileText}>
-              <p className="text-xs text-[var(--text-tertiary)] font-mono">
-                {postPath}
-              </p>
+              <p className="text-xs text-[var(--text-tertiary)] font-mono">{postPath}</p>
             </SidebarSection>
           </div>
         </div>
@@ -248,9 +255,7 @@ export function EditPagePage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("pages.confirm.deleteTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("pages.confirm.deleteMessage", { title })}
-            </DialogDescription>
+            <DialogDescription>{t("pages.confirm.deleteMessage", { title })}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>

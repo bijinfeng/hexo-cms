@@ -1,4 +1,8 @@
-import { MemoryPluginSecretStore, type PluginSecretStore, type PluginSecretStoreValue } from "@hexo-cms/core";
+import {
+  MemoryPluginSecretStore,
+  type PluginSecretStore,
+  type PluginSecretStoreValue,
+} from "@hexo-cms/core";
 import { getElectronAPI } from "../lib/electron-api";
 
 type SecretOperation =
@@ -41,7 +45,9 @@ export class WebPluginSecretStore implements PluginSecretStore {
   }
 
   async has(pluginId: string, key: string): Promise<boolean> {
-    const response = await fetch(`${this.endpoint}?pluginId=${encodeURIComponent(pluginId)}&key=${encodeURIComponent(key)}`);
+    const response = await fetch(
+      `${this.endpoint}?pluginId=${encodeURIComponent(pluginId)}&key=${encodeURIComponent(key)}`,
+    );
     if (!response.ok) return false;
     const data = (await response.json()) as { configured?: boolean };
     return data.configured === true;
@@ -65,11 +71,20 @@ export class DesktopPluginSecretStore implements PluginSecretStore {
   }
 
   async set(pluginId: string, key: string, value: string): Promise<void> {
-    await getElectronAPI()?.invoke("plugin-secret:mutate", { op: "set", pluginId, key, value } satisfies SecretOperation);
+    await getElectronAPI()?.invoke("plugin-secret:mutate", {
+      op: "set",
+      pluginId,
+      key,
+      value,
+    } satisfies SecretOperation);
   }
 
   async delete(pluginId: string, key: string): Promise<void> {
-    await getElectronAPI()?.invoke("plugin-secret:mutate", { op: "delete", pluginId, key } satisfies SecretOperation);
+    await getElectronAPI()?.invoke("plugin-secret:mutate", {
+      op: "delete",
+      pluginId,
+      key,
+    } satisfies SecretOperation);
   }
 
   async has(pluginId: string, key: string): Promise<boolean> {

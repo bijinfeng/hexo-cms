@@ -485,7 +485,8 @@ export const zh = {
     deleteTitle: "删除菜单项",
     deleteMessage: "确定要删除 {{{name}}} 吗？此操作不可撤销。",
     configNote: "配置说明",
-    configNoteContent: '菜单配置保存在 Hexo 站点的 <code>_config.yml</code> 文件中。每个菜单项包含键名、链接地址和图标名称。拖拽可调整菜单项的顺序。修改后点击"保存"即可更新站点配置。',
+    configNoteContent:
+      '菜单配置保存在 Hexo 站点的 <code>_config.yml</code> 文件中。每个菜单项包含键名、链接地址和图标名称。拖拽可调整菜单项的顺序。修改后点击"保存"即可更新站点配置。',
     dragHint: "",
   },
   themes: {

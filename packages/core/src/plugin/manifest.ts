@@ -62,7 +62,9 @@ export function validatePluginManifest(value: unknown): PluginManifest {
 
   const manifest = value as unknown as PluginManifest;
   if (manifest.permissions.includes("network.fetch") && !manifest.network?.allowedHosts?.length) {
-    throw new PluginManifestError("network.allowedHosts is required when network.fetch is declared");
+    throw new PluginManifestError(
+      "network.allowedHosts is required when network.fetch is declared",
+    );
   }
 
   return {

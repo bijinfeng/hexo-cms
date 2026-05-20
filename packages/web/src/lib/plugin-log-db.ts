@@ -1,8 +1,8 @@
+import type { PluginLogLevel, PluginLogStoreValue } from "@hexo-cms/core";
 import { asc, eq } from "drizzle-orm";
 import { db } from "./db";
 import { parseJsonColumn, stringifyJsonColumn } from "./json-db";
 import { pluginLogs } from "./schema";
-import type { PluginLogLevel, PluginLogStoreValue } from "@hexo-cms/core";
 
 const MAX_PLUGIN_LOG_ENTRIES_PER_PLUGIN = 50;
 

@@ -1,7 +1,7 @@
 import { Octokit } from "octokit";
-import type { GitHubConfig, HexoPost, Frontmatter } from "./types";
-import { DataProviderError, DataProviderErrorCode } from "./types";
 import { Logger } from "./logger";
+import type { Frontmatter, GitHubConfig, HexoPost } from "./types";
+import { DataProviderError, DataProviderErrorCode } from "./types";
 import { GITHUB_API_VERSION } from "./utils";
 
 type OctokitStatusError = Error & { status: number };
@@ -28,8 +28,14 @@ export class GitHubService {
       postsDir: config.postsDir ?? config.posts_dir ?? "source/_posts",
       mediaDir: config.mediaDir ?? config.media_dir ?? "source/images",
       workflowFile: config.workflowFile ?? config.workflow_file,
-      autoDeploy: config.autoDeploy ?? (typeof config.auto_deploy === "number" ? config.auto_deploy === 1 : config.auto_deploy),
-      deployNotifications: config.deployNotifications ?? (typeof config.deploy_notifications === "number" ? config.deploy_notifications === 1 : config.deploy_notifications),
+      autoDeploy:
+        config.autoDeploy ??
+        (typeof config.auto_deploy === "number" ? config.auto_deploy === 1 : config.auto_deploy),
+      deployNotifications:
+        config.deployNotifications ??
+        (typeof config.deploy_notifications === "number"
+          ? config.deploy_notifications === 1
+          : config.deploy_notifications),
     };
     this.log = new Logger("GitHubService");
   }
@@ -41,19 +47,39 @@ export class GitHubService {
       const { status } = error;
       if (status === 401 || status === 403) {
         this.log.error(`Auth failed: ${operation}`, ctx, error);
-        throw new DataProviderError("GitHub authentication failed", DataProviderErrorCode.AUTH, status, error);
+        throw new DataProviderError(
+          "GitHub authentication failed",
+          DataProviderErrorCode.AUTH,
+          status,
+          error,
+        );
       }
       if (status === 404) {
         this.log.warn(`Not found: ${operation}`, ctx);
-        throw new DataProviderError(`Resource not found: ${path}`, DataProviderErrorCode.NOT_FOUND, status, error);
+        throw new DataProviderError(
+          `Resource not found: ${path}`,
+          DataProviderErrorCode.NOT_FOUND,
+          status,
+          error,
+        );
       }
       if (status === 429) {
         this.log.warn(`Rate limited: ${operation}`, ctx);
-        throw new DataProviderError("GitHub API rate limit exceeded", DataProviderErrorCode.RATE_LIMIT, status, error);
+        throw new DataProviderError(
+          "GitHub API rate limit exceeded",
+          DataProviderErrorCode.RATE_LIMIT,
+          status,
+          error,
+        );
       }
     }
     this.log.error(`Operation failed: ${operation}`, ctx, error as Error);
-    throw new DataProviderError(`GitHub operation failed: ${operation}`, DataProviderErrorCode.NETWORK, undefined, error as Error);
+    throw new DataProviderError(
+      `GitHub operation failed: ${operation}`,
+      DataProviderErrorCode.NETWORK,
+      undefined,
+      error as Error,
+    );
   }
 
   /**
@@ -69,28 +95,34 @@ export class GitHubService {
       });
 
       if (!Array.isArray(data)) {
-        this.log.warn(`getPosts: response is not an array`, { directory, type: typeof data });
+        this.log.warn("getPosts: response is not an array", { directory, type: typeof data });
         return [];
       }
 
       const postPaths = data
-        .filter((file): file is typeof data[number] & { type: "file"; path: string } => file.type === "file" && file.name.endsWith(".md"))
+        .filter(
+          (file): file is (typeof data)[number] & { type: "file"; path: string } =>
+            file.type === "file" && file.name.endsWith(".md"),
+        )
         .map((file) => file.path);
 
       if (postPaths.length === 0) return [];
 
-      const results = await Promise.all(
-        postPaths.map((path) => this.getPost(path)),
-      );
+      const results = await Promise.all(postPaths.map((path) => this.getPost(path)));
 
       return results.filter((post): post is HexoPost => post !== null);
     } catch (error) {
       if (DataProviderError.isNotFound(error)) {
-        this.log.warn(`getPosts: directory not found`, { directory });
+        this.log.warn("getPosts: directory not found", { directory });
         return [];
       }
-      if (error && typeof error === "object" && "status" in error && (error as { status: number }).status === 404) {
-        this.log.warn(`getPosts: directory not found (Octokit 404)`, { directory });
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        (error as { status: number }).status === 404
+      ) {
+        this.log.warn("getPosts: directory not found (Octokit 404)", { directory });
         return [];
       }
       this.handleOctokitError(error, "getPosts", directory);
@@ -122,15 +154,20 @@ export class GitHubService {
         };
       }
 
-      this.log.warn(`getPost: response is not a file`, { path });
+      this.log.warn("getPost: response is not a file", { path });
       return null;
     } catch (error) {
       if (DataProviderError.isNotFound(error)) {
-        this.log.warn(`getPost: not found`, { path });
+        this.log.warn("getPost: not found", { path });
         return null;
       }
-      if (error && typeof error === "object" && "status" in error && (error as { status: number }).status === 404) {
-        this.log.warn(`getPost: not found (Octokit 404)`, { path });
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        (error as { status: number }).status === 404
+      ) {
+        this.log.warn("getPost: not found (Octokit 404)", { path });
         return null;
       }
       this.handleOctokitError(error, "getPost", path);
@@ -143,12 +180,14 @@ export class GitHubService {
   async savePost(post: HexoPost, commitMessage?: string): Promise<void> {
     try {
       const content = this.stringifyPost(post);
-      const { data: currentFile } = await this.octokit.rest.repos.getContent({
-        owner: this.config.owner,
-        repo: this.config.repo,
-        path: post.path,
-        ref: this.config.branch,
-      }).catch(() => ({ data: null }));
+      const { data: currentFile } = await this.octokit.rest.repos
+        .getContent({
+          owner: this.config.owner,
+          repo: this.config.repo,
+          path: post.path,
+          ref: this.config.branch,
+        })
+        .catch(() => ({ data: null }));
 
       const sha = currentFile && "sha" in currentFile ? currentFile.sha : undefined;
 
@@ -181,8 +220,12 @@ export class GitHubService {
       });
 
       if (!("sha" in data)) {
-        this.log.warn(`deletePost: no sha in response`, { path });
-        throw new DataProviderError(`Cannot delete ${path}: no SHA found`, DataProviderErrorCode.UNKNOWN, undefined);
+        this.log.warn("deletePost: no sha in response", { path });
+        throw new DataProviderError(
+          `Cannot delete ${path}: no SHA found`,
+          DataProviderErrorCode.UNKNOWN,
+          undefined,
+        );
       }
 
       await this.octokit.rest.repos.deleteFile({
@@ -196,7 +239,8 @@ export class GitHubService {
 
       this.log.info(`Post deleted: ${path}`);
     } catch (error) {
-      if (error instanceof DataProviderError && error.code !== DataProviderErrorCode.UNKNOWN) throw error;
+      if (error instanceof DataProviderError && error.code !== DataProviderErrorCode.UNKNOWN)
+        throw error;
       this.handleOctokitError(error, "deletePost", path);
     }
   }
@@ -218,7 +262,7 @@ export class GitHubService {
 
     frontmatterStr.split("\n").forEach((line) => {
       const colonIndex = line.indexOf(":");
-      if (colonIndex > 0 && (line[0] !== " " && line[0] !== "-")) {
+      if (colonIndex > 0 && line[0] !== " " && line[0] !== "-") {
         const key = line.slice(0, colonIndex).trim();
         const rawValue = line.slice(colonIndex + 1).trim();
 
@@ -230,12 +274,15 @@ export class GitHubService {
 
         let value: unknown;
         if (rawValue.startsWith("[") && rawValue.endsWith("]")) {
-          value = rawValue.slice(1, -1).split(",").map((v: string) => v.trim());
+          value = rawValue
+            .slice(1, -1)
+            .split(",")
+            .map((v: string) => v.trim());
         } else if (rawValue === "true") {
           value = true;
         } else if (rawValue === "false") {
           value = false;
-        } else if (!isNaN(Number(rawValue)) && rawValue !== "") {
+        } else if (!Number.isNaN(Number(rawValue)) && rawValue !== "") {
           value = Number(rawValue);
         } else {
           value = rawValue;
@@ -299,15 +346,20 @@ export class GitHubService {
           sha: data.sha,
         };
       }
-      this.log.warn(`getRawFile: response is not a file`, { path });
+      this.log.warn("getRawFile: response is not a file", { path });
       return null;
     } catch (error) {
       if (DataProviderError.isNotFound(error)) {
-        this.log.warn(`getRawFile: not found`, { path });
+        this.log.warn("getRawFile: not found", { path });
         return null;
       }
-      if (error && typeof error === "object" && "status" in error && (error as { status: number }).status === 404) {
-        this.log.warn(`getRawFile: not found (Octokit 404)`, { path });
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        (error as { status: number }).status === 404
+      ) {
+        this.log.warn("getRawFile: not found (Octokit 404)", { path });
         return null;
       }
       this.handleOctokitError(error, "getRawFile", path);
@@ -347,12 +399,14 @@ export class GitHubService {
       if (!Array.isArray(data)) return [];
       return data.map((item) => ({ name: item.name, type: item.type, path: item.path }));
     } catch (error) {
-      this.log.warn(`listDirectory failed`, { path }, error as Error);
+      this.log.warn("listDirectory failed", { path }, error as Error);
       return [];
     }
   }
 
-  async getMediaFiles(directory: string = this.config.mediaDir ?? "source/images"): Promise<Array<{ name: string; type: string; path: string; sha: string; size: number }>> {
+  async getMediaFiles(
+    directory: string = this.config.mediaDir ?? "source/images",
+  ): Promise<Array<{ name: string; type: string; path: string; sha: string; size: number }>> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.config.owner,
@@ -373,19 +427,25 @@ export class GitHubService {
           size: file.size,
         }));
     } catch (error) {
-      this.log.warn(`getMediaFiles failed`, { directory }, error as Error);
+      this.log.warn("getMediaFiles failed", { directory }, error as Error);
       return [];
     }
   }
 
-  async uploadMedia(path: string, base64Content: string, fileName: string): Promise<{ url: string }> {
+  async uploadMedia(
+    path: string,
+    base64Content: string,
+    fileName: string,
+  ): Promise<{ url: string }> {
     try {
-      const { data: currentFile } = await this.octokit.rest.repos.getContent({
-        owner: this.config.owner,
-        repo: this.config.repo,
-        path,
-        ref: this.config.branch,
-      }).catch(() => ({ data: null }));
+      const { data: currentFile } = await this.octokit.rest.repos
+        .getContent({
+          owner: this.config.owner,
+          repo: this.config.repo,
+          path,
+          ref: this.config.branch,
+        })
+        .catch(() => ({ data: null }));
 
       const sha = currentFile && "sha" in currentFile ? currentFile.sha : undefined;
 
@@ -416,7 +476,10 @@ export class GitHubService {
       });
 
       if (!("sha" in data)) {
-        throw new DataProviderError(`Cannot delete ${path}: no SHA found`, DataProviderErrorCode.UNKNOWN);
+        throw new DataProviderError(
+          `Cannot delete ${path}: no SHA found`,
+          DataProviderErrorCode.UNKNOWN,
+        );
       }
 
       await this.octokit.rest.repos.deleteFile({

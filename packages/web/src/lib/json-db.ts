@@ -1,6 +1,4 @@
-export type JsonColumnParseResult<T> =
-  | { ok: true; value: T }
-  | { ok: false };
+export type JsonColumnParseResult<T> = { ok: true; value: T } | { ok: false };
 
 export function tryParseJsonColumn<T>(value: string | null | undefined): JsonColumnParseResult<T> {
   if (!value) return { ok: false };

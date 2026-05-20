@@ -1,5 +1,5 @@
-import type { ComponentType } from "react";
 import type { PluginConfigValue, RegisteredDashboardWidget } from "@hexo-cms/core";
+import type { ComponentType } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { PluginErrorBoundary } from "./plugin-error-boundary";
 
@@ -11,7 +11,11 @@ interface DashboardExtensionOutletProps {
   getRenderer: (widget: RegisteredDashboardWidget) => DashboardWidgetRenderer | undefined;
 }
 
-export function DashboardExtensionOutlet({ widgets, configs, getRenderer }: DashboardExtensionOutletProps) {
+export function DashboardExtensionOutlet({
+  widgets,
+  configs,
+  getRenderer,
+}: DashboardExtensionOutletProps) {
   return widgets.map((widget) => ({
     id: `${widget.pluginId}:${widget.id}`,
     title: widget.title,

@@ -27,7 +27,7 @@ async function assertOk(response: Response, operation: string): Promise<Response
 function toValidationError(error: unknown): RepositoryValidationError | null {
   if (typeof error !== "string") return null;
   return REPOSITORY_VALIDATION_ERRORS.has(error as RepositoryValidationError)
-    ? error as RepositoryValidationError
+    ? (error as RepositoryValidationError)
     : null;
 }
 
@@ -52,7 +52,7 @@ export const webOnboardingClient: OnboardingClient = {
       await fetch(`/api/onboarding/repositories${query}`),
       "list repositories",
     );
-    const data = await response.json() as { repositories?: RepositoryOption[] };
+    const data = (await response.json()) as { repositories?: RepositoryOption[] };
     return data.repositories ?? [];
   },
 
@@ -62,7 +62,7 @@ export const webOnboardingClient: OnboardingClient = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       error?: unknown;
       validation?: RepositoryValidation;
     };

@@ -7,7 +7,7 @@ function isCJK(char: string): boolean {
     (code >= 0xff00 && code <= 0xffef) || // Halfwidth and Fullwidth Forms
     (code >= 0x3040 && code <= 0x309f) || // Hiragana
     (code >= 0x30a0 && code <= 0x30ff) || // Katakana
-    (code >= 0xac00 && code <= 0xd7af)    // Hangul Syllables
+    (code >= 0xac00 && code <= 0xd7af) // Hangul Syllables
   );
 }
 
@@ -24,7 +24,10 @@ export function countWords(text: string): number {
       wordCount += cjkCount;
     }
 
-    const nonCjkPart = [...segment].filter((c) => !isCJK(c)).join("").trim();
+    const nonCjkPart = [...segment]
+      .filter((c) => !isCJK(c))
+      .join("")
+      .trim();
     if (nonCjkPart.length > 0) {
       wordCount += 1;
     }

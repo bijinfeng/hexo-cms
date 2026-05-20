@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { DataProviderProvider, useDataProvider } from '../context/data-provider-context';
-import type { DataProvider } from '@hexo-cms/core';
+import type { DataProvider } from "@hexo-cms/core";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { DataProviderProvider, useDataProvider } from "../context/data-provider-context";
 
 function createMockProvider(): DataProvider {
   return {
@@ -23,10 +23,12 @@ function createMockProvider(): DataProvider {
     deleteTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
     mergeTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
     getMediaFiles: vi.fn().mockResolvedValue([]),
-    uploadMedia: vi.fn().mockResolvedValue({ url: '' }),
+    uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
     deleteMedia: vi.fn().mockResolvedValue(undefined),
-    getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
-    getThemes: vi.fn().mockResolvedValue({ currentTheme: '', installedThemes: [] }),
+    getStats: vi
+      .fn()
+      .mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+    getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),
     triggerDeploy: vi.fn().mockResolvedValue(undefined),
@@ -37,40 +39,40 @@ function createMockProvider(): DataProvider {
 
 function ConsumerComponent() {
   const provider = useDataProvider();
-  return <div data-testid="provider-exists">{provider ? 'has-provider' : 'no-provider'}</div>;
+  return <div data-testid="provider-exists">{provider ? "has-provider" : "no-provider"}</div>;
 }
 
-describe('DataProviderContext', () => {
-  describe('DataProviderProvider', () => {
-    it('should render children', () => {
+describe("DataProviderContext", () => {
+  describe("DataProviderProvider", () => {
+    it("should render children", () => {
       const mockProvider = createMockProvider();
       render(
         <DataProviderProvider provider={mockProvider}>
           <div data-testid="child">child content</div>
-        </DataProviderProvider>
+        </DataProviderProvider>,
       );
-      expect(screen.getByTestId('child')).toBeInTheDocument();
+      expect(screen.getByTestId("child")).toBeInTheDocument();
     });
 
-    it('should provide the provider to consumers', () => {
+    it("should provide the provider to consumers", () => {
       const mockProvider = createMockProvider();
       render(
         <DataProviderProvider provider={mockProvider}>
           <ConsumerComponent />
-        </DataProviderProvider>
+        </DataProviderProvider>,
       );
-      expect(screen.getByTestId('provider-exists')).toHaveTextContent('has-provider');
+      expect(screen.getByTestId("provider-exists")).toHaveTextContent("has-provider");
     });
   });
 
-  describe('useDataProvider', () => {
-    it('should return stub when used outside DataProviderProvider', () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  describe("useDataProvider", () => {
+    it("should return stub when used outside DataProviderProvider", () => {
+      const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
       expect(() => render(<ConsumerComponent />)).not.toThrow();
       consoleWarn.mockRestore();
     });
 
-    it('should return the provider instance', () => {
+    it("should return the provider instance", () => {
       const mockProvider = createMockProvider();
       let capturedProvider: DataProvider | null = null;
 
@@ -82,7 +84,7 @@ describe('DataProviderContext', () => {
       render(
         <DataProviderProvider provider={mockProvider}>
           <CapturingComponent />
-        </DataProviderProvider>
+        </DataProviderProvider>,
       );
 
       expect(capturedProvider).toBe(mockProvider);

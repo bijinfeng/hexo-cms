@@ -1,12 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { I18nConfig, I18nContextValue, Locale, TranslationMap } from "@hexo-cms/core";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-function flattenResource(
-  resource: Record<string, unknown>,
-  prefix = "",
-): TranslationMap {
+function flattenResource(resource: Record<string, unknown>, prefix = ""): TranslationMap {
   const result: TranslationMap = {};
   for (const [key, value] of Object.entries(resource)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
@@ -37,9 +34,7 @@ export function I18nProvider({
   onLocaleChange,
   children,
 }: I18nProviderProps) {
-  const [locale, setLocaleState] = useState<Locale>(
-    initialLocale ?? config.defaultLocale,
-  );
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? config.defaultLocale);
 
   const maps = useMemo(() => {
     const result: Record<string, TranslationMap> = {};

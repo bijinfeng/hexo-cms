@@ -1,8 +1,8 @@
+import type { PluginConfigStoreValue } from "@hexo-cms/core";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { parseJsonColumn, stringifyJsonColumn } from "./json-db";
 import { pluginConfig } from "./schema";
-import type { PluginConfigStoreValue } from "@hexo-cms/core";
 
 export function ensurePluginConfigTable(): void {
   db.run(

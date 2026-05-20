@@ -1,9 +1,9 @@
+import { AlertCircle, CheckCircle2, Download, Palette } from "lucide-react";
 import { useState } from "react";
-import { useThemes, useSwitchTheme } from "../hooks/use-themes-query";
-import { Card, CardContent } from "../components/ui/card";
+import { Skeleton } from "../components/skeleton";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Skeleton } from "../components/skeleton";
+import { Card, CardContent } from "../components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -12,12 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import {
-  Palette,
-  CheckCircle2,
-  Download,
-  AlertCircle,
-} from "lucide-react";
+import { useSwitchTheme, useThemes } from "../hooks/use-themes-query";
 import { useI18n } from "../i18n/I18nProvider";
 
 export function ThemesPage() {
@@ -94,7 +89,9 @@ export function ThemesPage() {
               <Card
                 key={themeName}
                 className={`transition-all ${
-                  isActive ? "border-[var(--brand-primary)] shadow-[var(--shadow-md)]" : "hover:shadow-[var(--shadow-sm)]"
+                  isActive
+                    ? "border-[var(--brand-primary)] shadow-[var(--shadow-md)]"
+                    : "hover:shadow-[var(--shadow-sm)]"
                 }`}
               >
                 <CardContent className="p-5">
@@ -112,9 +109,7 @@ export function ThemesPage() {
                       <h3 className="text-base font-semibold text-[var(--text-primary)]">
                         {themeName}
                       </h3>
-                      <p className="text-xs text-[var(--text-tertiary)]">
-                        {t("themes.hexoTheme")}
-                      </p>
+                      <p className="text-xs text-[var(--text-tertiary)]">{t("themes.hexoTheme")}</p>
                     </div>
                   </div>
 

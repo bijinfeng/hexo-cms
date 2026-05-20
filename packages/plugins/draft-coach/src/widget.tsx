@@ -1,9 +1,26 @@
-import { useEffect, useState } from "react";
-import { AlertCircle, Calendar, FileText, Image as ImageIcon, Loader2, RefreshCw } from "lucide-react";
-import { DRAFT_COACH_PLUGIN_ID } from "./manifest";
-import { checkDraft, type DraftIssue } from "./draft-checker";
 import type { HexoPost } from "@hexo-cms/core";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, useDataProvider, useI18n, usePluginSystem } from "@hexo-cms/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  useDataProvider,
+  useI18n,
+  usePluginSystem,
+} from "@hexo-cms/ui";
+import {
+  AlertCircle,
+  Calendar,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { type DraftIssue, checkDraft } from "./draft-checker";
+import { DRAFT_COACH_PLUGIN_ID } from "./manifest";
 
 interface DraftWithIssues {
   post: HexoPost;
@@ -59,9 +76,7 @@ export function DraftCoachWidget() {
           <CardTitle className="text-sm">{t("draft.widget.title")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-[var(--text-secondary)]">
-            {t("draft.widget.disabled")}
-          </p>
+          <p className="text-sm text-[var(--text-secondary)]">{t("draft.widget.disabled")}</p>
         </CardContent>
       </Card>
     );
@@ -90,7 +105,9 @@ export function DraftCoachWidget() {
           <span>{t("draft.widget.title")}</span>
           <div className="flex items-center gap-2">
             {draftsWithIssues.length > 0 && (
-              <Badge variant="warning">{t("draft.widget.reminders", { count: draftsWithIssues.length })}</Badge>
+              <Badge variant="warning">
+                {t("draft.widget.reminders", { count: draftsWithIssues.length })}
+              </Badge>
             )}
             <Button variant="ghost" size="sm" onClick={checkDrafts} disabled={loading}>
               <RefreshCw className="h-3.5 w-3.5" />

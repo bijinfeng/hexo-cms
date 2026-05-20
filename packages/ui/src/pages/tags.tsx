@@ -1,12 +1,21 @@
-﻿import { useState } from "react";
-import { useTags, useRenameTag, useDeleteTag, useMergeTag } from "../hooks/use-tags-query";
-import { useI18n } from "../i18n/I18nProvider";
-import { Card, CardContent } from "../components/ui/card";
+﻿import {
+  AlertCircle,
+  ChevronRight,
+  Edit3,
+  FolderOpen,
+  GitMerge,
+  Hash,
+  Loader2,
+  Plus,
+  Search,
+  Tag,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { Skeleton } from "../components/skeleton";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Skeleton } from "../components/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Card, CardContent } from "../components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -15,19 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import {
-  Tag,
-  FolderOpen,
-  Plus,
-  Search,
-  Edit3,
-  Trash2,
-  Hash,
-  ChevronRight,
-  Loader2,
-  AlertCircle,
-  GitMerge,
-} from "lucide-react";
+import { Input } from "../components/ui/input";
 import {
   Select,
   SelectContent,
@@ -36,10 +33,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { useDeleteTag, useMergeTag, useRenameTag, useTags } from "../hooks/use-tags-query";
+import { useI18n } from "../i18n/I18nProvider";
 
 const tagColors = [
-  "#61DAFB", "#3178C6", "#FF4154", "#1572B6", "#06B6D4", "#10B981",
-  "#F59E0B", "#6B7280", "#8B5CF6", "#EF4444", "#F97316", "#84CC16",
+  "#61DAFB",
+  "#3178C6",
+  "#FF4154",
+  "#1572B6",
+  "#06B6D4",
+  "#10B981",
+  "#F59E0B",
+  "#6B7280",
+  "#8B5CF6",
+  "#EF4444",
+  "#F97316",
+  "#84CC16",
 ];
 
 type DialogType = "rename" | "delete" | "merge" | null;
@@ -63,13 +73,17 @@ export function TagsPage() {
   const query = useTags();
   const loading = query.isPending;
   const error = query.error?.message ?? "";
-  const tags = (query.data?.tags ?? []).map((t, i) => ({ ...t, color: tagColors[i % tagColors.length] }));
+  const tags = (query.data?.tags ?? []).map((t, i) => ({
+    ...t,
+    color: tagColors[i % tagColors.length],
+  }));
   const categories = query.data?.categories ?? [];
 
   const renameMutation = useRenameTag();
   const deleteMutation = useDeleteTag();
   const mergeMutation = useMergeTag();
-  const processing = renameMutation.isPending || deleteMutation.isPending || mergeMutation.isPending;
+  const processing =
+    renameMutation.isPending || deleteMutation.isPending || mergeMutation.isPending;
 
   function openRenameDialog(type: "tag" | "category", name: string, id: string) {
     setDialog({ type: "rename", itemType: type, itemName: name, itemId: id });
@@ -135,12 +149,12 @@ export function TagsPage() {
     }
   }
 
-  const filteredTags = tags.filter((t) =>
-    !search || t.name.toLowerCase().includes(search.toLowerCase())
+  const filteredTags = tags.filter(
+    (t) => !search || t.name.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const filteredCategories = categories.filter((c) =>
-    !search || c.name.toLowerCase().includes(search.toLowerCase())
+  const filteredCategories = categories.filter(
+    (c) => !search || c.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   if (loading) {
@@ -149,7 +163,9 @@ export function TagsPage() {
         <Skeleton width={128} height={28} />
         <Skeleton width={256} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} variant="card" height={80} />)}
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} variant="card" height={80} />
+          ))}
         </div>
       </div>
     );
@@ -171,7 +187,11 @@ export function TagsPage() {
     const isDelete = dialog.type === "delete";
     const isMerge = dialog.type === "merge";
 
-    const titleText = isRename ? t("tags.renameDialogTitle") : isDelete ? t("tags.deleteDialogTitle") : t("tags.mergeDialogTitle");
+    const titleText = isRename
+      ? t("tags.renameDialogTitle")
+      : isDelete
+        ? t("tags.deleteDialogTitle")
+        : t("tags.mergeDialogTitle");
     const typeLabel = dialog.itemType === "tag" ? t("tags.tagItem") : t("tags.categoryItem");
     const itemList = dialog.itemType === "tag" ? filteredTags : filteredCategories;
     const mergeCandidates = itemList.filter((i) => i.name !== dialog.itemName);
@@ -180,13 +200,12 @@ export function TagsPage() {
       <Dialog open={!!dialog} onOpenChange={() => closeDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{titleText}{typeLabel}</DialogTitle>
+            <DialogTitle>
+              {titleText}
+              {typeLabel}
+            </DialogTitle>
             <DialogDescription>
-              {isRename && (
-                <>
-                  {t("tags.renameHint", { name: dialog.itemName })}
-                </>
-              )}
+              {isRename && t("tags.renameHint", { name: dialog.itemName })}
               {isDelete && (
                 <>
                   {t("tags.deleteHint", { name: dialog.itemName })}
@@ -234,17 +253,15 @@ export function TagsPage() {
             </Select>
           )}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={closeDialog}
-              disabled={processing}
-            >
+            <Button variant="outline" onClick={closeDialog} disabled={processing}>
               {t("common.cancel")}
             </Button>
             <Button
               onClick={isRename ? handleRename : isMerge ? handleMerge : handleDelete}
               disabled={processing || (isRename && !newName.trim()) || (isMerge && !mergeTarget)}
-              className={isDelete ? "bg-[var(--status-error)] hover:bg-[var(--status-error)]/90" : ""}
+              className={
+                isDelete ? "bg-[var(--status-error)] hover:bg-[var(--status-error)]/90" : ""
+              }
             >
               {processing ? (
                 <>
@@ -326,19 +343,23 @@ export function TagsPage() {
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: tag.color + "20" }}
+                  style={{ backgroundColor: `${tag.color}20` }}
                 >
                   <Hash size={14} style={{ color: tag.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-[var(--text-primary)] truncate">{tag.name}</div>
-                  <div className="text-xs text-[var(--text-tertiary)]">{t("tags.postsCount", { count: tag.count })}</div>
+                  <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+                    {tag.name}
+                  </div>
+                  <div className="text-xs text-[var(--text-tertiary)]">
+                    {t("tags.postsCount", { count: tag.count })}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => openMergeDialog("tag", tag.name, tag.id)}
                     className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent-subtle)] transition-colors cursor-pointer"
-                        title={t("tags.mergeTo")}
+                    title={t("tags.mergeTo")}
                   >
                     <GitMerge size={12} />
                   </button>
@@ -382,15 +403,19 @@ export function TagsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-[var(--text-primary)]">{cat.name}</span>
-                        <Badge variant="default">{t("tags.postsCountShort", { count: cat.count })}</Badge>
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">
+                          {cat.name}
+                        </span>
+                        <Badge variant="default">
+                          {t("tags.postsCountShort", { count: cat.count })}
+                        </Badge>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => openMergeDialog("category", cat.name, cat.id)}
                         className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent-subtle)] transition-colors cursor-pointer"
-                    title={t("tags.mergeTo")}
+                        title={t("tags.mergeTo")}
                       >
                         <GitMerge size={14} />
                       </button>

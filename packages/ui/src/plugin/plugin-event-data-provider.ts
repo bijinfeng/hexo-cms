@@ -3,9 +3,15 @@ import type { DataProvider, HexoPost, PluginEventName } from "@hexo-cms/core";
 type DeployRun = Awaited<ReturnType<DataProvider["getDeployments"]>>[number];
 type DeployStatusSnapshot = Pick<DeployRun, "status" | "conclusion">;
 
-export type PluginEventEmitter = <TPayload>(eventName: PluginEventName, payload: TPayload) => Promise<unknown>;
+export type PluginEventEmitter = <TPayload>(
+  eventName: PluginEventName,
+  payload: TPayload,
+) => Promise<unknown>;
 
-export function withPluginEvents(provider: DataProvider, emitEvent: PluginEventEmitter): DataProvider {
+export function withPluginEvents(
+  provider: DataProvider,
+  emitEvent: PluginEventEmitter,
+): DataProvider {
   const deploymentStatuses = new Map<string, DeployStatusSnapshot>();
   let deploymentsHydrated = false;
 
@@ -60,7 +66,12 @@ export function withPluginEvents(provider: DataProvider, emitEvent: PluginEventE
 
     async getDeployments(): Promise<DeployRun[]> {
       const deployments = await provider.getDeployments();
-      await emitDeploymentStatusChanges(deployments, deploymentStatuses, deploymentsHydrated, emitEvent);
+      await emitDeploymentStatusChanges(
+        deployments,
+        deploymentStatuses,
+        deploymentsHydrated,
+        emitEvent,
+      );
       deploymentsHydrated = true;
       return deployments;
     },
@@ -90,7 +101,8 @@ async function emitDeploymentStatusChanges(
     if (
       hydrated &&
       previousStatus &&
-      (previousStatus.status !== deployment.status || previousStatus.conclusion !== deployment.conclusion)
+      (previousStatus.status !== deployment.status ||
+        previousStatus.conclusion !== deployment.conclusion)
     ) {
       changes.push(
         emitEvent("deploy.statusChange", {

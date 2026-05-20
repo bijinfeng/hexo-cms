@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom';
+import "@testing-library/jest-dom";
 
 function createMemoryStorage() {
   const store = new Map<string, string>();
@@ -27,12 +27,12 @@ function createMemoryStorage() {
 
 const localStorageMock = createMemoryStorage();
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   configurable: true,
   value: localStorageMock,
 });
 
-Object.defineProperty(globalThis, 'localStorage', {
+Object.defineProperty(globalThis, "localStorage", {
   configurable: true,
   value: localStorageMock,
 });

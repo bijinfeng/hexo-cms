@@ -87,14 +87,11 @@ export const en = {
       batchDeleteMessage:
         "Are you sure you want to delete {{{count}}} posts? This cannot be undone.",
       batchPublishTitle: "Confirm Batch Publish",
-      batchPublishMessage:
-        "Are you sure you want to publish {{{count}}} draft posts?",
+      batchPublishMessage: "Are you sure you want to publish {{{count}}} draft posts?",
       batchUnpublishTitle: "Confirm Batch Unpublish",
-      batchUnpublishMessage:
-        "Are you sure you want to unpublish {{{count}}} posts?",
+      batchUnpublishMessage: "Are you sure you want to unpublish {{{count}}} posts?",
       singleDeleteTitle: "Confirm Delete",
-      singleDeleteMessage:
-        'Are you sure you want to delete "{{{title}}}"? This cannot be undone.',
+      singleDeleteMessage: 'Are you sure you want to delete "{{{title}}}"? This cannot be undone.',
     },
     editor: {
       titlePlaceholder: "Post title...",
@@ -173,8 +170,7 @@ export const en = {
     },
     confirm: {
       deleteTitle: "Confirm Delete",
-      deleteMessage:
-        'Are you sure you want to delete "{{{title}}}"? This cannot be undone.',
+      deleteMessage: 'Are you sure you want to delete "{{{title}}}"? This cannot be undone.',
     },
   },
   tags: {
@@ -201,8 +197,7 @@ export const en = {
     inputNewName: "Enter new name",
     deleteDialogTitle: "Delete",
     deleteHint: "Delete {{{name}}}?",
-    deleteWarning:
-      "This will remove the {{{typeLabel}}} from all posts.",
+    deleteWarning: "This will remove the {{{typeLabel}}} from all posts.",
     mergeDialogTitle: "Merge",
     mergeHint: "Merge {{{name}}} into target {{{typeLabel}}}.",
     mergeWarning:
@@ -415,23 +410,18 @@ export const en = {
     loginBtn: "Sign in with GitHub",
     redirecting: "Redirecting...",
     consent: "By signing in, you agree to our terms of service.",
-    dataNote:
-      "Your data is stored exclusively in your own GitHub repository.",
+    dataNote: "Your data is stored exclusively in your own GitHub repository.",
     autoContinue: "The app will continue automatically once authorized.",
     errors: {
       expired: "Authorization expired. Please sign in again.",
-      cancelled:
-        "GitHub authorization was cancelled. Please try again.",
-      notEnabled:
-        "GitHub device flow is not enabled. Please check your OAuth App configuration.",
+      cancelled: "GitHub authorization was cancelled. Please try again.",
+      notEnabled: "GitHub device flow is not enabled. Please check your OAuth App configuration.",
       unavailable:
         "GitHub authorization is temporarily unavailable. Please check your configuration.",
-      missingScope:
-        "Current authorization lacks repository access. Please re-authorize.",
+      missingScope: "Current authorization lacks repository access. Please re-authorize.",
       failed: "GitHub authorization failed. Please try again.",
       retryFailed: "GitHub authorization failed. Please try again.",
-      checkFailed:
-        "GitHub authorization status check failed. Please try again.",
+      checkFailed: "GitHub authorization status check failed. Please try again.",
     },
   },
   onboarding: {
@@ -447,8 +437,7 @@ export const en = {
     publicRepo: "Public",
     writable: "Writable",
     noMatch: "No matching repositories",
-    noWritable:
-      "No writable repositories found. Please check GitHub authorization permissions.",
+    noWritable: "No writable repositories found. Please check GitHub authorization permissions.",
     manualInput: "Can't find your repo? Enter manually",
     verify: "Verify",
     repoCheck: "Repository Check",
@@ -464,19 +453,15 @@ export const en = {
     repoLoadFailed: "Failed to load repositories. Please try again.",
     saveFailed: "Save failed. Please try again.",
     errors: {
-      repoNotFound:
-        "Repository not found. Please confirm access is authorized.",
+      repoNotFound: "Repository not found. Please confirm access is authorized.",
       missingScope:
         "Current authorization lacks repository read/write permissions. Please re-authorize.",
       branchNotFound: "Target branch not found.",
-      notHexo:
-        "No Hexo configuration detected. Please select an existing Hexo blog repository.",
+      notHexo: "No Hexo configuration detected. Please select an existing Hexo blog repository.",
       verifyFailed: "Verification failed. Please try again.",
       expired: "Authorization expired. Please re-authorize.",
-      cancelled:
-        "GitHub authorization was cancelled. Please try again.",
-      notEnabled:
-        "GitHub device flow is not enabled. Please check your OAuth App configuration.",
+      cancelled: "GitHub authorization was cancelled. Please try again.",
+      notEnabled: "GitHub device flow is not enabled. Please check your OAuth App configuration.",
       unavailable:
         "GitHub authorization is temporarily unavailable. Please check your configuration.",
       reauthFailed: "Re-authorization failed. Please try again.",
@@ -506,11 +491,10 @@ export const en = {
     saveEdit: "Save Changes",
     addBtn: "Add",
     deleteTitle: "Delete Menu Item",
-    deleteMessage:
-      "Are you sure you want to delete {{{name}}}? This cannot be undone.",
+    deleteMessage: "Are you sure you want to delete {{{name}}}? This cannot be undone.",
     configNote: "Configuration Note",
     configNoteContent:
-      "Menu configuration is saved in the <code>_config.yml</code> file of your Hexo site. Each menu item includes a key, link URL, and icon name. Drag to reorder menu items. Click \"Save\" to update the site configuration.",
+      'Menu configuration is saved in the <code>_config.yml</code> file of your Hexo site. Each menu item includes a key, link URL, and icon name. Drag to reorder menu items. Click "Save" to update the site configuration.',
   },
   themes: {
     title: "Theme Management",
@@ -518,15 +502,13 @@ export const en = {
     description: "Manage and switch Hexo themes",
     installNew: "Install New Theme",
     empty: "No installed themes detected",
-    emptyHint:
-      "Install themes in the themes/ directory of your repository",
+    emptyHint: "Install themes in the themes/ directory of your repository",
     currentUse: "Currently using",
     hexoTheme: "Hexo Theme",
     installedAt: "Installed in themes/{{{name}}}",
     switchTo: "Switch Theme",
     switching: "Switching...",
-    switched:
-      'Switched to "{{{theme}}}". Please redeploy for changes to take effect.',
+    switched: 'Switched to "{{{theme}}}". Please redeploy for changes to take effect.',
     switchFailed: "Failed to switch theme",
   },
   components: {
@@ -540,8 +522,7 @@ export const en = {
     },
     errorBoundary: {
       title: "Something went wrong",
-      message:
-        "The page encountered an unexpected error. Your data is safe.",
+      message: "The page encountered an unexpected error. Your data is safe.",
       details: "Error Details",
     },
     saveIndicator: {

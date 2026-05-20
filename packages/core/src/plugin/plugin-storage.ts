@@ -1,11 +1,11 @@
+import { assertNonEmptyString, cloneValue } from "../utils";
+import { BrowserJsonStore, MemoryStore } from "./stores";
 import type {
   PluginPermission,
   PluginStorageAPI,
   PluginStorageJsonValue,
   PluginStorageStoreValue,
 } from "./types";
-import { assertNonEmptyString, cloneValue } from "../utils";
-import { BrowserJsonStore, MemoryStore } from "./stores";
 
 export interface PluginStorageStore {
   load(): PluginStorageStoreValue | Promise<PluginStorageStoreValue>;
@@ -13,11 +13,18 @@ export interface PluginStorageStore {
 }
 
 export class MemoryPluginStorageStore extends MemoryStore<PluginStorageStoreValue> {
-  load(): PluginStorageStoreValue { return cloneValue(super.load()); }
-  save(value: PluginStorageStoreValue): void { super.save(cloneValue(value)); }
+  load(): PluginStorageStoreValue {
+    return cloneValue(super.load());
+  }
+  save(value: PluginStorageStoreValue): void {
+    super.save(cloneValue(value));
+  }
 }
 
-export class BrowserPluginStorageStore extends BrowserJsonStore<PluginStorageStoreValue> implements PluginStorageStore {
+export class BrowserPluginStorageStore
+  extends BrowserJsonStore<PluginStorageStoreValue>
+  implements PluginStorageStore
+{
   constructor(key = "hexo-cms:plugin-storage") {
     super(key);
   }
@@ -26,7 +33,9 @@ export class BrowserPluginStorageStore extends BrowserJsonStore<PluginStorageSto
 export function createPluginStorageAPI(
   pluginId: string,
   store: PluginStorageStore,
-  permissionBroker: { assert(pluginId: string, permission: PluginPermission, operation: string): void },
+  permissionBroker: {
+    assert(pluginId: string, permission: PluginPermission, operation: string): void;
+  },
 ): PluginStorageAPI {
   return {
     async get<T extends PluginStorageJsonValue>(key: string): Promise<T | undefined> {

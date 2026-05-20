@@ -5,7 +5,7 @@
  * 遵循业界最佳实践（Notion、VS Code 等）
  */
 
-import type { HexoPost, GitHubConfig } from "./types";
+import type { GitHubConfig, HexoPost } from "./types";
 
 export interface DataProvider {
   // ==================== 配置管理 ====================
@@ -95,7 +95,11 @@ export interface DataProvider {
   /**
    * 重命名标签或分类
    */
-  renameTag(type: "tag" | "category", oldName: string, newName: string): Promise<{ updatedCount: number }>;
+  renameTag(
+    type: "tag" | "category",
+    oldName: string,
+    newName: string,
+  ): Promise<{ updatedCount: number }>;
 
   /**
    * 删除标签或分类
@@ -105,20 +109,26 @@ export interface DataProvider {
   /**
    * 合并标签或分类（将 sourceName 合并到 targetName）
    */
-  mergeTag(type: "tag" | "category", sourceName: string, targetName: string): Promise<{ updatedCount: number }>;
+  mergeTag(
+    type: "tag" | "category",
+    sourceName: string,
+    targetName: string,
+  ): Promise<{ updatedCount: number }>;
 
   // ==================== 媒体管理 ====================
 
   /**
    * 获取媒体文件列表
    */
-  getMediaFiles(): Promise<Array<{
-    name: string;
-    path: string;
-    size: number;
-    url: string;
-    sha: string;
-  }>>;
+  getMediaFiles(): Promise<
+    Array<{
+      name: string;
+      path: string;
+      size: number;
+      url: string;
+      sha: string;
+    }>
+  >;
 
   /**
    * 上传媒体文件
@@ -162,13 +172,15 @@ export interface DataProvider {
   /**
    * 获取部署历史
    */
-  getDeployments(): Promise<Array<{
-    id: string;
-    status: string;
-    createdAt: string;
-    duration: number;
-    conclusion: string;
-  }>>;
+  getDeployments(): Promise<
+    Array<{
+      id: string;
+      status: string;
+      createdAt: string;
+      duration: number;
+      conclusion: string;
+    }>
+  >;
 
   /**
    * 手动触发部署

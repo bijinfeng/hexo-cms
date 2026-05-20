@@ -1,19 +1,17 @@
-import { useState, useEffect } from "react";
+import { Bell, CheckCircle2, Globe, Puzzle, Save, Shield, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Button } from "../components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
-import {
-  Globe, User, Bell, Shield, Puzzle, Save, CheckCircle2,
-} from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useI18n } from "../i18n/I18nProvider";
-import type { AuthClient } from "../types/auth";
 import { PluginSettingsPanel } from "../plugin";
-import { SiteSettings } from "./settings/SiteSettings";
-import { GitHubSettings } from "./settings/GitHubSettings";
+import type { AuthClient } from "../types/auth";
 import { EditorPreferencesSettings } from "./settings/EditorPreferencesSettings";
-import { ProfileSettings } from "./settings/ProfileSettings";
+import { GitHubSettings } from "./settings/GitHubSettings";
 import { NotificationSettings, SecuritySettings } from "./settings/NotifyAndSecuritySettings";
+import { ProfileSettings } from "./settings/ProfileSettings";
+import { SiteSettings } from "./settings/SiteSettings";
 
 export interface SettingsSectionDef {
   id: string;
@@ -45,41 +43,83 @@ export interface SettingsPageProps {
   extraSections?: SettingsSectionDef[];
 }
 
-export function SettingsPage({ authClient, initialSection, onSignedOut, extraSections }: SettingsPageProps) {
+export function SettingsPage({
+  authClient,
+  initialSection,
+  onSignedOut,
+  extraSections,
+}: SettingsPageProps) {
   const { t } = useI18n();
   const allSections = extraSections?.length ? [...baseSections, ...extraSections] : baseSections;
   const sectionIds = new Set(allSections.map((s) => s.id));
 
   const [activeSection, setActiveSection] = useState(() =>
-    initialSection ? (sectionIds.has(initialSection) ? initialSection : "site") : getInitialSettingsSection(sectionIds),
+    initialSection
+      ? sectionIds.has(initialSection)
+        ? initialSection
+        : "site"
+      : getInitialSettingsSection(sectionIds),
   );
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setActiveSection(initialSection ? (sectionIds.has(initialSection) ? initialSection : "site") : getInitialSettingsSection(sectionIds));
+    setActiveSection(
+      initialSection
+        ? sectionIds.has(initialSection)
+          ? initialSection
+          : "site"
+        : getInitialSettingsSection(sectionIds),
+    );
   }, [initialSection, extraSections]);
 
-  function handleSave() { setSaved(true); setTimeout(() => setSaved(false), 2000); }
+  function handleSave() {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("settings.main.title")}</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">{t("settings.main.subtitle")}</p>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+            {t("settings.main.title")}
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+            {t("settings.main.subtitle")}
+          </p>
         </div>
         <Button onClick={handleSave} variant={saved ? "success" : "default"}>
-          {saved ? <><CheckCircle2 size={16} />{t("common.saved")}</> : <><Save size={16} />{t("settings.main.saveChanges")}</>}
+          {saved ? (
+            <>
+              <CheckCircle2 size={16} />
+              {t("common.saved")}
+            </>
+          ) : (
+            <>
+              <Save size={16} />
+              {t("settings.main.saveChanges")}
+            </>
+          )}
         </Button>
       </div>
 
-      <Tabs value={activeSection} onValueChange={setActiveSection} orientation="vertical" className="flex flex-col lg:flex-row gap-6">
+      <Tabs
+        value={activeSection}
+        onValueChange={setActiveSection}
+        orientation="vertical"
+        className="flex flex-col lg:flex-row gap-6"
+      >
         <TabsList className="flex-col lg:w-52 h-auto bg-transparent p-0 space-y-0.5">
           {allSections.map((section) => {
             const Icon = section.icon;
             return (
-              <TabsTrigger key={section.id} value={section.id} className="w-full justify-start gap-3 px-3 py-2.5 data-[state=active]:bg-[var(--brand-primary-subtle)] data-[state=active]:text-[var(--brand-primary)] data-[state=active]:shadow-none data-[state=inactive]:text-[var(--text-secondary)]">
-                <Icon size={16} className="flex-shrink-0" />{t(section.label)}
+              <TabsTrigger
+                key={section.id}
+                value={section.id}
+                className="w-full justify-start gap-3 px-3 py-2.5 data-[state=active]:bg-[var(--brand-primary-subtle)] data-[state=active]:text-[var(--brand-primary)] data-[state=active]:shadow-none data-[state=inactive]:text-[var(--text-secondary)]"
+              >
+                <Icon size={16} className="flex-shrink-0" />
+                {t(section.label)}
               </TabsTrigger>
             );
           })}
@@ -87,13 +127,19 @@ export function SettingsPage({ authClient, initialSection, onSignedOut, extraSec
 
         <div className="flex-1 min-w-0 space-y-4">
           {activeSection === "site" && <SiteSettings />}
-          {activeSection === "github" && <GitHubSettings authClient={authClient} onSignedOut={onSignedOut} />}
+          {activeSection === "github" && (
+            <GitHubSettings authClient={authClient} onSignedOut={onSignedOut} />
+          )}
           {activeSection === "profile" && <ProfileSettings />}
           {activeSection === "editor" && <EditorPreferencesSettings />}
           {activeSection === "notifications" && <NotificationSettings />}
           {activeSection === "plugins" && <PluginSettingsPanel />}
           {activeSection === "security" && <SecuritySettings />}
-          {extraSections?.map((section) => activeSection === section.id ? <section key={section.id}>{section.render()}</section> : null)}
+          {extraSections?.map((section) =>
+            activeSection === section.id ? (
+              <section key={section.id}>{section.render()}</section>
+            ) : null,
+          )}
         </div>
       </Tabs>
     </div>

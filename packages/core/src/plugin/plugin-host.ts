@@ -1,7 +1,9 @@
-import { PluginCatalog } from "./plugin-catalog";
-import { PluginManager, type PluginConfigStore, type PluginStateStore } from "./plugin-manager";
+import type { DataProvider } from "../data-provider";
+import type { TranslationResource } from "../i18n/types";
+import type { PluginCatalog } from "./plugin-catalog";
 import type { PluginFetch } from "./plugin-http";
 import type { PluginLogStore } from "./plugin-logger";
+import { type PluginConfigStore, PluginManager, type PluginStateStore } from "./plugin-manager";
 import type { PluginSecretStore } from "./plugin-secret";
 import type { PluginStorageStore } from "./plugin-storage";
 import type {
@@ -17,8 +19,6 @@ import type {
   PluginRuntimeErrorInput,
   RegisteredDashboardWidget,
 } from "./types";
-import type { DataProvider } from "../data-provider";
-import type { TranslationResource } from "../i18n/types";
 
 export interface PluginHostOptions<TRenderer = unknown> {
   catalog: PluginCatalog<TRenderer>;
@@ -133,8 +133,8 @@ export class PluginHost<TRenderer = unknown> {
 
   private syncRuntimeContributions(): void {
     const enabled = new Set(
-      this.snapshot().plugins
-        .filter(({ record }) => record.state === "enabled")
+      this.snapshot()
+        .plugins.filter(({ record }) => record.state === "enabled")
         .map(({ manifest }) => manifest.id),
     );
 

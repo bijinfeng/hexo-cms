@@ -1,17 +1,21 @@
 import { PluginPermissionError } from "./errors";
+import type { PermissionBroker } from "./permissions";
 import type {
   PluginCommandExecutionResult,
   PluginCommandHandler,
   PluginManifest,
   RegisteredCommand,
 } from "./types";
-import type { PermissionBroker } from "./permissions";
 
 function commandKey(pluginId: string, commandId: string): string {
   return `${pluginId}:${commandId}`;
 }
 
-function commandError(code: string, message: string, command?: RegisteredCommand): PluginCommandExecutionResult {
+function commandError(
+  code: string,
+  message: string,
+  command?: RegisteredCommand,
+): PluginCommandExecutionResult {
   return {
     ok: false,
     command,
@@ -63,7 +67,11 @@ export class CommandRegistry {
     this.handlers.set(commandKey(pluginId, commandId), handler);
   }
 
-  async execute(pluginId: string, commandId: string, args: unknown[] = []): Promise<PluginCommandExecutionResult> {
+  async execute(
+    pluginId: string,
+    commandId: string,
+    args: unknown[] = [],
+  ): Promise<PluginCommandExecutionResult> {
     const key = commandKey(pluginId, commandId);
     const command = this.commands.get(key);
     if (!command) {

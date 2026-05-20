@@ -1,6 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
 import { getElectronAPI } from "@hexo-cms/ui";
-import type { UpdateStatus, UpdateChannel, UpdateStatusPayload } from "@hexo-cms/ui/types/electron-api";
+import type {
+  UpdateChannel,
+  UpdateStatus,
+  UpdateStatusPayload,
+} from "@hexo-cms/ui/types/electron-api";
+import { useCallback, useEffect, useState } from "react";
 
 export interface UseUpdaterReturn {
   status: UpdateStatus;

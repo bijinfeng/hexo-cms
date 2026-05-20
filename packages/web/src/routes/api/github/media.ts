@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { getErrorMessage } from "@hexo-cms/core";
+import { createFileRoute } from "@tanstack/react-router";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
-const MEDIA_FILE_PATTERN = /\.(png|jpg|jpeg|gif|svg|webp|ico|avif|mp4|webm|mov|mp3|wav|ogg|flac|pdf|doc|docx)$/i;
+const MEDIA_FILE_PATTERN =
+  /\.(png|jpg|jpeg|gif|svg|webp|ico|avif|mp4|webm|mov|mp3|wav|ogg|flac|pdf|doc|docx)$/i;
 
 export const Route = createFileRoute("/api/github/media")({
   server: {
@@ -41,7 +42,11 @@ export const Route = createFileRoute("/api/github/media")({
 
         try {
           const bytes = new Uint8Array(await file.arrayBuffer());
-          const result = await ctx.github.uploadMedia(path, Buffer.from(bytes).toString("base64"), file.name);
+          const result = await ctx.github.uploadMedia(
+            path,
+            Buffer.from(bytes).toString("base64"),
+            file.name,
+          );
           return json(result);
         } catch (error) {
           return json({ error: getErrorMessage(error) }, 500);

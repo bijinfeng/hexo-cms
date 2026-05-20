@@ -37,7 +37,12 @@ export class Logger {
     return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[this.minLevel];
   }
 
-  private formatEntry(level: LogLevel, message: string, context?: LogContext, error?: Error): LogEntry {
+  private formatEntry(
+    level: LogLevel,
+    message: string,
+    context?: LogContext,
+    error?: Error,
+  ): LogEntry {
     const entry: LogEntry = {
       level,
       message,

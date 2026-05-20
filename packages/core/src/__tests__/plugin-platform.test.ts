@@ -60,7 +60,9 @@ describe("plugin platform contract", () => {
       },
     });
 
-    const catalog = await PluginCatalog.discover([new StaticPluginSourceResolver("official", [plugin])]);
+    const catalog = await PluginCatalog.discover([
+      new StaticPluginSourceResolver("official", [plugin]),
+    ]);
 
     expect(catalog.manifests()).toEqual([expect.objectContaining({ id: validManifest.id })]);
     expect(catalog.getDefinition(validManifest.id)).toEqual(plugin);
@@ -95,6 +97,8 @@ describe("plugin platform contract", () => {
       new StaticPluginSourceResolver("local-dev", [plugin], { enabled: true }),
     ]);
 
-    expect(enabledCatalog.manifests().map((manifest) => manifest.id)).toEqual(["hexo-cms-local-plugin"]);
+    expect(enabledCatalog.manifests().map((manifest) => manifest.id)).toEqual([
+      "hexo-cms-local-plugin",
+    ]);
   });
 });

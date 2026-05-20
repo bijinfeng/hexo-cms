@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it } from "vitest";
 import { SettingsPage } from "../pages/settings";
 import { PluginProvider } from "../plugin";
-import { createMockPluginHost } from "./test-utils";
 import { I18nTestWrapper } from "./i18n-test-wrapper";
+import { createMockPluginHost } from "./test-utils";
 
 describe("SettingsPage switches", () => {
   beforeEach(() => {
@@ -28,7 +28,11 @@ describe("SettingsPage switches", () => {
   it("anchors switch thumbs inside the track", async () => {
     const user = userEvent.setup();
 
-    render(<I18nTestWrapper><SettingsPage /></I18nTestWrapper>);
+    render(
+      <I18nTestWrapper>
+        <SettingsPage />
+      </I18nTestWrapper>,
+    );
 
     await user.click(screen.getByRole("tab", { name: "通知设置" }));
 

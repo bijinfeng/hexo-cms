@@ -144,14 +144,24 @@ export function mockPosts(page: Page) {
                 title: "Hello World",
                 date: "2026-01-01",
                 content: "This is my first post.",
-                frontmatter: { title: "Hello World", date: "2026-01-01", tags: ["intro"], draft: false },
+                frontmatter: {
+                  title: "Hello World",
+                  date: "2026-01-01",
+                  tags: ["intro"],
+                  draft: false,
+                },
               },
               {
                 path: "source/_posts/tanstack-guide.md",
                 title: "TanStack Start Guide",
                 date: "2026-03-15",
                 content: "A comprehensive guide.",
-                frontmatter: { title: "TanStack Start Guide", date: "2026-03-15", tags: ["react"], draft: false },
+                frontmatter: {
+                  title: "TanStack Start Guide",
+                  date: "2026-03-15",
+                  tags: ["react"],
+                  draft: false,
+                },
               },
               {
                 path: "source/_posts/draft-post.md",
@@ -165,7 +175,11 @@ export function mockPosts(page: Page) {
         });
       }
     } else {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      });
     }
   });
 }
@@ -189,7 +203,11 @@ export function mockPages(page: Page) {
         }),
       });
     } else {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      });
     }
   });
 }
@@ -210,7 +228,11 @@ export function mockTags(page: Page) {
         }),
       });
     } else {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ updatedCount: 1 }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ updatedCount: 1 }),
+      });
     }
   });
 }
@@ -223,13 +245,29 @@ export function mockMedia(page: Page) {
         contentType: "application/json",
         body: JSON.stringify({
           files: [
-            { name: "hero.png", path: "source/images/hero.png", size: 102400, url: "https://example.com/hero.png", sha: "abc" },
-            { name: "photo.jpg", path: "source/images/photo.jpg", size: 204800, url: "https://example.com/photo.jpg", sha: "def" },
+            {
+              name: "hero.png",
+              path: "source/images/hero.png",
+              size: 102400,
+              url: "https://example.com/hero.png",
+              sha: "abc",
+            },
+            {
+              name: "photo.jpg",
+              path: "source/images/photo.jpg",
+              size: 204800,
+              url: "https://example.com/photo.jpg",
+              sha: "def",
+            },
           ],
         }),
       });
     } else {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      });
     }
   });
 }
@@ -249,7 +287,11 @@ export function mockThemes(page: Page) {
         }),
       });
     } else {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      });
     }
   });
 }
@@ -262,12 +304,22 @@ export function mockDeploy(page: Page) {
         contentType: "application/json",
         body: JSON.stringify({
           deployments: [
-            { id: "1", status: "success", createdAt: "2026-05-15T10:00:00Z", duration: 45000, conclusion: "success" },
+            {
+              id: "1",
+              status: "success",
+              createdAt: "2026-05-15T10:00:00Z",
+              duration: 45000,
+              conclusion: "success",
+            },
           ],
         }),
       });
     } else {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      });
     }
   });
 }
@@ -291,7 +343,11 @@ export function mockConfigFile(page: Page) {
         }),
       });
     } else {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      });
     }
   });
 }
@@ -300,13 +356,29 @@ export function mockPluginApi(page: Page) {
   return page.route("**/api/plugin/**", (route: Route) => {
     const url = route.request().url();
     if (url.includes("/state")) {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ state: {} }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ state: {} }),
+      });
     } else if (url.includes("/config")) {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ config: {} }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ config: {} }),
+      });
     } else if (url.includes("/logs")) {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ logs: {} }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ logs: {} }),
+      });
     } else if (url.includes("/storage")) {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ storage: {} }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ storage: {} }),
+      });
     } else if (url.includes("/secrets")) {
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) });
     } else {

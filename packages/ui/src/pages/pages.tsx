@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react";
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { usePages, useDeletePage } from "../hooks/use-pages-query";
-import { useI18n } from "../i18n/I18nProvider";
-import { Card, CardContent } from "../components/ui/card";
+import { Edit3, Globe, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ListPage } from "../components/list-page";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { ListPage } from "../components/list-page";
+import { Card, CardContent } from "../components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import {
-  Plus,
-  Edit3,
-  Trash2,
-  Globe,
-} from "lucide-react";
+import { useDeletePage, usePages } from "../hooks/use-pages-query";
+import { useI18n } from "../i18n/I18nProvider";
 
 interface PageItem {
   id: string;
@@ -50,12 +45,16 @@ export function PagesPage() {
       .filter((page) => !page.path.includes("_posts"))
       .map((page, index) => ({
         id: String(index + 1),
-        title: page.title || page.path.split("/").pop()?.replace(".md", "") || t("pages.list.unnamed"),
-        path: "/" + page.path.replace(/^source\//, "").replace(/\.md$/, ""),
+        title:
+          page.title || page.path.split("/").pop()?.replace(".md", "") || t("pages.list.unnamed"),
+        path: `/${page.path.replace(/^source\//, "").replace(/\.md$/, "")}`,
         filePath: page.path,
-        slug: page.path.replace(/^source\//, "").replace(/\/index\.md$/, "").replace(/\.md$/, ""),
+        slug: page.path
+          .replace(/^source\//, "")
+          .replace(/\/index\.md$/, "")
+          .replace(/\.md$/, ""),
         status: page.frontmatter?.draft ? "draft" : "published",
-        description: page.frontmatter?.description || (page.content || "").slice(0, 50) + "...",
+        description: page.frontmatter?.description || `${(page.content || "").slice(0, 50)}...`,
       }));
   }, [query.data, isListRoute, t]);
 

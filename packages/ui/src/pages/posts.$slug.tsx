@@ -1,13 +1,29 @@
+import type { Frontmatter, HexoPost } from "@hexo-cms/core";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { useI18n } from "../i18n/I18nProvider";
-import { usePost, useSavePost, useDeletePost } from "../hooks/use-posts-query";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Alert } from "../components/ui/alert";
-import { Input } from "../components/ui/input";
-import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import {
+  ArrowLeft,
+  Calendar,
+  Eye,
+  EyeOff,
+  FileText,
+  FolderOpen,
+  Globe,
+  Image,
+  Info,
+  Loader2,
+  Save,
+  Tag,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { marked } from "marked";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 import { SidebarSection } from "../components/SidebarSection";
+import { Skeleton } from "../components/skeleton";
+import { Alert } from "../components/ui/alert";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
 import {
   Select,
   SelectContent,
@@ -24,31 +41,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { Skeleton } from "../components/skeleton";
-import { DiagnosticsPanel } from "../plugin/diagnostics-panel";
-import type { Frontmatter, HexoPost } from "@hexo-cms/core";
-import { MarkdownEditor } from "../components/MarkdownEditor";
-import { marked } from "marked";
-import { sanitizeHtml } from "../sanitize";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { useAutoSave } from "../hooks/use-autosave";
-import {
-  ArrowLeft,
-  Save,
-  Eye,
-  EyeOff,
-  Image,
-  Globe,
-  FileText,
-  Loader2,
-  Calendar,
-  FolderOpen,
-  Tag,
-  Upload,
-  Trash2,
-  Info,
-} from "lucide-react";
+import { useDeletePost, usePost, useSavePost } from "../hooks/use-posts-query";
+import { useI18n } from "../i18n/I18nProvider";
+import { DiagnosticsPanel } from "../plugin/diagnostics-panel";
+import { sanitizeHtml } from "../sanitize";
 
-const availableTags = ["React", "TypeScript", "TanStack", "CSS", "Tailwind", "Auth", "DevOps", "GitHub", "架构", "安全"];
+const availableTags = [
+  "React",
+  "TypeScript",
+  "TanStack",
+  "CSS",
+  "Tailwind",
+  "Auth",
+  "DevOps",
+  "GitHub",
+  "架构",
+  "安全",
+];
 const availableCategories = ["前端开发", "后端开发", "系统设计", "运维", "其他"];
 
 export function EditPostPage() {
@@ -179,7 +190,7 @@ export function EditPostPage() {
 
   function toggleTag(tag: string) {
     setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   }
 
@@ -227,7 +238,9 @@ export function EditPostPage() {
 
         <div className="w-px h-4 bg-[var(--border-default)]" />
 
-        <span className="text-sm font-medium text-[var(--text-primary)]">{t("posts.editor.editTitle")}</span>
+        <span className="text-sm font-medium text-[var(--text-primary)]">
+          {t("posts.editor.editTitle")}
+        </span>
 
         <Badge variant={status === "published" ? "success" : "default"}>
           {status === "published" ? t("posts.editor.publishStatus") : t("posts.editor.draftStatus")}
@@ -270,7 +283,9 @@ export function EditPostPage() {
       {/* Auto-save indicator */}
       {autosave.saved && (
         <div className="flex items-center justify-center py-1 bg-[var(--bg-muted)]">
-          <span className="text-xs text-[var(--text-tertiary)]">{t("posts.editor.autoSaveNotice")}</span>
+          <span className="text-xs text-[var(--text-tertiary)]">
+            {t("posts.editor.autoSaveNotice")}
+          </span>
         </div>
       )}
       {autosave.error && (
@@ -327,9 +342,18 @@ export function EditPostPage() {
             )}
             {/* Status */}
             <SidebarSection title={t("posts.editor.statusLabel")} icon={Globe}>
-              <ToggleGroup type="single" value={status} onValueChange={(v) => v && setStatus(v as "draft" | "published")} className="w-full">
-                <ToggleGroupItem value="draft" className="flex-1 text-xs">{t("posts.editor.draftStatus")}</ToggleGroupItem>
-                <ToggleGroupItem value="published" className="flex-1 text-xs">{t("posts.editor.publishBtn")}</ToggleGroupItem>
+              <ToggleGroup
+                type="single"
+                value={status}
+                onValueChange={(v) => v && setStatus(v as "draft" | "published")}
+                className="w-full"
+              >
+                <ToggleGroupItem value="draft" className="flex-1 text-xs">
+                  {t("posts.editor.draftStatus")}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="published" className="flex-1 text-xs">
+                  {t("posts.editor.publishBtn")}
+                </ToggleGroupItem>
               </ToggleGroup>
             </SidebarSection>
 
@@ -352,17 +376,16 @@ export function EditPostPage() {
 
             {/* Category */}
             <SidebarSection title={t("posts.editor.categoryLabel")} icon={FolderOpen}>
-              <Select
-                value={category}
-                onValueChange={setCategory}
-              >
+              <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="w-full text-xs" size="sm">
                   <SelectValue placeholder={t("posts.editor.categoryPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     {availableCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
                     ))}
                   </SelectGroup>
                 </SelectContent>

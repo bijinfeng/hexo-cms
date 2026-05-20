@@ -28,7 +28,13 @@ function recordAuditLog(
   method: string | undefined,
   requestHeaders: Record<string, string> | undefined,
   requestBody: string | undefined,
-  result: { ok: boolean; status: number; statusText: string; headers: Record<string, string>; body: string } | null,
+  result: {
+    ok: boolean;
+    status: number;
+    statusText: string;
+    headers: Record<string, string>;
+    body: string;
+  } | null,
   error: string | null,
   startTime: number,
 ): void {
@@ -79,14 +85,34 @@ export const webPluginFetch: PluginFetch = async (url, options) => {
     });
 
     if (!response.ok) {
-      const error = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+      const error = (await response.json().catch(() => ({ error: "Unknown error" }))) as {
+        error?: string;
+      };
       const errorMsg = error.error ?? "Plugin fetch failed";
-      recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, null, errorMsg, startTime);
+      recordAuditLog(
+        options.pluginId,
+        url,
+        options.method,
+        options.headers,
+        options.body,
+        null,
+        errorMsg,
+        startTime,
+      );
       throw new Error(errorMsg);
     }
 
     const result = (await response.json()) as PluginFetchResponse;
-    recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, result, null, startTime);
+    recordAuditLog(
+      options.pluginId,
+      url,
+      options.method,
+      options.headers,
+      options.body,
+      result,
+      null,
+      startTime,
+    );
 
     return {
       ok: result.ok,
@@ -100,7 +126,16 @@ export const webPluginFetch: PluginFetch = async (url, options) => {
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
-    recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, null, errorMsg, startTime);
+    recordAuditLog(
+      options.pluginId,
+      url,
+      options.method,
+      options.headers,
+      options.body,
+      null,
+      errorMsg,
+      startTime,
+    );
     throw error;
   }
 };
@@ -120,15 +155,36 @@ export const desktopPluginFetch: PluginFetch = async (url, options) => {
   };
 
   try {
-    const result = await getElectronAPI()?.invoke<PluginFetchResponse>("plugin-http:fetch", request);
+    const result = await getElectronAPI()?.invoke<PluginFetchResponse>(
+      "plugin-http:fetch",
+      request,
+    );
 
     if (!result) {
       const errorMsg = "Electron API not available";
-      recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, null, errorMsg, startTime);
+      recordAuditLog(
+        options.pluginId,
+        url,
+        options.method,
+        options.headers,
+        options.body,
+        null,
+        errorMsg,
+        startTime,
+      );
       throw new Error(errorMsg);
     }
 
-    recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, result, null, startTime);
+    recordAuditLog(
+      options.pluginId,
+      url,
+      options.method,
+      options.headers,
+      options.body,
+      result,
+      null,
+      startTime,
+    );
 
     return {
       ok: result.ok,
@@ -142,7 +198,16 @@ export const desktopPluginFetch: PluginFetch = async (url, options) => {
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
-    recordAuditLog(options.pluginId, url, options.method, options.headers, options.body, null, errorMsg, startTime);
+    recordAuditLog(
+      options.pluginId,
+      url,
+      options.method,
+      options.headers,
+      options.body,
+      null,
+      errorMsg,
+      startTime,
+    );
     throw error;
   }
 };

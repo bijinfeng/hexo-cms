@@ -1,5 +1,5 @@
-import { useI18n } from "../i18n/I18nProvider";
 import { CheckCircle2, Clock, Loader2, Rocket, XCircle } from "lucide-react";
+import { useI18n } from "../i18n/I18nProvider";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 export type DeployStatus = "idle" | "deploying" | "deployed" | "failed";
@@ -15,26 +15,30 @@ export function SaveIndicator({ status, deployStatus = "idle", onDeploy }: SaveI
   const isActive = status !== "idle" || deployStatus !== "idle";
   if (!isActive) return null;
 
-  const saveConfig: Record<SaveStatus, { icon: typeof Loader2; text: string; className: string }> = {
-    idle: { icon: Clock, text: "", className: "" },
-    saving: {
-      icon: Loader2,
-      text: t("components.saveIndicator.saving"),
-      className: "text-[var(--status-info)]",
-    },
-    saved: {
-      icon: CheckCircle2,
-      text: t("components.saveIndicator.saved"),
-      className: "text-[var(--status-success)]",
-    },
-    error: {
-      icon: XCircle,
-      text: t("components.saveIndicator.failed"),
-      className: "text-[var(--status-error)]",
-    },
-  };
+  const saveConfig: Record<SaveStatus, { icon: typeof Loader2; text: string; className: string }> =
+    {
+      idle: { icon: Clock, text: "", className: "" },
+      saving: {
+        icon: Loader2,
+        text: t("components.saveIndicator.saving"),
+        className: "text-[var(--status-info)]",
+      },
+      saved: {
+        icon: CheckCircle2,
+        text: t("components.saveIndicator.saved"),
+        className: "text-[var(--status-success)]",
+      },
+      error: {
+        icon: XCircle,
+        text: t("components.saveIndicator.failed"),
+        className: "text-[var(--status-error)]",
+      },
+    };
 
-  const deployConfig: Record<DeployStatus, { icon: typeof Loader2; text: string; className: string }> = {
+  const deployConfig: Record<
+    DeployStatus,
+    { icon: typeof Loader2; text: string; className: string }
+  > = {
     idle: { icon: Rocket, text: "", className: "" },
     deploying: {
       icon: Loader2,
@@ -66,7 +70,9 @@ export function SaveIndicator({ status, deployStatus = "idle", onDeploy }: SaveI
       )}
       {deployStatus !== "idle" && (
         <div className={`flex items-center gap-1.5 ${deployClass}`}>
-          <DeployIcon className={`w-3.5 h-3.5 ${deployStatus === "deploying" ? "animate-spin" : ""}`} />
+          <DeployIcon
+            className={`w-3.5 h-3.5 ${deployStatus === "deploying" ? "animate-spin" : ""}`}
+          />
           <span>{deployText}</span>
         </div>
       )}

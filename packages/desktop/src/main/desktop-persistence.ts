@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "node:path";
 import type {
   GitHubConfig,
   PluginConfigStoreValue,
@@ -114,7 +114,11 @@ export function createDesktopPersistence({
   }
 
   async function savePluginSecrets(value: PluginSecretStoreValue): Promise<void> {
-    await (await keychain()).setPassword(keytarService, PLUGIN_SECRET_ACCOUNT, JSON.stringify(value));
+    await (await keychain()).setPassword(
+      keytarService,
+      PLUGIN_SECRET_ACCOUNT,
+      JSON.stringify(value),
+    );
   }
 
   return {
@@ -130,7 +134,8 @@ export function createDesktopPersistence({
       return typeof secrets[pluginId]?.[key] === "string";
     },
     async mutatePluginSecret(mutation) {
-      if (!mutation || !mutation.pluginId || !mutation.key) throw new Error("Invalid secret target");
+      if (!mutation || !mutation.pluginId || !mutation.key)
+        throw new Error("Invalid secret target");
       const secrets = await loadPluginSecrets();
       const namespace = { ...(secrets[mutation.pluginId] ?? {}) };
 

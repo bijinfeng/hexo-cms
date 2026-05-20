@@ -31,12 +31,10 @@ updates:
           - "electron"
           - "electron-*"
           - "@electron-toolkit/*"
-      # ESLint 相关包分组
-      eslint:
+      # Biome 相关包分组
+      biome:
         patterns:
-          - "eslint"
-          - "eslint-*"
-          - "@typescript-eslint/*"
+          - "@biomejs/*"
     # 自动合并补丁版本更新
     labels:
       - "dependencies"

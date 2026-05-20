@@ -1,5 +1,8 @@
 import { definePlugin } from "@hexo-cms/core";
-import { createSeoPostDiagnosticsHandler, createSeoSiteDiagnosticsHandler } from "./diagnostics/seo-inspector";
+import {
+  createSeoPostDiagnosticsHandler,
+  createSeoSiteDiagnosticsHandler,
+} from "./diagnostics/seo-inspector";
 import { seoInspectorManifest } from "./manifest";
 
 export const seoInspectorPlugin = definePlugin({

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { eq } from "drizzle-orm";
 import { db } from "../../../lib/db";
 import { githubConfig } from "../../../lib/schema";
-import { json, getAuth } from "../../../lib/server-utils";
+import { getAuth, json } from "../../../lib/server-utils";
 
 function toBoolean(value: unknown, fallback: boolean): boolean {
   if (typeof value === "boolean") return value;
@@ -60,18 +60,23 @@ export const Route = createFileRoute("/api/github/config")({
           mediaDir: body.mediaDir || body.media_dir || "source/images",
           workflowFile: body.workflowFile || body.workflow_file || ".github/workflows/deploy.yml",
           autoDeploy: toBoolean(body.autoDeploy ?? body.auto_deploy, true),
-          deployNotifications: toBoolean(body.deployNotifications ?? body.deploy_notifications, true),
+          deployNotifications: toBoolean(
+            body.deployNotifications ?? body.deploy_notifications,
+            true,
+          ),
           updatedAt: new Date().toISOString(),
         };
 
         if (existing) {
           db.update(githubConfig).set(values).where(eq(githubConfig.userId, session.user.id)).run();
         } else {
-          db.insert(githubConfig).values({
-            userId: session.user.id,
-            ...values,
-            createdAt: new Date().toISOString(),
-          }).run();
+          db.insert(githubConfig)
+            .values({
+              userId: session.user.id,
+              ...values,
+              createdAt: new Date().toISOString(),
+            })
+            .run();
         }
 
         return json({ success: true });

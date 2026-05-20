@@ -1,14 +1,24 @@
-import { BrowserPluginLogStore, type PluginLogStore, type PluginLogStoreValue } from "@hexo-cms/core";
+import {
+  BrowserPluginLogStore,
+  type PluginLogStore,
+  type PluginLogStoreValue,
+} from "@hexo-cms/core";
 import { getElectronAPI } from "../lib/electron-api";
 import { DesktopBackedPluginStore, WebBackedPluginStore } from "./platform-sync-store";
 
-export class WebPluginLogStore extends WebBackedPluginStore<PluginLogStoreValue> implements PluginLogStore {
+export class WebPluginLogStore
+  extends WebBackedPluginStore<PluginLogStoreValue>
+  implements PluginLogStore
+{
   constructor(endpoint = "/api/plugin/logs") {
     super({ endpoint, payloadKey: "logs", fallback: new BrowserPluginLogStore() });
   }
 }
 
-export class DesktopPluginLogStore extends DesktopBackedPluginStore<PluginLogStoreValue> implements PluginLogStore {
+export class DesktopPluginLogStore
+  extends DesktopBackedPluginStore<PluginLogStoreValue>
+  implements PluginLogStore
+{
   constructor() {
     super({
       loadChannel: "plugin-logs:load",

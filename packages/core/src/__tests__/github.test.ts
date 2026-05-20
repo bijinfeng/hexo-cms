@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitHubService } from "../github";
 import { DataProviderError } from "../types";
 import type { HexoPost } from "../types";
@@ -67,7 +67,7 @@ describe("GitHubService", () => {
 
     it("should return posts for markdown files", async () => {
       const rawContent = Buffer.from(
-        "---\ntitle: Test Post\ndate: 2024-01-01\n---\nHello World"
+        "---\ntitle: Test Post\ndate: 2024-01-01\n---\nHello World",
       ).toString("base64");
 
       mockGetContent
@@ -92,16 +92,14 @@ describe("GitHubService", () => {
     it("should use custom directory when provided", async () => {
       mockGetContent.mockResolvedValue({ data: [] });
       await service.getPosts("custom/dir");
-      expect(mockGetContent).toHaveBeenCalledWith(
-        expect.objectContaining({ path: "custom/dir" })
-      );
+      expect(mockGetContent).toHaveBeenCalledWith(expect.objectContaining({ path: "custom/dir" }));
     });
   });
 
   describe("getPost", () => {
     it("should parse frontmatter correctly", async () => {
       const rawContent = Buffer.from(
-        "---\ntitle: My Post\ndate: 2024-01-15\ntags: [react, typescript]\ndraft: false\n---\n# Content\n\nBody text"
+        "---\ntitle: My Post\ndate: 2024-01-15\ntags: [react, typescript]\ndraft: false\n---\n# Content\n\nBody text",
       ).toString("base64");
 
       mockGetContent.mockResolvedValue({
@@ -167,7 +165,7 @@ describe("GitHubService", () => {
         expect.objectContaining({
           path: testPost.path,
           sha: undefined,
-        })
+        }),
       );
     });
 
@@ -179,7 +177,7 @@ describe("GitHubService", () => {
 
       await expect(service.savePost(testPost)).resolves.toBeUndefined();
       expect(mockCreateOrUpdateFileContents).toHaveBeenCalledWith(
-        expect.objectContaining({ sha: "existing-sha" })
+        expect.objectContaining({ sha: "existing-sha" }),
       );
     });
 
@@ -189,7 +187,7 @@ describe("GitHubService", () => {
 
       await expect(service.savePost(testPost, "Custom commit message")).resolves.toBeUndefined();
       expect(mockCreateOrUpdateFileContents).toHaveBeenCalledWith(
-        expect.objectContaining({ message: "Custom commit message" })
+        expect.objectContaining({ message: "Custom commit message" }),
       );
     });
 
@@ -209,9 +207,7 @@ describe("GitHubService", () => {
       mockDeleteFile.mockResolvedValue({ data: {} });
 
       await expect(service.deletePost("source/_posts/test.md")).resolves.toBeUndefined();
-      expect(mockDeleteFile).toHaveBeenCalledWith(
-        expect.objectContaining({ sha: "file-sha" })
-      );
+      expect(mockDeleteFile).toHaveBeenCalledWith(expect.objectContaining({ sha: "file-sha" }));
     });
 
     it("should throw when file has no sha", async () => {

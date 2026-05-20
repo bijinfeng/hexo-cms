@@ -18,10 +18,25 @@ export const seoInspectorManifest: PluginManifest = {
       "seo.settings": {
         id: "seo.settings",
         fields: [
-          { key: "minTitleLength", label: "Minimum title length", type: "string", defaultValue: "10" },
-          { key: "maxTitleLength", label: "Maximum title length", type: "string", defaultValue: "60" },
+          {
+            key: "minTitleLength",
+            label: "Minimum title length",
+            type: "string",
+            defaultValue: "10",
+          },
+          {
+            key: "maxTitleLength",
+            label: "Maximum title length",
+            type: "string",
+            defaultValue: "60",
+          },
           { key: "requireExcerpt", label: "Require excerpt", type: "boolean", defaultValue: true },
-          { key: "requireCategories", label: "Require categories", type: "boolean", defaultValue: true },
+          {
+            key: "requireCategories",
+            label: "Require categories",
+            type: "boolean",
+            defaultValue: true,
+          },
         ],
       },
     },
@@ -45,7 +60,8 @@ export const seoInspectorManifest: PluginManifest = {
         "seo.diag.titleTooShort": "标题过短（{{length}} 字符），建议不少于 {{min}} 字符",
         "seo.diag.titleTooLong": "标题过长（{{length}} 字符），建议不超过 {{max}} 字符",
         "seo.diag.missingExcerpt": "缺少摘要或描述",
-        "seo.diag.missingExcerptHint": "在 frontmatter 添加 excerpt 或 description 有助于社交分享和搜索摘要",
+        "seo.diag.missingExcerptHint":
+          "在 frontmatter 添加 excerpt 或 description 有助于社交分享和搜索摘要",
         "seo.diag.missingCategories": "文章未设置分类",
         "seo.diag.missingCategoriesHint": "设置分类有助于读者浏览相关内容",
         "seo.diag.missingSlug": "缺少 slug",
@@ -64,11 +80,15 @@ export const seoInspectorManifest: PluginManifest = {
         "seo.site.title": "Site SEO Overview",
         "seo.site.noSitemap": "Sitemap not found",
         "seo.diag.missingTitle": "Post is missing a title",
-        "seo.diag.missingTitleHint": "Add a descriptive title to help search engines identify content",
-        "seo.diag.titleTooShort": "Title is too short ({{length}} chars), recommended at least {{min}}",
-        "seo.diag.titleTooLong": "Title is too long ({{length}} chars), recommended at most {{max}}",
+        "seo.diag.missingTitleHint":
+          "Add a descriptive title to help search engines identify content",
+        "seo.diag.titleTooShort":
+          "Title is too short ({{length}} chars), recommended at least {{min}}",
+        "seo.diag.titleTooLong":
+          "Title is too long ({{length}} chars), recommended at most {{max}}",
         "seo.diag.missingExcerpt": "Missing excerpt or description",
-        "seo.diag.missingExcerptHint": "Add excerpt or description in frontmatter for social sharing and search summaries",
+        "seo.diag.missingExcerptHint":
+          "Add excerpt or description in frontmatter for social sharing and search summaries",
         "seo.diag.missingCategories": "Post has no categories set",
         "seo.diag.missingCategoriesHint": "Setting categories helps readers browse related content",
         "seo.diag.missingSlug": "Missing slug",

@@ -18,7 +18,7 @@ export interface DraftStats {
 function parsePositiveInt(value: unknown, fallback: number): number {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.floor(value);
   if (typeof value === "string") {
-    const parsed = parseInt(value, 10);
+    const parsed = Number.parseInt(value, 10);
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
   }
   return fallback;

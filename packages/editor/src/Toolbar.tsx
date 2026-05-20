@@ -1,23 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import type { Editor } from "@tiptap/react";
 import {
   Bold,
   Code,
-  Image as ImageIcon,
   Code2,
+  FileCode,
   Heading1,
-  Table as TableIcon,
+  Image as ImageIcon,
   Italic,
   Link as LinkIcon,
   List,
   ListChecks,
   ListOrdered,
   Minus,
-  FileCode,
   PenLine,
   Quote,
   Strikethrough,
+  Table as TableIcon,
 } from "lucide-react";
-import type { Editor } from "@tiptap/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ToolbarProps {
   editor: Editor | null;

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, AlertTriangle, Info, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import type { DiagnosticsIssue, DiagnosticsReport, DiagnosticsTarget } from "@hexo-cms/core";
-import { usePluginSystem } from "./plugin-provider";
+import { AlertCircle, AlertTriangle, Info, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
+import { usePluginSystem } from "./plugin-provider";
 
 function severityIcon(severity: DiagnosticsIssue["severity"]) {
   switch (severity) {
@@ -11,7 +11,6 @@ function severityIcon(severity: DiagnosticsIssue["severity"]) {
       return <AlertCircle className="h-4 w-4 text-[var(--status-error)]" />;
     case "warn":
       return <AlertTriangle className="h-4 w-4 text-[var(--status-warning)]" />;
-    case "info":
     default:
       return <Info className="h-4 w-4 text-[var(--status-info)]" />;
   }
@@ -23,7 +22,6 @@ function severityLabel(severity: DiagnosticsIssue["severity"]): string {
       return "错误";
     case "warn":
       return "警告";
-    case "info":
     default:
       return "提示";
   }
@@ -93,7 +91,11 @@ export function DiagnosticsPanel({
             ) : null}
           </div>
           <Button variant="ghost" size="sm" onClick={run} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             重新检查
           </Button>
         </div>

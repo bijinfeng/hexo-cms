@@ -19,7 +19,7 @@ const session = {
 
 describe("server-utils auth token lookup", () => {
   it("reads the GitHub access token via drizzle query", async () => {
-    const { __mocks } = await import("./db") as any;
+    const { __mocks } = (await import("./db")) as any;
     __mocks.get.mockReturnValue({ accessToken: "gho_oauth_token" });
 
     const { getGitHubAccessToken } = await import("./server-utils");
@@ -30,7 +30,7 @@ describe("server-utils auth token lookup", () => {
   });
 
   it("returns null when no GitHub account token exists", async () => {
-    const { __mocks } = await import("./db") as any;
+    const { __mocks } = (await import("./db")) as any;
     __mocks.get.mockReturnValue(undefined);
 
     const { getGitHubAccessToken } = await import("./server-utils");
@@ -53,14 +53,18 @@ describe("server-utils auth token lookup", () => {
   });
 
   it("maps Better Auth account lookup failures to a missing GitHub token", async () => {
-    const getAccessToken = vi.fn().mockRejectedValue(Object.assign(new Error("Account not found"), {
-      code: "ACCOUNT_NOT_FOUND",
-    }));
+    const getAccessToken = vi.fn().mockRejectedValue(
+      Object.assign(new Error("Account not found"), {
+        code: "ACCOUNT_NOT_FOUND",
+      }),
+    );
 
-    await expect(getGitHubAccessTokenFromAuth(
-      { getAccessToken },
-      new Headers({ cookie: "better-auth.session_token=session" }),
-    )).resolves.toBeNull();
+    await expect(
+      getGitHubAccessTokenFromAuth(
+        { getAccessToken },
+        new Headers({ cookie: "better-auth.session_token=session" }),
+      ),
+    ).resolves.toBeNull();
   });
 
   it("maps missing GitHub OAuth token to a reauthorization response", async () => {

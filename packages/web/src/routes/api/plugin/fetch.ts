@@ -1,14 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
 import {
+  PLUGIN_HTTP_DEFAULT_TIMEOUT_MS,
+  PLUGIN_HTTP_MAX_RESPONSE_SIZE,
   PermissionBroker,
   assertPluginHttpRequestAllowed,
   sanitizeHeaders,
-  PLUGIN_HTTP_DEFAULT_TIMEOUT_MS,
-  PLUGIN_HTTP_MAX_RESPONSE_SIZE,
 } from "@hexo-cms/core";
+import { createFileRoute } from "@tanstack/react-router";
 import { getWebPluginManifests } from "../../../lib/plugin-host";
-import { getAuth, json } from "../../../lib/server-utils";
 import { appendPluginNetworkAudit } from "../../../lib/plugin-network-audit-db";
+import { getAuth, json } from "../../../lib/server-utils";
 
 interface PluginFetchRequest {
   pluginId?: string;
@@ -49,7 +49,12 @@ export const Route = createFileRoute("/api/plugin/fetch")({
           const permissionBroker = new PermissionBroker(manifests);
           const manifest = manifests.find((plugin) => plugin.id === req.pluginId);
           if (!manifest) return json({ error: "Unknown plugin" }, 403);
-          parsedUrl = assertPluginHttpRequestAllowed(req.pluginId, manifest, permissionBroker, req.url);
+          parsedUrl = assertPluginHttpRequestAllowed(
+            req.pluginId,
+            manifest,
+            permissionBroker,
+            req.url,
+          );
         } catch (error) {
           return json({ error: error instanceof Error ? error.message : "Invalid URL" }, 403);
         }
@@ -71,7 +76,7 @@ export const Route = createFileRoute("/api/plugin/fetch")({
           });
 
           const contentLength = response.headers.get("content-length");
-          if (contentLength && parseInt(contentLength, 10) > PLUGIN_HTTP_MAX_RESPONSE_SIZE) {
+          if (contentLength && Number.parseInt(contentLength, 10) > PLUGIN_HTTP_MAX_RESPONSE_SIZE) {
             appendPluginNetworkAudit(session.user.id, {
               pluginId: auditPluginId,
               url: parsedUrl.toString(),

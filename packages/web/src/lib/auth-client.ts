@@ -1,5 +1,5 @@
-import { createAuthClient } from "better-auth/react";
 import type { AuthClient, AuthSession } from "@hexo-cms/ui/types/auth";
+import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
   baseURL: typeof window !== "undefined" ? window.location.origin : "http://localhost:3000",
@@ -39,12 +39,12 @@ function normalizeSession(session: unknown): AuthSession {
 async function hasGitHubToken(): Promise<boolean | "reauthorization_required"> {
   const response = await fetch("/api/auth/token");
   if (response.ok) {
-    const data = await response.json() as { authenticated?: boolean };
+    const data = (await response.json()) as { authenticated?: boolean };
     return data.authenticated === true;
   }
 
   if (response.status === 401 || response.status === 403) {
-    const data = await response.json().catch(() => null) as { error?: string } | null;
+    const data = (await response.json().catch(() => null)) as { error?: string } | null;
     if (data?.error === "REAUTH_REQUIRED") return "reauthorization_required";
     return false;
   }

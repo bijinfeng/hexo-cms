@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import type { DataProvider } from "@hexo-cms/core";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { Topbar } from "../components/layout/Topbar";
 import { DataProviderProvider } from "../context/data-provider-context";
-import type { DataProvider } from "@hexo-cms/core";
 import { I18nTestWrapper } from "./i18n-test-wrapper";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -34,7 +34,8 @@ const mockDataProvider: DataProvider = {
   getMediaFiles: () => Promise.resolve([]),
   uploadMedia: () => Promise.resolve({ url: "" }),
   deleteMedia: () => Promise.resolve(),
-  getStats: () => Promise.resolve({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+  getStats: () =>
+    Promise.resolve({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
   getThemes: () => Promise.resolve({ currentTheme: "", installedThemes: [] }),
   switchTheme: () => Promise.resolve(),
   getDeployments: () => Promise.resolve([]),
@@ -49,7 +50,7 @@ function renderTopbar(props: Partial<Parameters<typeof Topbar>[0]> = {}) {
       <DataProviderProvider provider={mockDataProvider}>
         <Topbar title="测试" {...props} />
       </DataProviderProvider>
-    </I18nTestWrapper>
+    </I18nTestWrapper>,
   );
 }
 
@@ -71,7 +72,8 @@ describe("Topbar", () => {
 
   it("renders UserMenu when authClient is provided", () => {
     const mockAuthClient = {
-      getSession: () => Promise.resolve({ state: "authenticated" as const, user: { name: "Test" } }),
+      getSession: () =>
+        Promise.resolve({ state: "authenticated" as const, user: { name: "Test" } }),
       startLogin: () => Promise.resolve({ state: "authenticating" as const }),
       signOut: () => Promise.resolve(),
       reauthorize: () => Promise.resolve({ state: "authenticating" as const }),

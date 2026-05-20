@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import type { AuthClient, AuthSession } from "../types/auth";
+import { LogOut, Settings } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
-import { Settings, LogOut } from "lucide-react";
+import type { AuthClient, AuthSession } from "../types/auth";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 interface UserMenuProps {
   authClient: AuthClient;
@@ -45,7 +45,10 @@ export function UserMenu({ authClient, onSignedOut }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity ml-1" aria-label={t("components.userMenu.menuLabel")}>
+        <button
+          className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity ml-1"
+          aria-label={t("components.userMenu.menuLabel")}
+        >
           <Avatar className="w-8 h-8">
             <AvatarImage src={user?.avatarUrl ?? undefined} alt={displayName} />
             <AvatarFallback>{initial}</AvatarFallback>
@@ -64,9 +67,7 @@ export function UserMenu({ authClient, onSignedOut }: UserMenuProps) {
                 {displayName}
               </div>
               {email && (
-                <div className="text-xs text-[var(--text-secondary)] truncate">
-                  {email}
-                </div>
+                <div className="text-xs text-[var(--text-secondary)] truncate">{email}</div>
               )}
             </div>
           </div>

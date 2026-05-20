@@ -1,14 +1,24 @@
-import { BrowserPluginStateStore, type PluginStateStore, type PluginStateStoreValue } from "@hexo-cms/core";
+import {
+  BrowserPluginStateStore,
+  type PluginStateStore,
+  type PluginStateStoreValue,
+} from "@hexo-cms/core";
 import { getElectronAPI } from "../lib/electron-api";
 import { DesktopBackedPluginStore, WebBackedPluginStore } from "./platform-sync-store";
 
-export class WebPluginStateStore extends WebBackedPluginStore<PluginStateStoreValue> implements PluginStateStore {
+export class WebPluginStateStore
+  extends WebBackedPluginStore<PluginStateStoreValue>
+  implements PluginStateStore
+{
   constructor(endpoint = "/api/plugin/state") {
     super({ endpoint, payloadKey: "state", fallback: new BrowserPluginStateStore() });
   }
 }
 
-export class DesktopPluginStateStore extends DesktopBackedPluginStore<PluginStateStoreValue> implements PluginStateStore {
+export class DesktopPluginStateStore
+  extends DesktopBackedPluginStore<PluginStateStoreValue>
+  implements PluginStateStore
+{
   constructor() {
     super({
       loadChannel: "plugin-state:load",

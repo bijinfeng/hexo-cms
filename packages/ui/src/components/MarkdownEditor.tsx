@@ -1,8 +1,8 @@
-import { useMemo, useState, useCallback } from "react";
 import { Editor } from "@hexo-cms/editor";
+import { useCallback, useMemo, useState } from "react";
 import { useDataProvider } from "../context/data-provider-context";
 import { useEditorPreferences } from "../hooks/use-editor-preferences";
-import { countWords, countChars, estimateReadingTime } from "../lib/text-stats";
+import { countChars, countWords, estimateReadingTime } from "../lib/text-stats";
 import { cn } from "../utils";
 
 interface MarkdownEditorProps {
@@ -19,12 +19,15 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
   const charCount = useMemo(() => countChars(value), [value]);
   const readingTime = useMemo(() => estimateReadingTime(wordCount), [wordCount]);
 
-  const handleUploadMedia = useCallback(async (file: File): Promise<string> => {
-    setUploadError("");
-    const path = `source/images/${file.name}`;
-    const result = await dataProvider.uploadMedia(file, path);
-    return result.url;
-  }, [dataProvider]);
+  const handleUploadMedia = useCallback(
+    async (file: File): Promise<string> => {
+      setUploadError("");
+      const path = `source/images/${file.name}`;
+      const result = await dataProvider.uploadMedia(file, path);
+      return result.url;
+    },
+    [dataProvider],
+  );
 
   const handleUploadError = useCallback((error: Error) => {
     setUploadError(`图片上传失败: ${error.message}`);
@@ -57,15 +60,9 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
           "flex items-center justify-end gap-4 px-4 py-1.5 border-t border-[var(--border-default)] bg-[var(--bg-surface)] flex-shrink-0",
         )}
       >
-        <span className="text-xs text-[var(--text-tertiary)]">
-          {wordCount} 字
-        </span>
-        <span className="text-xs text-[var(--text-tertiary)]">
-          {charCount} 字符
-        </span>
-        <span className="text-xs text-[var(--text-tertiary)]">
-          {readingTime}
-        </span>
+        <span className="text-xs text-[var(--text-tertiary)]">{wordCount} 字</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{charCount} 字符</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{readingTime}</span>
       </div>
     </div>
   );

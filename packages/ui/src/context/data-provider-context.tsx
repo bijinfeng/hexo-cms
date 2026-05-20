@@ -1,8 +1,8 @@
-import { createContext, useContext, useRef } from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import type { DataProvider } from '@hexo-cms/core';
-import type { HexoPost } from '@hexo-cms/core';
-import { createQueryClient } from '../lib/query-client';
+import type { DataProvider } from "@hexo-cms/core";
+import type { HexoPost } from "@hexo-cms/core";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createContext, useContext, useRef } from "react";
+import { createQueryClient } from "../lib/query-client";
 
 const DataProviderContext = createContext<DataProvider | null>(null);
 
@@ -25,10 +25,11 @@ const STUB_PROVIDER: DataProvider = {
   deleteTag: () => Promise.resolve({ updatedCount: 0 }),
   mergeTag: () => Promise.resolve({ updatedCount: 0 }),
   getMediaFiles: () => Promise.resolve([]),
-  uploadMedia: () => Promise.resolve({ url: '' }),
+  uploadMedia: () => Promise.resolve({ url: "" }),
   deleteMedia: () => Promise.resolve(),
-  getStats: () => Promise.resolve({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
-  getThemes: () => Promise.resolve({ currentTheme: '', installedThemes: [] }),
+  getStats: () =>
+    Promise.resolve({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+  getThemes: () => Promise.resolve({ currentTheme: "", installedThemes: [] }),
   switchTheme: () => Promise.resolve(),
   getDeployments: () => Promise.resolve([]),
   triggerDeploy: () => Promise.resolve(),
@@ -36,7 +37,10 @@ const STUB_PROVIDER: DataProvider = {
   writeConfigFile: () => Promise.resolve(),
 };
 
-export function DataProviderProvider({ children, provider }: {
+export function DataProviderProvider({
+  children,
+  provider,
+}: {
   children: React.ReactNode;
   provider: DataProvider;
 }) {
@@ -44,9 +48,7 @@ export function DataProviderProvider({ children, provider }: {
 
   return (
     <QueryClientProvider client={queryClientRef.current}>
-      <DataProviderContext.Provider value={provider}>
-        {children}
-      </DataProviderContext.Provider>
+      <DataProviderContext.Provider value={provider}>{children}</DataProviderContext.Provider>
     </QueryClientProvider>
   );
 }
@@ -54,7 +56,9 @@ export function DataProviderProvider({ children, provider }: {
 export function useDataProvider(): DataProvider {
   const provider = useContext(DataProviderContext);
   if (!provider) {
-    console.warn('[hexo-cms] useDataProvider called outside DataProviderProvider — using stub provider');
+    console.warn(
+      "[hexo-cms] useDataProvider called outside DataProviderProvider — using stub provider",
+    );
     return STUB_PROVIDER;
   }
   return provider;

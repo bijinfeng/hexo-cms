@@ -1,19 +1,19 @@
 import {
-  PluginCatalog,
-  PluginHost,
-  StaticPluginSourceResolver,
-  MemoryStore,
   type DataProvider,
-  type PluginConfigValue,
+  MemoryStore,
+  PluginCatalog,
   type PluginConfigStoreValue,
+  type PluginConfigValue,
   type PluginDefinition,
+  PluginHost,
+  type PluginLogStoreValue,
+  type PluginSecretStoreValue,
   type PluginStateStoreValue,
   type PluginStorageStoreValue,
-  type PluginSecretStoreValue,
-  type PluginLogStoreValue,
+  StaticPluginSourceResolver,
 } from "@hexo-cms/core";
-import type { ComponentType } from "react";
 import { officialPlugins } from "@hexo-cms/plugins";
+import type { ComponentType } from "react";
 import { vi } from "vitest";
 
 function createMockDataProvider(overrides: Partial<DataProvider> = {}): DataProvider {
@@ -38,7 +38,9 @@ function createMockDataProvider(overrides: Partial<DataProvider> = {}): DataProv
     getMediaFiles: vi.fn().mockResolvedValue([]),
     uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
     deleteMedia: vi.fn().mockResolvedValue(undefined),
-    getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+    getStats: vi
+      .fn()
+      .mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
     getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),
@@ -57,7 +59,10 @@ export async function createTestPluginHost(
   dataProviderOverrides: Partial<DataProvider> = {},
 ): Promise<PluginHost<ComponentType<{ config?: PluginConfigValue }>>> {
   const catalog = await PluginCatalog.discover<ComponentType<{ config?: PluginConfigValue }>>([
-    new StaticPluginSourceResolver("official", officialPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[]),
+    new StaticPluginSourceResolver(
+      "official",
+      officialPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[],
+    ),
   ]);
 
   return new PluginHost<ComponentType<{ config?: PluginConfigValue }>>({

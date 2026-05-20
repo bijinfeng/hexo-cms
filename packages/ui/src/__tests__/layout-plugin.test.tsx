@@ -1,13 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { DataProvider } from "@hexo-cms/core";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { DataProviderProvider } from "../context/data-provider-context";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CMSLayout } from "../components/layout/CMSLayout";
+import { DataProviderProvider } from "../context/data-provider-context";
 import { PluginProvider } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
-import type { DataProvider } from "@hexo-cms/core";
-import { createTestPluginHost } from "./test-utils";
 import { I18nTestWrapper } from "./i18n-test-wrapper";
+import { createTestPluginHost } from "./test-utils";
 
 vi.mock("@tanstack/react-router", () => ({
   useRouterState: () => ({ location: { pathname: "/media" } }),
@@ -50,7 +50,9 @@ function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider
     getMediaFiles: vi.fn().mockResolvedValue([]),
     uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
     deleteMedia: vi.fn().mockResolvedValue(undefined),
-    getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+    getStats: vi
+      .fn()
+      .mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
     getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),
@@ -117,9 +119,6 @@ describe("CMSLayout plugin policy", () => {
     expect(commentsCard).not.toBeNull();
     await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
 
-    expect(screen.getByRole("link", { name: "评论管理" })).toHaveAttribute(
-      "href",
-      "/comments",
-    );
+    expect(screen.getByRole("link", { name: "评论管理" })).toHaveAttribute("href", "/comments");
   });
 });

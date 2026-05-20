@@ -1,11 +1,11 @@
 import {
-  PermissionBroker,
-  assertPluginHttpRequestAllowed,
-  sanitizeHeaders,
   PLUGIN_HTTP_DEFAULT_TIMEOUT_MS,
   PLUGIN_HTTP_MAX_RESPONSE_SIZE,
+  PermissionBroker,
   type PluginHttpPermissionBroker,
   type PluginManifest,
+  assertPluginHttpRequestAllowed,
+  sanitizeHeaders,
 } from "@hexo-cms/core";
 import type { PluginNetworkAuditEntryInput } from "./desktop-persistence";
 
@@ -80,7 +80,12 @@ async function executePluginFetch(
 
   const manifest = manifests.find((plugin) => plugin.id === req.pluginId);
   if (!manifest) throw new Error("Unknown plugin");
-  const parsedUrl = assertPluginHttpRequestAllowed(req.pluginId, manifest, permissionBroker, req.url);
+  const parsedUrl = assertPluginHttpRequestAllowed(
+    req.pluginId,
+    manifest,
+    permissionBroker,
+    req.url,
+  );
 
   const timeoutMs = req.timeoutMs ?? defaultTimeoutMs;
   const controller = new globalThis.AbortController();
@@ -98,7 +103,7 @@ async function executePluginFetch(
     });
 
     const contentLength = response.headers.get("content-length");
-    if (contentLength && parseInt(contentLength, 10) > maxResponseSize) {
+    if (contentLength && Number.parseInt(contentLength, 10) > maxResponseSize) {
       appendAudit({
         pluginId: auditPluginId,
         url: parsedUrl.toString(),

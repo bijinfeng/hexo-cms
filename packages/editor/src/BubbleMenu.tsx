@@ -1,18 +1,18 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import type { Editor } from "@tiptap/react";
 import { BubbleMenu as TiptapBubbleMenu } from "@tiptap/react/menus";
 import {
   Bold,
-  Italic,
-  Strikethrough,
   Code,
-  Quote,
-  List,
-  ListOrdered,
-  ListChecks,
-  Link as LinkIcon,
   Heading1,
+  Italic,
+  Link as LinkIcon,
+  List,
+  ListChecks,
+  ListOrdered,
+  Quote,
+  Strikethrough,
 } from "lucide-react";
-import type { Editor } from "@tiptap/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface BubbleMenuProps {
   editor: Editor | null;
@@ -59,10 +59,7 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
   ];
 
   return (
-    <TiptapBubbleMenu
-      editor={editor}
-      className="tiptap-bubble-menu"
-    >
+    <TiptapBubbleMenu editor={editor} className="tiptap-bubble-menu">
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -122,7 +119,11 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
                 key={h.level}
                 type="button"
                 onClick={() => {
-                  editor.chain().focus().toggleHeading({ level: h.level as 1 | 2 | 3 | 4 | 5 | 6 }).run();
+                  editor
+                    .chain()
+                    .focus()
+                    .toggleHeading({ level: h.level as 1 | 2 | 3 | 4 | 5 | 6 })
+                    .run();
                   setHeadingMenuOpen(false);
                 }}
                 className={`tiptap-heading-dropdown-item ${editor.isActive("heading", { level: h.level }) ? "is-active" : ""}`}

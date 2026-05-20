@@ -1,8 +1,8 @@
+import type { PluginStorageJsonValue, PluginStorageStoreValue } from "@hexo-cms/core";
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
 import { stringifyJsonColumn, tryParseJsonColumn } from "./json-db";
 import { pluginStorage } from "./schema";
-import type { PluginStorageJsonValue, PluginStorageStoreValue } from "@hexo-cms/core";
 
 export function ensurePluginStorageTable(): void {
   db.run(
@@ -58,6 +58,12 @@ export function savePluginStorage(userId: string, value: PluginStorageStoreValue
 export function deletePluginStorageKey(userId: string, pluginId: string, key: string): void {
   ensurePluginStorageTable();
   db.delete(pluginStorage)
-    .where(and(eq(pluginStorage.userId, userId), eq(pluginStorage.pluginId, pluginId), eq(pluginStorage.key, key)))
+    .where(
+      and(
+        eq(pluginStorage.userId, userId),
+        eq(pluginStorage.pluginId, pluginId),
+        eq(pluginStorage.key, key),
+      ),
+    )
     .run();
 }

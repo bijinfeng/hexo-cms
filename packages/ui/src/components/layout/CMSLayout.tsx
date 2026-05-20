@@ -1,11 +1,11 @@
-import { useState, useMemo, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { type ReactNode, useMemo, useState } from "react";
+import { useI18n } from "../../i18n/I18nProvider";
+import { usePluginSystem } from "../../plugin";
+import type { AuthClient } from "../../types/auth";
+import { cn } from "../../utils";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
-import { cn } from "../../utils";
-import { usePluginSystem } from "../../plugin";
-import { useI18n } from "../../i18n/I18nProvider";
-import type { AuthClient } from "../../types/auth";
 
 export function CMSLayout({
   children,
@@ -40,9 +40,9 @@ export function CMSLayout({
     };
     return titles[pathname] ?? "";
   }, [pathname, t]);
-  const showTopbarSearch = pathname !== "/media" || snapshot.extensions.uiFlags.some(
-    (flag) => flag.flag === "media.search",
-  );
+  const showTopbarSearch =
+    pathname !== "/media" ||
+    snapshot.extensions.uiFlags.some((flag) => flag.flag === "media.search");
   const isMac = /Mac|Darwin/i.test(navigator.userAgent || navigator.platform);
 
   return (
@@ -68,14 +68,14 @@ export function CMSLayout({
         <div
           className={cn(
             "fixed inset-y-0 left-0 z-30 lg:relative lg:z-auto transition-transform duration-300",
-            mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed((v) => !v)}
-          pluginItems={snapshot.extensions.sidebarItems}
-        />
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() => setSidebarCollapsed((v) => !v)}
+            pluginItems={snapshot.extensions.sidebarItems}
+          />
         </div>
 
         {/* Main content */}
@@ -88,9 +88,7 @@ export function CMSLayout({
             authClient={authClient}
             onSignedOut={onSignedOut}
           />
-          <main className="flex-1 overflow-y-auto p-6">
-            {children}
-          </main>
+          <main className="flex-1 overflow-y-auto p-6">{children}</main>
         </div>
       </div>
     </div>

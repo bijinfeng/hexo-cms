@@ -1,5 +1,11 @@
-import type { HexoPost, PluginConfigValue, PluginEventHandler, PluginStorageAPI, PluginStorageJsonValue } from "@hexo-cms/core";
-import { checkDraft, type DraftIssue } from "./draft-checker";
+import type {
+  HexoPost,
+  PluginConfigValue,
+  PluginEventHandler,
+  PluginStorageAPI,
+  PluginStorageJsonValue,
+} from "@hexo-cms/core";
+import { type DraftIssue, checkDraft } from "./draft-checker";
 
 export interface DraftAlert {
   postPath: string;

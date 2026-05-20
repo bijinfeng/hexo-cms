@@ -1,7 +1,3 @@
-import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { SettingsPage, type SettingsSectionDef } from "@hexo-cms/ui/pages/settings";
-import { desktopAuthClient } from "../lib/desktop-auth-client";
-import { RefreshCw } from "lucide-react";
 import {
   Button,
   Card,
@@ -15,13 +11,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@hexo-cms/ui";
+import { SettingsPage, type SettingsSectionDef } from "@hexo-cms/ui/pages/settings";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { RefreshCw } from "lucide-react";
 import { useUpdater } from "../hooks/useUpdater";
+import { desktopAuthClient } from "../lib/desktop-auth-client";
 
 function UpdatesSection() {
   const updater = useUpdater();
   if (!updater) return null;
 
-  const { status, progress, version, error, channel, currentVersion, checkForUpdates, downloadUpdate, quitAndInstall, setChannel } = updater;
+  const {
+    status,
+    progress,
+    version,
+    error,
+    channel,
+    currentVersion,
+    checkForUpdates,
+    downloadUpdate,
+    quitAndInstall,
+    setChannel,
+  } = updater;
 
   return (
     <div className="space-y-4">
@@ -33,7 +44,9 @@ function UpdatesSection() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[var(--text-secondary)]">当前版本</span>
-            <span className="text-sm font-medium text-[var(--text-primary)]">v{currentVersion || "..."}</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              v{currentVersion || "..."}
+            </span>
           </div>
 
           <div className="flex items-center justify-between">
@@ -63,8 +76,15 @@ function UpdatesSection() {
             disabled={status === "checking" || status === "downloading"}
             className="w-full"
           >
-            <RefreshCw size={16} className={status === "checking" || status === "downloading" ? "animate-spin" : ""} />
-            {status === "checking" ? "检查中..." : status === "downloading" ? "下载中..." : "检查更新"}
+            <RefreshCw
+              size={16}
+              className={status === "checking" || status === "downloading" ? "animate-spin" : ""}
+            />
+            {status === "checking"
+              ? "检查中..."
+              : status === "downloading"
+                ? "下载中..."
+                : "检查更新"}
           </Button>
 
           {status === "available" && version && (

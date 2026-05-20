@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
 import type { HexoPost } from "@hexo-cms/core";
 import { getErrorMessage } from "@hexo-cms/core";
+import { createFileRoute } from "@tanstack/react-router";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 function resolvePostPath(post: Partial<HexoPost>, postsDir: string): string | null {
@@ -45,7 +45,8 @@ export const Route = createFileRoute("/api/github/posts")({
 
         const post: HexoPost = {
           path,
-          title: typeof body.title === "string" ? body.title : String(body.frontmatter?.title ?? ""),
+          title:
+            typeof body.title === "string" ? body.title : String(body.frontmatter?.title ?? ""),
           date: typeof body.date === "string" ? body.date : String(body.frontmatter?.date ?? ""),
           content: body.content,
           frontmatter: body.frontmatter ?? {},
@@ -64,7 +65,9 @@ export const Route = createFileRoute("/api/github/posts")({
         if (!ctx.ok) return githubCtxErrorResponse(ctx.error);
 
         const body = (await request.json()) as { path?: string } | string[];
-        const paths = Array.isArray(body) ? body : [body.path].filter((path): path is string => typeof path === "string");
+        const paths = Array.isArray(body)
+          ? body
+          : [body.path].filter((path): path is string => typeof path === "string");
         if (paths.length === 0) return json({ error: "INVALID_PATH" }, 400);
 
         try {

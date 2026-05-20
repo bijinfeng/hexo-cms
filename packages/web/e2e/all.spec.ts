@@ -1,4 +1,10 @@
-import { chromium, type Browser, type BrowserContext, type Locator, type Page } from "@playwright/test";
+import {
+  type Browser,
+  type BrowserContext,
+  type Locator,
+  type Page,
+  chromium,
+} from "@playwright/test";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setupAnonymousApp, setupAuthenticatedApp } from "./helpers";
 

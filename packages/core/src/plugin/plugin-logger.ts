@@ -1,7 +1,7 @@
-import { redactPluginRuntimeText, redactPluginRuntimeValue } from "./redaction";
-import type { PluginLogEntry, PluginLogLevel, PluginLogStoreValue, PluginLogger } from "./types";
 import { cloneValue } from "../utils";
+import { redactPluginRuntimeText, redactPluginRuntimeValue } from "./redaction";
 import { BrowserJsonStore, MemoryStore } from "./stores";
+import type { PluginLogEntry, PluginLogLevel, PluginLogStoreValue, PluginLogger } from "./types";
 
 export interface PluginLogStore {
   load(): PluginLogStoreValue;
@@ -9,11 +9,18 @@ export interface PluginLogStore {
 }
 
 export class MemoryPluginLogStore extends MemoryStore<PluginLogStoreValue> {
-  load(): PluginLogStoreValue { return cloneValue(super.load()); }
-  save(value: PluginLogStoreValue): void { super.save(cloneValue(value)); }
+  load(): PluginLogStoreValue {
+    return cloneValue(super.load());
+  }
+  save(value: PluginLogStoreValue): void {
+    super.save(cloneValue(value));
+  }
 }
 
-export class BrowserPluginLogStore extends BrowserJsonStore<PluginLogStoreValue> implements PluginLogStore {
+export class BrowserPluginLogStore
+  extends BrowserJsonStore<PluginLogStoreValue>
+  implements PluginLogStore
+{
   constructor(key = "hexo-cms:plugin-logs") {
     super(key);
   }
@@ -29,10 +36,12 @@ export function createPluginLogger(
   options: PluginLogAppendOptions = {},
 ): PluginLogger {
   return {
-    debug: (message, meta) => appendPluginLogEntry(pluginId, "debug", message, meta, store, options),
+    debug: (message, meta) =>
+      appendPluginLogEntry(pluginId, "debug", message, meta, store, options),
     info: (message, meta) => appendPluginLogEntry(pluginId, "info", message, meta, store, options),
     warn: (message, meta) => appendPluginLogEntry(pluginId, "warn", message, meta, store, options),
-    error: (message, meta) => appendPluginLogEntry(pluginId, "error", message, meta, store, options),
+    error: (message, meta) =>
+      appendPluginLogEntry(pluginId, "error", message, meta, store, options),
   };
 }
 
@@ -63,12 +72,18 @@ export function appendPluginLogEntry(
   return entry;
 }
 
-export function readPluginLogs(pluginId: string, store: PluginLogStore, limit?: number): PluginLogEntry[] {
+export function readPluginLogs(
+  pluginId: string,
+  store: PluginLogStore,
+  limit?: number,
+): PluginLogEntry[] {
   const entries = store.load()[pluginId] ?? [];
   return typeof limit === "number" ? entries.slice(-limit) : entries;
 }
 
-function sanitizePluginLogMeta(meta: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+function sanitizePluginLogMeta(
+  meta: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
   if (!meta) return undefined;
   return redactPluginRuntimeValue(meta) as Record<string, unknown>;
 }

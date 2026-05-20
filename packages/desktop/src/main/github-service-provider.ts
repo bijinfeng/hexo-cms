@@ -15,7 +15,7 @@ export interface GitHubServiceProviderOptions<TService = GitHubService> {
 export function createGitHubServiceProvider<TService = GitHubService>({
   loadConfig,
   getAccessToken,
-  createService = ((token, config) => new GitHubService(token, config) as TService),
+  createService = (token, config) => new GitHubService(token, config) as TService,
 }: GitHubServiceProviderOptions<TService>): GitHubServiceProvider<TService> {
   let cachedService: TService | null = null;
   let cachedToken: string | null = null;

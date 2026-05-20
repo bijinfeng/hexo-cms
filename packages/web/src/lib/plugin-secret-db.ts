@@ -1,8 +1,8 @@
+import type { PluginSecretStoreValue } from "@hexo-cms/core";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { parseJsonColumn, stringifyJsonColumn } from "./json-db";
 import { pluginSecrets } from "./schema";
-import type { PluginSecretStoreValue } from "@hexo-cms/core";
 
 export function ensurePluginSecretTable(): void {
   db.run(
@@ -40,7 +40,12 @@ export function hasPluginSecret(userId: string, pluginId: string, key: string): 
   return typeof loadPluginSecrets(userId)[pluginId]?.[key] === "string";
 }
 
-export function setPluginSecret(userId: string, pluginId: string, key: string, value: string): void {
+export function setPluginSecret(
+  userId: string,
+  pluginId: string,
+  key: string,
+  value: string,
+): void {
   const secrets = loadPluginSecrets(userId);
   savePluginSecrets(userId, {
     ...secrets,

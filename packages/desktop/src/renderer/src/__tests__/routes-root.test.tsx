@@ -1,7 +1,7 @@
-import { act, type ComponentType, type ReactElement, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthSession } from "@hexo-cms/ui/types/auth";
+import { type ComponentType, type ReactElement, type ReactNode, act } from "react";
+import { type Root, createRoot } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigateMock = vi.fn();
 let pathname = "/";
@@ -51,9 +51,22 @@ vi.mock("../lib/desktop-data-provider-instance", () => ({
 }));
 
 vi.mock("../lib/plugin-host", () => ({
-  createDesktopPluginHost: vi.fn(() => Promise.resolve({
-    snapshot: () => ({ plugins: [], extensions: { commands: [], diagnostics: [], dashboardWidgets: [], events: [], sidebarItems: [], settingsPanels: [], uiFlags: [] } }),
-  })),
+  createDesktopPluginHost: vi.fn(() =>
+    Promise.resolve({
+      snapshot: () => ({
+        plugins: [],
+        extensions: {
+          commands: [],
+          diagnostics: [],
+          dashboardWidgets: [],
+          events: [],
+          sidebarItems: [],
+          settingsPanels: [],
+          uiFlags: [],
+        },
+      }),
+    }),
+  ),
 }));
 
 async function renderElement(element: ReactElement) {

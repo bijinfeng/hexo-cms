@@ -1,15 +1,23 @@
+import {
+  type OctokitLike,
+  getRepositoryValidationHttpStatus,
+  validateHexoRepository,
+} from "@hexo-cms/core";
 import { createFileRoute } from "@tanstack/react-router";
-import { getRepositoryValidationHttpStatus, validateHexoRepository, type OctokitLike } from "@hexo-cms/core";
 import { getAuth, getGitHubAccessTokenFromAuth, json } from "../../../lib/server-utils";
 
-function isRepositorySelection(input: unknown): input is { owner: string; repo: string; branch?: string } {
+function isRepositorySelection(
+  input: unknown,
+): input is { owner: string; repo: string; branch?: string } {
   if (typeof input !== "object" || input === null) return false;
   const selection = input as { owner?: unknown; repo?: unknown; branch?: unknown };
-  return typeof selection.owner === "string"
-    && selection.owner.trim().length > 0
-    && typeof selection.repo === "string"
-    && selection.repo.trim().length > 0
-    && (selection.branch === undefined || typeof selection.branch === "string");
+  return (
+    typeof selection.owner === "string" &&
+    selection.owner.trim().length > 0 &&
+    typeof selection.repo === "string" &&
+    selection.repo.trim().length > 0 &&
+    (selection.branch === undefined || typeof selection.branch === "string")
+  );
 }
 
 export const Route = createFileRoute("/api/onboarding/validate")({
@@ -28,14 +36,17 @@ export const Route = createFileRoute("/api/onboarding/validate")({
           return json({ error: "INVALID_REPOSITORY_SELECTION" }, 400);
         }
         const { Octokit } = await import("octokit");
-        const validation = await validateHexoRepository(new Octokit({
-          auth: accessToken,
-          headers: { "X-GitHub-Api-Version": "2022-11-28" },
-        }) as OctokitLike, {
-          owner: selection.owner.trim(),
-          repo: selection.repo.trim(),
-          branch: selection.branch?.trim() || undefined,
-        });
+        const validation = await validateHexoRepository(
+          new Octokit({
+            auth: accessToken,
+            headers: { "X-GitHub-Api-Version": "2022-11-28" },
+          }) as OctokitLike,
+          {
+            owner: selection.owner.trim(),
+            repo: selection.repo.trim(),
+            branch: selection.branch?.trim() || undefined,
+          },
+        );
 
         const status = getRepositoryValidationHttpStatus(validation);
         const payload = validation.error ? { error: validation.error, validation } : { validation };

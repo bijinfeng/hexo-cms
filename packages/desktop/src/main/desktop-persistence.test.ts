@@ -1,8 +1,8 @@
-import { mkdtempSync, readFileSync, rmSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createDesktopPersistence, type KeychainAdapter } from "./desktop-persistence";
+import { type KeychainAdapter, createDesktopPersistence } from "./desktop-persistence";
 
 let tempDir: string | null = null;
 
@@ -44,7 +44,9 @@ describe("desktop persistence", () => {
 
     persistence.saveConfig({ owner: "hexo", repo: "blog", branch: "main" });
     persistence.savePluginStorage({ pluginA: { count: 2 } });
-    persistence.savePluginState({ pluginA: { id: "pluginA", version: "1.0.0", origin: "official", state: "enabled" } });
+    persistence.savePluginState({
+      pluginA: { id: "pluginA", version: "1.0.0", origin: "official", state: "enabled" },
+    });
 
     expect(persistence.loadConfig()).toEqual({ owner: "hexo", repo: "blog", branch: "main" });
     expect(persistence.loadPluginStorage()).toEqual({ pluginA: { count: 2 } });
@@ -65,7 +67,12 @@ describe("desktop persistence", () => {
     await expect(persistence.loadPluginSecrets()).resolves.toEqual({});
     await expect(persistence.hasPluginSecret("pluginA", "token")).resolves.toBe(false);
 
-    await persistence.mutatePluginSecret({ op: "set", pluginId: "pluginA", key: "token", value: "secret" });
+    await persistence.mutatePluginSecret({
+      op: "set",
+      pluginId: "pluginA",
+      key: "token",
+      value: "secret",
+    });
     await expect(persistence.hasPluginSecret("pluginA", "token")).resolves.toBe(true);
 
     await persistence.mutatePluginSecret({ op: "delete", pluginId: "pluginA", key: "token" });
@@ -87,9 +94,25 @@ describe("desktop persistence", () => {
       maxAuditEntries: 2,
     });
 
-    persistence.appendPluginNetworkAudit({ pluginId: "pluginA", url: "https://a.test", method: "GET", status: 200 });
-    persistence.appendPluginNetworkAudit({ pluginId: "pluginA", url: "https://b.test", method: "POST", status: 201 });
-    persistence.appendPluginNetworkAudit({ pluginId: "pluginB", url: "https://c.test", method: "GET", status: 500, error: "boom" });
+    persistence.appendPluginNetworkAudit({
+      pluginId: "pluginA",
+      url: "https://a.test",
+      method: "GET",
+      status: 200,
+    });
+    persistence.appendPluginNetworkAudit({
+      pluginId: "pluginA",
+      url: "https://b.test",
+      method: "POST",
+      status: 201,
+    });
+    persistence.appendPluginNetworkAudit({
+      pluginId: "pluginB",
+      url: "https://c.test",
+      method: "GET",
+      status: 500,
+      error: "boom",
+    });
 
     expect(persistence.listPluginNetworkAudit()).toEqual([
       {

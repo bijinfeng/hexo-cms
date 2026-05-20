@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { SettingsPage } from "@hexo-cms/ui/pages/settings";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { webAuthClient } from "../lib/auth-client";
 
 function WebSettingsPage() {

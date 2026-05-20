@@ -1,7 +1,7 @@
+import { Button, useI18n, usePluginDataProvider, usePluginSystem } from "@hexo-cms/ui";
+import { Copy, FileArchive, FileText, Loader2, Paperclip } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ATTACHMENTS_HELPER_PLUGIN_ID } from "../manifest";
-import { Copy, FileArchive, FileText, Loader2, Paperclip } from "lucide-react";
-import { Button, useI18n, usePluginDataProvider, usePluginSystem } from "@hexo-cms/ui";
 
 const ATTACHMENT_EXTS = new Set([
   "pdf",
@@ -72,7 +72,9 @@ export function AttachmentsSummaryWidget() {
   );
 
   async function copyLink(item: MediaItem) {
-    await executePluginCommand(ATTACHMENTS_HELPER_PLUGIN_ID, "attachments.copyLink", [`[${item.name}](/${item.path})`]);
+    await executePluginCommand(ATTACHMENTS_HELPER_PLUGIN_ID, "attachments.copyLink", [
+      `[${item.name}](/${item.path})`,
+    ]);
     setCopiedPath(item.path);
     window.setTimeout(() => setCopiedPath(""), 1800);
   }
@@ -102,14 +104,18 @@ export function AttachmentsSummaryWidget() {
             <Paperclip size={14} />
             {t("attachments.widget.attachmentCount")}
           </div>
-          <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{attachments.length}</div>
+          <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
+            {attachments.length}
+          </div>
         </div>
         <div className="rounded-lg bg-[var(--bg-muted)] p-3">
           <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
             <FileArchive size={14} />
             {t("attachments.widget.totalSize")}
           </div>
-          <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{formatSize(totalSize)}</div>
+          <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
+            {formatSize(totalSize)}
+          </div>
         </div>
       </div>
 
@@ -121,16 +127,32 @@ export function AttachmentsSummaryWidget() {
       ) : (
         <div className="space-y-2">
           {attachments.map((item) => (
-            <div key={item.path} className="flex items-center gap-3 rounded-lg border border-[var(--border-default)] p-2">
+            <div
+              key={item.path}
+              className="flex items-center gap-3 rounded-lg border border-[var(--border-default)] p-2"
+            >
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--brand-primary-subtle)] text-[var(--brand-primary)]">
                 <FileText size={14} />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-[var(--text-primary)]">{item.name}</div>
+                <div className="truncate text-sm font-medium text-[var(--text-primary)]">
+                  {item.name}
+                </div>
                 <div className="truncate text-xs text-[var(--text-tertiary)]">{item.path}</div>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => copyLink(item)} title={t("attachments.widget.copyLink")}>
-                {copiedPath === item.path ? <span className="text-xs text-[var(--status-success)]">{t("attachments.widget.copied")}</span> : <Copy size={14} />}
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => copyLink(item)}
+                title={t("attachments.widget.copyLink")}
+              >
+                {copiedPath === item.path ? (
+                  <span className="text-xs text-[var(--status-success)]">
+                    {t("attachments.widget.copied")}
+                  </span>
+                ) : (
+                  <Copy size={14} />
+                )}
               </Button>
             </div>
           ))}

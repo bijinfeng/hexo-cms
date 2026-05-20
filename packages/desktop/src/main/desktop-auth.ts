@@ -1,20 +1,21 @@
 import type { AuthSession } from "@hexo-cms/ui/types/auth";
 import {
+  type StoredOAuthSession,
   createAnonymousSession,
   createAuthenticatedSession,
   createDeviceFlowSession,
   fetchGitHubUser as defaultFetchGitHubUser,
-  parseStoredOAuthSession,
   pollGitHubDeviceFlowToken as defaultPollGitHubDeviceFlowToken,
-  serializeStoredOAuthSession,
   startGitHubDeviceFlow as defaultStartGitHubDeviceFlow,
-  type StoredOAuthSession,
+  parseStoredOAuthSession,
+  serializeStoredOAuthSession,
 } from "./auth";
 import type { KeychainAdapter } from "./desktop-persistence";
 
 const DEFAULT_OAUTH_SESSION_ACCOUNT = "github-oauth-session";
 const DEFAULT_LEGACY_TOKEN_ACCOUNT = "github-token";
-const DEFAULT_POLL_SLEEP_MS = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const DEFAULT_POLL_SLEEP_MS = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export interface DesktopAuthManager {
   getSession(): Promise<AuthSession>;
@@ -53,7 +54,10 @@ export function createDesktopAuthManager({
   pollGitHubDeviceFlowToken = defaultPollGitHubDeviceFlowToken,
   fetchGitHubUser = defaultFetchGitHubUser,
 }: DesktopAuthManagerOptions): DesktopAuthManager {
-  let activeDeviceFlow: { deviceCode: string; deviceFlow: NonNullable<AuthSession["deviceFlow"]> } | null = null;
+  let activeDeviceFlow: {
+    deviceCode: string;
+    deviceFlow: NonNullable<AuthSession["deviceFlow"]>;
+  } | null = null;
   let lastDeviceFlowError: string | null = null;
   let pollingDeviceFlow = false;
 
@@ -69,7 +73,11 @@ export function createDesktopAuthManager({
 
   async function saveStoredOAuthSession(session: StoredOAuthSession): Promise<void> {
     const keychainClient = await keychain();
-    await keychainClient.setPassword(keytarService, oauthSessionAccount, serializeStoredOAuthSession(session));
+    await keychainClient.setPassword(
+      keytarService,
+      oauthSessionAccount,
+      serializeStoredOAuthSession(session),
+    );
   }
 
   async function deleteStoredOAuthSession(): Promise<void> {

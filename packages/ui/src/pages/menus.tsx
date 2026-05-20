@@ -1,26 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
-import { useDataProvider } from "../context/data-provider-context";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Skeleton } from "../components/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
 import {
   DndContext,
-  closestCenter,
+  type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
+  closestCenter,
   useSensor,
   useSensors,
-  type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -30,16 +15,31 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  Plus,
-  GripVertical,
-  Edit3,
-  Trash2,
-  Save,
-  Loader2,
   AlertCircle,
+  Edit3,
   Globe,
+  GripVertical,
+  Loader2,
+  Plus,
+  Save,
   Search,
+  Trash2,
 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Skeleton } from "../components/skeleton";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { useDataProvider } from "../context/data-provider-context";
 import { useI18n } from "../i18n/I18nProvider";
 
 interface MenuItem {
@@ -51,13 +51,46 @@ interface MenuItem {
 }
 
 const COMMON_ICONS = [
-  "home", "archive", "tags", "user", "folder", "folder-open",
-  "rss", "github", "twitter", "mail", "link", "bookmark",
-  "heart", "star", "search", "globe", "calendar", "clock",
-  "camera", "image", "video", "music", "file", "file-text",
-  "settings", "tool", "coffee", "sun", "moon", "zap",
-  "bell", "message-circle", "phone", "map-pin", "briefcase",
-  "award", "book", "code", "pen-tool", "terminal",
+  "home",
+  "archive",
+  "tags",
+  "user",
+  "folder",
+  "folder-open",
+  "rss",
+  "github",
+  "twitter",
+  "mail",
+  "link",
+  "bookmark",
+  "heart",
+  "star",
+  "search",
+  "globe",
+  "calendar",
+  "clock",
+  "camera",
+  "image",
+  "video",
+  "music",
+  "file",
+  "file-text",
+  "settings",
+  "tool",
+  "coffee",
+  "sun",
+  "moon",
+  "zap",
+  "bell",
+  "message-circle",
+  "phone",
+  "map-pin",
+  "briefcase",
+  "award",
+  "book",
+  "code",
+  "pen-tool",
+  "terminal",
 ];
 
 function generateId() {
@@ -122,14 +155,9 @@ interface SortableMenuItemProps {
 }
 
 function SortableMenuItem({ item, onEdit, onDelete }: SortableMenuItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -161,7 +189,9 @@ function SortableMenuItem({ item, onEdit, onDelete }: SortableMenuItemProps) {
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-xs text-[var(--text-tertiary)] font-mono">{item.url}</span>
-          <Badge variant="default" className="text-[10px] py-0 px-1.5">{item.icon}</Badge>
+          <Badge variant="default" className="text-[10px] py-0 px-1.5">
+            {item.icon}
+          </Badge>
         </div>
       </div>
 
@@ -235,10 +265,15 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
 
         <div className="space-y-4 mt-2">
           <div>
-            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">{t("menus.keyLabel")}</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">
+              {t("menus.keyLabel")}
+            </label>
             <Input
               value={key}
-              onChange={(e) => { setKey(e.target.value); setLabel(e.target.value); }}
+              onChange={(e) => {
+                setKey(e.target.value);
+                setLabel(e.target.value);
+              }}
               placeholder="home"
               className="h-10 bg-[var(--bg-base)]"
               disabled={isEdit}
@@ -247,7 +282,9 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
           </div>
 
           <div>
-            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">{t("menus.displayName")}</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">
+              {t("menus.displayName")}
+            </label>
             <Input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -257,7 +294,9 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
           </div>
 
           <div>
-            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">{t("menus.linkLabel")}</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">
+              {t("menus.linkLabel")}
+            </label>
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -268,7 +307,12 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
 
           <div>
             <label className="text-xs font-medium text-[var(--text-secondary)] mb-2 block">
-              {t("menus.iconLabel")} {icon && <Badge variant="default" className="ml-1 text-[10px] py-0 px-1.5">{icon}</Badge>}
+              {t("menus.iconLabel")}{" "}
+              {icon && (
+                <Badge variant="default" className="ml-1 text-[10px] py-0 px-1.5">
+                  {icon}
+                </Badge>
+              )}
             </label>
             <div className="flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] focus-within:border-[var(--brand-primary)] transition-colors mb-2">
               <Search size={14} className="text-[var(--text-tertiary)] flex-shrink-0" />
@@ -303,8 +347,19 @@ function MenuItemDialog({ open, onOpenChange, onSave, initial, isSaving }: MenuI
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={() => onSave({ key: key.trim(), label: label.trim(), url: url.trim(), icon: icon.trim() })} disabled={!canSave || isSaving}>
-            {isSaving ? <Loader2 size={14} className="animate-spin" /> : isEdit ? t("menus.saveEdit") : t("menus.addBtn")}
+          <Button
+            onClick={() =>
+              onSave({ key: key.trim(), label: label.trim(), url: url.trim(), icon: icon.trim() })
+            }
+            disabled={!canSave || isSaving}
+          >
+            {isSaving ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : isEdit ? (
+              t("menus.saveEdit")
+            ) : (
+              t("menus.addBtn")
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -331,16 +386,22 @@ function DeleteConfirmDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("menus.deleteTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("menus.deleteMessage", { name: itemLabel })}
-          </DialogDescription>
+          <DialogDescription>{t("menus.deleteMessage", { name: itemLabel })}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isDeleting}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={onConfirm} disabled={isDeleting} className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90">
-            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : t("common.confirmDelete")}
+          <Button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="bg-[var(--status-error)] hover:bg-[var(--status-error)]/90"
+          >
+            {isDeleting ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              t("common.confirmDelete")
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -365,7 +426,7 @@ export function MenusPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   useEffect(() => {
@@ -419,16 +480,9 @@ export function MenusPage() {
 
   function handleSaveItem(values: Pick<MenuItem, "key" | "label" | "url" | "icon">) {
     if (editingItem) {
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === editingItem.id ? { ...i, ...values } : i
-        )
-      );
+      setItems((prev) => prev.map((i) => (i.id === editingItem.id ? { ...i, ...values } : i)));
     } else {
-      setItems((prev) => [
-        ...prev,
-        { id: generateId(), ...values },
-      ]);
+      setItems((prev) => [...prev, { id: generateId(), ...values }]);
     }
     setEditDialogOpen(false);
   }
@@ -467,7 +521,9 @@ export function MenusPage() {
         <Skeleton width={128} height={28} />
         <Skeleton width={256} />
         <div className="space-y-3 mt-4">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} variant="card" height={64} />)}
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} variant="card" height={64} />
+          ))}
         </div>
       </div>
     );
@@ -478,7 +534,9 @@ export function MenusPage() {
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <AlertCircle className="w-12 h-12 text-[var(--status-error)]" />
         <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-        <Button variant="outline" onClick={loadConfig}>{t("common.retry")}</Button>
+        <Button variant="outline" onClick={loadConfig}>
+          {t("common.retry")}
+        </Button>
       </div>
     );
   }
@@ -553,11 +611,7 @@ export function MenusPage() {
           </CardContent>
         </Card>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-3">
               {items.map((item) => (
@@ -575,10 +629,14 @@ export function MenusPage() {
 
       <Card className="border-dashed">
         <CardContent className="p-6">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">{t("menus.configNote")}</h3>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">
+            {t("menus.configNote")}
+          </h3>
           <p className="text-xs text-[var(--text-tertiary)] leading-relaxed">
             {t("menus.configNoteContent").split("<code>")[0]}
-            <code className="px-1 py-0.5 rounded bg-[var(--bg-muted)] text-[var(--text-secondary)]">_config.yml</code>
+            <code className="px-1 py-0.5 rounded bg-[var(--bg-muted)] text-[var(--text-secondary)]">
+              _config.yml
+            </code>
             {t("menus.configNoteContent").split("</code>")[1]}
           </p>
         </CardContent>

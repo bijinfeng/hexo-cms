@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { validatePluginManifest } from "@hexo-cms/core";
+import { describe, expect, it } from "vitest";
 import { officialPlugins } from "../official";
 
 describe("official plugins", () => {

@@ -1,14 +1,17 @@
-import type { Octokit as OctokitType } from "octokit";
-import { GitHubService, GITHUB_API_VERSION } from "@hexo-cms/core";
+import { GITHUB_API_VERSION, GitHubService } from "@hexo-cms/core";
 import type { GitHubConfig } from "@hexo-cms/core";
-import { eq, and, desc } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
+import type { Octokit as OctokitType } from "octokit";
 import { db } from "./db";
 import { account, githubConfig } from "./schema";
 
 export type GitHubCtxError = "unauthorized" | "config_missing" | "reauthorization_required";
 
 export function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 interface PluginStoreHandlersOptions<T> {
@@ -72,9 +75,10 @@ export async function getGitHubAccessTokenFromAuth(
       headers,
     });
   } catch (error) {
-    const code = typeof error === "object" && error !== null && "code" in error
-      ? String((error as { code?: unknown }).code)
-      : "";
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? String((error as { code?: unknown }).code)
+        : "";
     if (code === "ACCOUNT_NOT_FOUND" || code === "FAILED_TO_GET_ACCESS_TOKEN") {
       return null;
     }

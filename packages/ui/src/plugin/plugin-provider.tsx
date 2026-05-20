@@ -1,4 +1,3 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ComponentType } from "react";
 import type {
   DiagnosticsReport,
   DiagnosticsTarget,
@@ -9,6 +8,14 @@ import type {
   PluginRuntimeErrorInput,
   RegisteredDashboardWidget,
 } from "@hexo-cms/core";
+import {
+  type ComponentType,
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { DataProviderProvider, useDataProvider } from "../context/data-provider-context";
 import { withPluginEvents } from "./plugin-event-data-provider";
 
@@ -19,9 +26,15 @@ interface PluginContextValue {
   disablePlugin: (pluginId: string) => void;
   updatePluginConfig: (pluginId: string, config: PluginConfigValue) => void;
   recordPluginError: (pluginId: string, error: PluginRuntimeErrorInput) => void;
-  executePluginCommand: (pluginId: string, commandId: string, args?: unknown[]) => Promise<PluginCommandExecutionResult>;
+  executePluginCommand: (
+    pluginId: string,
+    commandId: string,
+    args?: unknown[],
+  ) => Promise<PluginCommandExecutionResult>;
   runDiagnostics: (target: DiagnosticsTarget) => Promise<DiagnosticsReport[]>;
-  getDashboardWidgetRenderer: (widget: RegisteredDashboardWidget) => ComponentType<{ config?: PluginConfigValue }> | undefined;
+  getDashboardWidgetRenderer: (
+    widget: RegisteredDashboardWidget,
+  ) => ComponentType<{ config?: PluginConfigValue }> | undefined;
   setPluginLocale: (locale: string) => void;
 }
 
@@ -48,65 +61,102 @@ export function PluginProvider({
     [dataProvider, host],
   );
 
-  const enablePlugin = useCallback((pluginId: string) => {
-    setSnapshot(host.enablePlugin(pluginId));
-    onStateChange?.();
-  }, [host, onStateChange]);
+  const enablePlugin = useCallback(
+    (pluginId: string) => {
+      setSnapshot(host.enablePlugin(pluginId));
+      onStateChange?.();
+    },
+    [host, onStateChange],
+  );
 
-  const disablePlugin = useCallback((pluginId: string) => {
-    setSnapshot(host.disablePlugin(pluginId));
-    onStateChange?.();
-  }, [host, onStateChange]);
+  const disablePlugin = useCallback(
+    (pluginId: string) => {
+      setSnapshot(host.disablePlugin(pluginId));
+      onStateChange?.();
+    },
+    [host, onStateChange],
+  );
 
-  const updatePluginConfig = useCallback((pluginId: string, config: PluginConfigValue) => {
-    setSnapshot(host.updatePluginConfig(pluginId, config));
-  }, [host]);
+  const updatePluginConfig = useCallback(
+    (pluginId: string, config: PluginConfigValue) => {
+      setSnapshot(host.updatePluginConfig(pluginId, config));
+    },
+    [host],
+  );
 
-  const recordPluginError = useCallback((pluginId: string, error: PluginRuntimeErrorInput) => {
-    setSnapshot(host.recordPluginError(pluginId, error));
-  }, [host]);
+  const recordPluginError = useCallback(
+    (pluginId: string, error: PluginRuntimeErrorInput) => {
+      setSnapshot(host.recordPluginError(pluginId, error));
+    },
+    [host],
+  );
 
-  const executePluginCommand = useCallback(async (pluginId: string, commandId: string, args: unknown[] = []) => {
-    const result = await host.executePluginCommand(pluginId, commandId, args);
-    if (!result.ok && result.error) {
-      setSnapshot(host.recordPluginError(pluginId, {
-        contributionId: commandId,
-        contributionType: "command",
-        message: result.error.message,
-        code: result.error.code,
-      }));
-    }
-    return result;
-  }, [host]);
+  const executePluginCommand = useCallback(
+    async (pluginId: string, commandId: string, args: unknown[] = []) => {
+      const result = await host.executePluginCommand(pluginId, commandId, args);
+      if (!result.ok && result.error) {
+        setSnapshot(
+          host.recordPluginError(pluginId, {
+            contributionId: commandId,
+            contributionType: "command",
+            message: result.error.message,
+            code: result.error.code,
+          }),
+        );
+      }
+      return result;
+    },
+    [host],
+  );
 
-  const runDiagnostics = useCallback(async (target: DiagnosticsTarget): Promise<DiagnosticsReport[]> => {
-    const reports = await host.runDiagnostics(target);
-    setSnapshot(host.snapshot());
-    return reports;
-  }, [host]);
+  const runDiagnostics = useCallback(
+    async (target: DiagnosticsTarget): Promise<DiagnosticsReport[]> => {
+      const reports = await host.runDiagnostics(target);
+      setSnapshot(host.snapshot());
+      return reports;
+    },
+    [host],
+  );
 
   const getDashboardWidgetRenderer = useCallback(
     (widget: RegisteredDashboardWidget) => host.getDashboardWidgetRenderer(widget),
     [host],
   );
 
-  const setPluginLocale = useCallback((locale: string) => {
-    host.setCurrentLocale(locale);
-    setSnapshot(host.snapshot());
-  }, [host]);
+  const setPluginLocale = useCallback(
+    (locale: string) => {
+      host.setCurrentLocale(locale);
+      setSnapshot(host.snapshot());
+    },
+    [host],
+  );
 
-  const contextValue = useMemo(() => ({
-    host,
-    snapshot,
-    enablePlugin,
-    disablePlugin,
-    updatePluginConfig,
-    recordPluginError,
-    executePluginCommand,
-    runDiagnostics,
-    getDashboardWidgetRenderer,
-    setPluginLocale,
-  }), [host, snapshot, enablePlugin, disablePlugin, updatePluginConfig, recordPluginError, executePluginCommand, runDiagnostics, getDashboardWidgetRenderer, setPluginLocale]);
+  const contextValue = useMemo(
+    () => ({
+      host,
+      snapshot,
+      enablePlugin,
+      disablePlugin,
+      updatePluginConfig,
+      recordPluginError,
+      executePluginCommand,
+      runDiagnostics,
+      getDashboardWidgetRenderer,
+      setPluginLocale,
+    }),
+    [
+      host,
+      snapshot,
+      enablePlugin,
+      disablePlugin,
+      updatePluginConfig,
+      recordPluginError,
+      executePluginCommand,
+      runDiagnostics,
+      getDashboardWidgetRenderer,
+      setPluginLocale,
+    ],
+  );
 
   return (
     <PluginContext.Provider value={contextValue}>

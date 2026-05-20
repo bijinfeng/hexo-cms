@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
 import type { Extension } from "@tiptap/core";
-import { getBuiltinExtensions } from "./extensions";
-import { Toolbar } from "./Toolbar";
+import { EditorContent, useEditor } from "@tiptap/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BubbleMenu } from "./BubbleMenu";
+import { Toolbar } from "./Toolbar";
+import { getBuiltinExtensions } from "./extensions";
 
 export interface EditorProps {
   value: string;
@@ -38,7 +38,7 @@ export function Editor({
                 uploadFn: onUploadMedia,
                 onUploadError,
               })
-            : ext
+            : ext,
         )
       : builtin;
 

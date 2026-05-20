@@ -16,7 +16,10 @@ export const Route = createFileRoute("/api/github/config-file")({
           const file = await ctx.github.getRawFile(path);
           return json({ content: file?.content ?? "" });
         } catch (error) {
-          return json({ error: error instanceof Error ? error.message : "Unknown error", content: "" }, 500);
+          return json(
+            { error: error instanceof Error ? error.message : "Unknown error", content: "" },
+            500,
+          );
         }
       },
 

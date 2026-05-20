@@ -1,11 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertCircle, ArrowRight, CheckCircle2, Loader2, RefreshCw, Search, Settings2 } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Loader2,
+  RefreshCw,
+  Search,
+  Settings2,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
 import { GithubIcon } from "../components/ui/github-icon";
 import { Input } from "../components/ui/input";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AuthSession } from "../types/auth";
 import type {
@@ -84,7 +92,10 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
   function getValidationErrorMessage(validation: RepositoryValidation | null) {
     if (!validation || validation.ok) return "";
     if (validation.error) return t(VALIDATION_ERROR_KEYS[validation.error]);
-    return validation.checks.find((check) => check.status === "error")?.message ?? t("onboarding.errors.verifyFailed");
+    return (
+      validation.checks.find((check) => check.status === "error")?.message ??
+      t("onboarding.errors.verifyFailed")
+    );
   }
 
   function getAuthErrorMessage(error?: string) {
@@ -129,46 +140,49 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
     setSaveError("");
   }, []);
 
-  const loadRepositories = useCallback(async (nextQuery: string) => {
-    const requestId = repositoryRequestIdRef.current + 1;
-    repositoryRequestIdRef.current = requestId;
-    const isInitialLoad = !hasLoadedRepositoriesRef.current;
-    const queryChanged = !isInitialLoad && nextQuery !== loadedRepositoryQueryRef.current;
-    if (queryChanged) {
-      clearSelectedRepository();
-    }
-    if (isInitialLoad) {
-      setLoadingRepos(true);
-    } else {
-      setSearchingRepos(true);
-    }
-    setRepoError("");
-    try {
-      const [user, repoList] = await Promise.all([
-        onboardingClient.getCurrentUser(),
-        onboardingClient.listRepositories({ query: nextQuery }),
-      ]);
-      if (repositoryRequestIdRef.current !== requestId) return;
-      hasLoadedRepositoriesRef.current = true;
-      loadedRepositoryQueryRef.current = nextQuery;
-      setCurrentUser(user);
-      setRepositories(repoList);
-    } catch {
-      if (repositoryRequestIdRef.current !== requestId) return;
-      setRepoError(t("onboarding.repoLoadFailed"));
-      if (isInitialLoad) {
-        setRepositories([]);
+  const loadRepositories = useCallback(
+    async (nextQuery: string) => {
+      const requestId = repositoryRequestIdRef.current + 1;
+      repositoryRequestIdRef.current = requestId;
+      const isInitialLoad = !hasLoadedRepositoriesRef.current;
+      const queryChanged = !isInitialLoad && nextQuery !== loadedRepositoryQueryRef.current;
+      if (queryChanged) {
+        clearSelectedRepository();
       }
-    } finally {
-      if (repositoryRequestIdRef.current === requestId) {
+      if (isInitialLoad) {
+        setLoadingRepos(true);
+      } else {
+        setSearchingRepos(true);
+      }
+      setRepoError("");
+      try {
+        const [user, repoList] = await Promise.all([
+          onboardingClient.getCurrentUser(),
+          onboardingClient.listRepositories({ query: nextQuery }),
+        ]);
+        if (repositoryRequestIdRef.current !== requestId) return;
+        hasLoadedRepositoriesRef.current = true;
+        loadedRepositoryQueryRef.current = nextQuery;
+        setCurrentUser(user);
+        setRepositories(repoList);
+      } catch {
+        if (repositoryRequestIdRef.current !== requestId) return;
+        setRepoError(t("onboarding.repoLoadFailed"));
         if (isInitialLoad) {
-          setLoadingRepos(false);
-        } else {
-          setSearchingRepos(false);
+          setRepositories([]);
+        }
+      } finally {
+        if (repositoryRequestIdRef.current === requestId) {
+          if (isInitialLoad) {
+            setLoadingRepos(false);
+          } else {
+            setSearchingRepos(false);
+          }
         }
       }
-    }
-  }, [clearSelectedRepository, onboardingClient, t]);
+    },
+    [clearSelectedRepository, onboardingClient, t],
+  );
 
   useEffect(() => {
     if (!query.trim()) {
@@ -340,7 +354,9 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-primary-subtle)] text-[var(--brand-primary)]">
               <GithubIcon className="h-6 w-6" />
             </div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)]">{t("onboarding.title")}</h1>
+            <h1 className="text-3xl font-bold text-[var(--text-primary)]">
+              {t("onboarding.title")}
+            </h1>
             <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
               {t("onboarding.description")}
             </p>
@@ -348,11 +364,7 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
 
           <div className="flex items-center gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] p-3">
             {currentUser?.avatarUrl ? (
-              <img
-                src={currentUser.avatarUrl}
-                alt=""
-                className="h-10 w-10 rounded-full"
-              />
+              <img src={currentUser.avatarUrl} alt="" className="h-10 w-10 rounded-full" />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-tertiary)]">
                 <GithubIcon className="h-5 w-5" />
@@ -375,14 +387,18 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                 disabled={reauthorizing}
               >
                 <RefreshCw className={`h-4 w-4 ${reauthorizing ? "animate-spin" : ""}`} />
-                {reauthorizationDeviceFlow ? t("onboarding.waitingAuth") : t("settings.auth.reauthorize")}
+                {reauthorizationDeviceFlow
+                  ? t("onboarding.waitingAuth")
+                  : t("settings.auth.reauthorize")}
               </Button>
               {reauthorizeError && (
                 <p className="text-xs text-[var(--status-error)]">{reauthorizeError}</p>
               )}
               {reauthorizationDeviceFlow && (
                 <div className="w-56 rounded-lg border border-[var(--border-default)] bg-[var(--bg-muted)] p-3 text-center">
-                  <p className="text-xs text-[var(--text-secondary)]">{t("settings.auth.enterCode")}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {t("settings.auth.enterCode")}
+                  </p>
                   <div className="mt-2 rounded-md bg-[var(--bg-card)] px-3 py-2 font-mono text-xl font-bold tracking-widest text-[var(--text-primary)]">
                     {reauthorizationDeviceFlow.userCode}
                   </div>
@@ -461,14 +477,23 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-[var(--text-primary)]">{repository.fullName}</p>
+                        <p className="font-semibold text-[var(--text-primary)]">
+                          {repository.fullName}
+                        </p>
                         <Badge variant={repository.private ? "warning" : "green"}>
-                          {repository.private ? t("onboarding.privateRepo") : t("onboarding.publicRepo")}
+                          {repository.private
+                            ? t("onboarding.privateRepo")
+                            : t("onboarding.publicRepo")}
                         </Badge>
-                        {repository.permissions.push && <Badge variant="success">{t("onboarding.writable")}</Badge>}
+                        {repository.permissions.push && (
+                          <Badge variant="success">{t("onboarding.writable")}</Badge>
+                        )}
                       </div>
                       <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                        {t("onboarding.defaultBranch", { branch: repository.defaultBranch, updated: getUpdatedText(repository.pushedAt) })}
+                        {t("onboarding.defaultBranch", {
+                          branch: repository.defaultBranch,
+                          updated: getUpdatedText(repository.pushedAt),
+                        })}
                       </p>
                     </div>
                     {selectedRepoId === repository.id && validating ? (
@@ -491,7 +516,12 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                     {hasSearchQuery ? t("onboarding.noMatch") : t("onboarding.noWritable")}
                   </p>
                   {repoError && <p className="text-xs text-[var(--status-error)]">{repoError}</p>}
-                  <Button type="button" variant="outline" size="sm" onClick={() => void loadRepositories(activeQuery)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void loadRepositories(activeQuery)}
+                  >
                     <RefreshCw className="h-4 w-4" />
                     {t("common.retry")}
                   </Button>
@@ -547,14 +577,17 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
           <aside className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] p-5">
             <div className="flex items-center gap-2">
               <Settings2 className="h-5 w-5 text-[var(--brand-primary)]" />
-              <h2 className="font-semibold text-[var(--text-primary)]">{t("onboarding.repoCheck")}</h2>
+              <h2 className="font-semibold text-[var(--text-primary)]">
+                {t("onboarding.repoCheck")}
+              </h2>
             </div>
 
             {selectedSelection ? (
               <div className="mt-5 space-y-4">
                 <div className="rounded-lg bg-[var(--bg-muted)] p-3">
                   <p className="text-sm font-medium text-[var(--text-primary)]">
-                    {selectedRepository?.fullName ?? `${selectedSelection.owner}/${selectedSelection.repo}`}
+                    {selectedRepository?.fullName ??
+                      `${selectedSelection.owner}/${selectedSelection.repo}`}
                   </p>
                   <p className="mt-1 text-xs text-[var(--text-tertiary)]">
                     {t("onboarding.branchLabel", { branch: selectedSelection.branch || "main" })}
@@ -600,15 +633,21 @@ export function OnboardingPage({ onboardingClient }: OnboardingPageProps) {
                               <dl className="space-y-2 text-xs">
                                 <div className="flex justify-between gap-3">
                                   <dt className="text-[var(--text-tertiary)]">branch</dt>
-                                  <dd className="font-mono text-[var(--text-primary)]">{config.branch}</dd>
+                                  <dd className="font-mono text-[var(--text-primary)]">
+                                    {config.branch}
+                                  </dd>
                                 </div>
                                 <div className="flex justify-between gap-3">
                                   <dt className="text-[var(--text-tertiary)]">postsDir</dt>
-                                  <dd className="font-mono text-[var(--text-primary)]">{config.postsDir}</dd>
+                                  <dd className="font-mono text-[var(--text-primary)]">
+                                    {config.postsDir}
+                                  </dd>
                                 </div>
                                 <div className="flex justify-between gap-3">
                                   <dt className="text-[var(--text-tertiary)]">mediaDir</dt>
-                                  <dd className="font-mono text-[var(--text-primary)]">{config.mediaDir}</dd>
+                                  <dd className="font-mono text-[var(--text-primary)]">
+                                    {config.mediaDir}
+                                  </dd>
                                 </div>
                                 <div className="flex justify-between gap-3">
                                   <dt className="text-[var(--text-tertiary)]">workflowFile</dt>

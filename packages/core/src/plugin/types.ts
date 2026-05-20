@@ -5,12 +5,7 @@ export type PluginOrigin = "official" | "local-dev" | "private" | "marketplace";
 
 export type PluginRuntime = "hosted" | "worker" | "iframe";
 
-export type PluginState =
-  | "installed"
-  | "enabled"
-  | "disabled"
-  | "error"
-  | "incompatible";
+export type PluginState = "installed" | "enabled" | "disabled" | "error" | "incompatible";
 
 export type PluginPermission =
   | "content.read"
@@ -25,11 +20,7 @@ export type PluginPermission =
   | "event.subscribe"
   | "network.fetch";
 
-export type PluginActivationEvent =
-  | "onStartup"
-  | "onDashboard"
-  | "onMedia"
-  | "onSettings";
+export type PluginActivationEvent = "onStartup" | "onDashboard" | "onMedia" | "onSettings";
 
 export interface PluginManifest {
   id: string;
@@ -200,7 +191,9 @@ export interface PluginCommandHandlerContext {
   args: unknown[];
 }
 
-export type PluginCommandHandler = (context: PluginCommandHandlerContext) => unknown | Promise<unknown>;
+export type PluginCommandHandler = (
+  context: PluginCommandHandlerContext,
+) => unknown | Promise<unknown>;
 
 export interface PluginCommandExecutionResult {
   ok: boolean;
@@ -270,7 +263,9 @@ export interface PluginEvent<TPayload = unknown> {
   at: string;
 }
 
-export type PluginEventHandler<TPayload = unknown> = (event: PluginEvent<TPayload>) => void | Promise<void>;
+export type PluginEventHandler<TPayload = unknown> = (
+  event: PluginEvent<TPayload>,
+) => void | Promise<void>;
 
 export interface PluginEventSubscription {
   dispose(): void;
@@ -442,7 +437,9 @@ export type PluginConfigStoreValue = Record<string, PluginConfigValue>;
 export function createContentReadAPI(
   pluginId: string,
   dataProvider: DataProvider,
-  permissionBroker: { assert(pluginId: string, permission: PluginPermission, operation: string): void },
+  permissionBroker: {
+    assert(pluginId: string, permission: PluginPermission, operation: string): void;
+  },
 ): ContentReadAPI {
   return {
     getPosts: () => {

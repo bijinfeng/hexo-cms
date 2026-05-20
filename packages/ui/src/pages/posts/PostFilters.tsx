@@ -1,9 +1,16 @@
-import { Search, Filter, ChevronDown, ChevronUp, X } from "lucide-react";
-import { Button } from "../../components/ui/button";
+import { ChevronDown, ChevronUp, Filter, Search, X } from "lucide-react";
 import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { DateRangeOption } from "./usePostsFilter";
 
@@ -28,23 +35,37 @@ interface PostFiltersProps {
 }
 
 export function PostFilters({
-  search, onSearchChange,
-  activeFilter, onActiveFilterChange,
-  showFilters, onToggleFilters,
+  search,
+  onSearchChange,
+  activeFilter,
+  onActiveFilterChange,
+  showFilters,
+  onToggleFilters,
   hasActiveFilters,
-  selectedCategory, onSelectedCategoryChange,
-  dateRange, onDateRangeChange,
-  allCategories, onClearAll,
-  filteredCount, totalCount,
-  filterOptions, dateRangeOptions,
+  selectedCategory,
+  onSelectedCategoryChange,
+  dateRange,
+  onDateRangeChange,
+  allCategories,
+  onClearAll,
+  filteredCount,
+  totalCount,
+  filterOptions,
+  dateRangeOptions,
 }: PostFiltersProps) {
   const { t } = useI18n();
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col sm:flex-row gap-3">
-        <ToggleGroup type="single" value={activeFilter} onValueChange={(v) => v && onActiveFilterChange(v)}>
+        <ToggleGroup
+          type="single"
+          value={activeFilter}
+          onValueChange={(v) => v && onActiveFilterChange(v)}
+        >
           {filterOptions.map((opt) => (
-            <ToggleGroupItem key={opt} value={opt} size="default">{opt}</ToggleGroupItem>
+            <ToggleGroupItem key={opt} value={opt} size="default">
+              {opt}
+            </ToggleGroupItem>
           ))}
         </ToggleGroup>
 
@@ -58,13 +79,21 @@ export function PostFilters({
             className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
           />
           {search && (
-            <button onClick={() => onSearchChange("")} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer">
+            <button
+              onClick={() => onSearchChange("")}
+              className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+            >
               <X size={14} />
             </button>
           )}
         </div>
 
-        <Button variant="outline" size="default" className="gap-2 flex-shrink-0" onClick={onToggleFilters}>
+        <Button
+          variant="outline"
+          size="default"
+          className="gap-2 flex-shrink-0"
+          onClick={onToggleFilters}
+        >
           <Filter size={14} className={hasActiveFilters ? "text-[var(--brand-primary)]" : ""} />
           {t("posts.filter.advancedFilter")}
           {showFilters ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -77,23 +106,42 @@ export function PostFilters({
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">{t("posts.filter.categoryLabel")}</label>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                    {t("posts.filter.categoryLabel")}
+                  </label>
                   <Select value={selectedCategory} onValueChange={onSelectedCategoryChange}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
                         {allCategories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
                         ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">{t("posts.filter.dateRangeLabel")}</label>
-                  <ToggleGroup type="single" value={dateRange} onValueChange={(v) => v && onDateRangeChange(v)}>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                    {t("posts.filter.dateRangeLabel")}
+                  </label>
+                  <ToggleGroup
+                    type="single"
+                    value={dateRange}
+                    onValueChange={(v) => v && onDateRangeChange(v)}
+                  >
                     {dateRangeOptions.map((opt) => (
-                      <ToggleGroupItem key={opt.value} value={opt.value} size="sm" className="flex-1 text-xs">{opt.label}</ToggleGroupItem>
+                      <ToggleGroupItem
+                        key={opt.value}
+                        value={opt.value}
+                        size="sm"
+                        className="flex-1 text-xs"
+                      >
+                        {opt.label}
+                      </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
                 </div>
@@ -102,14 +150,40 @@ export function PostFilters({
               {hasActiveFilters && (
                 <div className="flex items-center justify-between pt-3 border-t border-[var(--border-default)]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-[var(--text-tertiary)]">{t("posts.filter.activeFilters")}:</span>
-                    {search && <Badge variant="default" className="gap-1">{t("posts.filter.searchFilter")}: {search.slice(0, 20)}{search.length > 20 && "..."}</Badge>}
-                    {activeFilter !== t("posts.filter.all") && <Badge variant="default">{t("posts.filter.statusFilter")}: {activeFilter}</Badge>}
-                    {selectedCategory !== t("posts.filter.allCategories") && <Badge variant="default">{t("posts.filter.categoryFilter")}: {selectedCategory}</Badge>}
-                    {dateRange !== "all" && <Badge variant="default">{t("posts.filter.dateFilter")}: {dateRangeOptions.find((o) => o.value === dateRange)?.label}</Badge>}
+                    <span className="text-xs text-[var(--text-tertiary)]">
+                      {t("posts.filter.activeFilters")}:
+                    </span>
+                    {search && (
+                      <Badge variant="default" className="gap-1">
+                        {t("posts.filter.searchFilter")}: {search.slice(0, 20)}
+                        {search.length > 20 && "..."}
+                      </Badge>
+                    )}
+                    {activeFilter !== t("posts.filter.all") && (
+                      <Badge variant="default">
+                        {t("posts.filter.statusFilter")}: {activeFilter}
+                      </Badge>
+                    )}
+                    {selectedCategory !== t("posts.filter.allCategories") && (
+                      <Badge variant="default">
+                        {t("posts.filter.categoryFilter")}: {selectedCategory}
+                      </Badge>
+                    )}
+                    {dateRange !== "all" && (
+                      <Badge variant="default">
+                        {t("posts.filter.dateFilter")}:{" "}
+                        {dateRangeOptions.find((o) => o.value === dateRange)?.label}
+                      </Badge>
+                    )}
                   </div>
-                  <Button variant="outline" size="sm" onClick={onClearAll} className="gap-1 flex-shrink-0">
-                    <X size={12} />{t("posts.filter.clearAll")}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onClearAll}
+                    className="gap-1 flex-shrink-0"
+                  >
+                    <X size={12} />
+                    {t("posts.filter.clearAll")}
                   </Button>
                 </div>
               )}
@@ -120,11 +194,16 @@ export function PostFilters({
 
       {(hasActiveFilters || filteredCount !== totalCount) && (
         <div className="flex items-center gap-2 text-sm">
-              <span className="text-[var(--text-secondary)]">
-                {t("posts.filter.showCount", { count: filteredCount, total: totalCount })}
-              </span>
-              {hasActiveFilters && (
-                <button onClick={onClearAll} className="text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer text-xs underline">{t("posts.filter.clearFilter")}</button>
+          <span className="text-[var(--text-secondary)]">
+            {t("posts.filter.showCount", { count: filteredCount, total: totalCount })}
+          </span>
+          {hasActiveFilters && (
+            <button
+              onClick={onClearAll}
+              className="text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer text-xs underline"
+            >
+              {t("posts.filter.clearFilter")}
+            </button>
           )}
         </div>
       )}

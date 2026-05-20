@@ -77,10 +77,7 @@ export const ImageUpload = Image.extend<ImageUploadOptions>({
                 uploadFn(file)
                   .then((url) => {
                     const node = view.state.schema.nodes.image.create({ src: url });
-                    const tr = view.state.tr.insert(
-                      pos?.pos ?? view.state.selection.from,
-                      node,
-                    );
+                    const tr = view.state.tr.insert(pos?.pos ?? view.state.selection.from, node);
                     view.dispatch(tr);
                   })
                   .catch(handleUploadError);

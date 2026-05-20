@@ -1,6 +1,6 @@
-import type { PluginPermission, PluginSecretAPI, PluginSecretStoreValue } from "./types";
 import { assertNonEmptyString, cloneValue } from "../utils";
 import { MemoryStore } from "./stores";
+import type { PluginPermission, PluginSecretAPI, PluginSecretStoreValue } from "./types";
 
 export interface PluginSecretStore {
   load(): PluginSecretStoreValue | Promise<PluginSecretStoreValue>;
@@ -11,14 +11,20 @@ export interface PluginSecretStore {
 }
 
 export class MemoryPluginSecretStore extends MemoryStore<PluginSecretStoreValue> {
-  load(): PluginSecretStoreValue { return cloneValue(super.load()); }
-  save(value: PluginSecretStoreValue): void { super.save(cloneValue(value)); }
+  load(): PluginSecretStoreValue {
+    return cloneValue(super.load());
+  }
+  save(value: PluginSecretStoreValue): void {
+    super.save(cloneValue(value));
+  }
 }
 
 export function createPluginSecretAPI(
   pluginId: string,
   store: PluginSecretStore,
-  permissionBroker: { assert(pluginId: string, permission: PluginPermission, operation: string): void },
+  permissionBroker: {
+    assert(pluginId: string, permission: PluginPermission, operation: string): void;
+  },
 ): PluginSecretAPI {
   return {
     async has(key: string): Promise<boolean> {

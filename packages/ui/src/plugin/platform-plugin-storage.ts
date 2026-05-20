@@ -1,4 +1,8 @@
-import { BrowserPluginStorageStore, type PluginStorageStore, type PluginStorageStoreValue } from "@hexo-cms/core";
+import {
+  BrowserPluginStorageStore,
+  type PluginStorageStore,
+  type PluginStorageStoreValue,
+} from "@hexo-cms/core";
 import { getElectronAPI } from "../lib/electron-api";
 
 export class WebPluginStorageStore implements PluginStorageStore {

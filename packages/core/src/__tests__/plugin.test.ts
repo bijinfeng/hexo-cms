@@ -1,23 +1,23 @@
 import { describe, expect, it, vi } from "vitest";
+import type { DataProvider } from "../data-provider";
 import {
-  MemoryPluginStateStore,
+  type DiagnosticsHandler,
   MemoryPluginConfigStore,
   MemoryPluginLogStore,
   MemoryPluginSecretStore,
+  MemoryPluginStateStore,
   MemoryPluginStorageStore,
   PermissionBroker,
+  type PluginFetch,
   PluginManager,
+  type PluginManifest,
   PluginManifestError,
   PluginPermissionError,
-  assertPluginHttpRequestAllowed,
-  type DiagnosticsHandler,
-  type PluginFetch,
-  type PluginManifest,
   type PluginSecretStoreValue,
   type PluginStorageStoreValue,
+  assertPluginHttpRequestAllowed,
   validatePluginManifest,
 } from "../plugin";
-import type { DataProvider } from "../data-provider";
 
 function makeTestManifest(overrides: Partial<PluginManifest> = {}): PluginManifest {
   return {
@@ -35,7 +35,9 @@ function makeTestManifest(overrides: Partial<PluginManifest> = {}): PluginManife
 describe("plugin system", () => {
   it("validates a plugin manifest", () => {
     expect(() =>
-      validatePluginManifest(makeTestManifest({ id: "hexo-cms-valid-plugin", name: "Valid Plugin" })),
+      validatePluginManifest(
+        makeTestManifest({ id: "hexo-cms-valid-plugin", name: "Valid Plugin" }),
+      ),
     ).not.toThrow();
   });
 
@@ -137,9 +139,9 @@ describe("plugin system", () => {
     expect(() =>
       broker.assert("hexo-cms-test-attachments", "content.read", "content.getMediaFiles"),
     ).not.toThrow();
-    expect(() =>
-      broker.assert("hexo-cms-test-attachments", "network.fetch", "http.fetch"),
-    ).toThrow(PluginPermissionError);
+    expect(() => broker.assert("hexo-cms-test-attachments", "network.fetch", "http.fetch")).toThrow(
+      PluginPermissionError,
+    );
   });
 
   it("persists plugin config across manager instances", () => {
@@ -179,7 +181,9 @@ describe("plugin system", () => {
     });
 
     expect(
-      secondManager.snapshot().plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments")?.config,
+      secondManager
+        .snapshot()
+        .plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments")?.config,
     ).toEqual({
       provider: "waline",
       moderationUrl: "https://comments.example.com",
@@ -222,7 +226,7 @@ describe("plugin system", () => {
       manifests: [testManifest],
       store: new MemoryPluginStateStore(),
       commandHandlers: {
-        [`hexo-cms-test-comments:comments.openModeration`]: ({ args }) => `opened:${String(args[0])}`,
+        "hexo-cms-test-comments:comments.openModeration": ({ args }) => `opened:${String(args[0])}`,
       },
     });
 
@@ -481,7 +485,11 @@ describe("plugin system", () => {
     await secrets.delete("apiKey");
 
     expect(scopedSecretStore.has).toHaveBeenCalledWith("hexo-cms-scoped-secret", "apiKey");
-    expect(scopedSecretStore.set).toHaveBeenCalledWith("hexo-cms-scoped-secret", "apiKey", "secret-token");
+    expect(scopedSecretStore.set).toHaveBeenCalledWith(
+      "hexo-cms-scoped-secret",
+      "apiKey",
+      "secret-token",
+    );
     expect(scopedSecretStore.delete).toHaveBeenCalledWith("hexo-cms-scoped-secret", "apiKey");
     expect(scopedSecretStore.load).not.toHaveBeenCalled();
     expect(scopedSecretStore.save).not.toHaveBeenCalled();
@@ -512,12 +520,12 @@ describe("plugin system", () => {
       store: new MemoryPluginStateStore(),
     });
 
-    await expect(manager.createSecretAPI("hexo-cms-secret-readonly").set("apiKey", "secret")).rejects.toThrow(
-      PluginPermissionError,
-    );
-    await expect(manager.createSecretAPI("hexo-cms-secret-writeonly").has("apiKey")).rejects.toThrow(
-      PluginPermissionError,
-    );
+    await expect(
+      manager.createSecretAPI("hexo-cms-secret-readonly").set("apiKey", "secret"),
+    ).rejects.toThrow(PluginPermissionError);
+    await expect(
+      manager.createSecretAPI("hexo-cms-secret-writeonly").has("apiKey"),
+    ).rejects.toThrow(PluginPermissionError);
   });
 
   it("enforces controlled network fetch permissions and allowed hosts", async () => {
@@ -525,7 +533,9 @@ describe("plugin system", () => {
       ok: true,
       status: 200,
       statusText: "OK",
-      headers: { get: (name: string) => (name.toLowerCase() === "content-type" ? "application/json" : null) },
+      headers: {
+        get: (name: string) => (name.toLowerCase() === "content-type" ? "application/json" : null),
+      },
       json: async () => ({ ok: true }),
       text: async () => "ok",
     });
@@ -565,7 +575,9 @@ describe("plugin system", () => {
         },
       }),
     ).resolves.toEqual({ ok: true });
-    await expect(http.fetch("https://nested.trusted.example/status")).resolves.toEqual({ ok: true });
+    await expect(http.fetch("https://nested.trusted.example/status")).resolves.toEqual({
+      ok: true,
+    });
     expect(fetchImpl.mock.calls[0][1].credentials).toBe("omit");
     expect(fetchImpl.mock.calls[0][1].headers).toEqual({
       Authorization: "Bearer plugin-token",
@@ -574,7 +586,9 @@ describe("plugin system", () => {
     await expect(http.fetch("http://api.example.com/status")).rejects.toThrow(/HTTPS/);
     await expect(http.fetch("https://evil.example.com/status")).rejects.toThrow(/not allowed/);
     await expect(
-      manager.createHttpAPI("hexo-cms-network-without-permission").fetch("https://api.example.com/status"),
+      manager
+        .createHttpAPI("hexo-cms-network-without-permission")
+        .fetch("https://api.example.com/status"),
     ).rejects.toThrow(PluginPermissionError);
   });
 
@@ -591,14 +605,22 @@ describe("plugin system", () => {
     };
     const broker = new PermissionBroker([manifest]);
 
-    expect(assertPluginHttpRequestAllowed(
-      manifest.id,
-      manifest,
-      broker,
-      "https://api.example.com/status",
-    ).hostname).toBe("api.example.com");
-    expect(() => assertPluginHttpRequestAllowed(manifest.id, manifest, broker, "https://evil.example.com/status"))
-      .toThrow(/not allowed/);
+    expect(
+      assertPluginHttpRequestAllowed(
+        manifest.id,
+        manifest,
+        broker,
+        "https://api.example.com/status",
+      ).hostname,
+    ).toBe("api.example.com");
+    expect(() =>
+      assertPluginHttpRequestAllowed(
+        manifest.id,
+        manifest,
+        broker,
+        "https://evil.example.com/status",
+      ),
+    ).toThrow(/not allowed/);
   });
 
   it("passes pluginId to fetchImpl for platform proxy auditing", async () => {
@@ -708,7 +730,9 @@ describe("plugin system", () => {
       message: "Renderer failed with apiKey=secret-key at C:\\Users\\demo\\.env",
     });
 
-    const plugin = manager.snapshot().plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
+    const plugin = manager
+      .snapshot()
+      .plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
 
     expect(plugin?.logs).toEqual([
       expect.objectContaining({
@@ -748,7 +772,9 @@ describe("plugin system", () => {
       received.push(event.payload);
     });
 
-    await expect(manager.emitEvent("post.afterSave", { path: "source/_posts/hello.md" })).resolves.toEqual([
+    await expect(
+      manager.emitEvent("post.afterSave", { path: "source/_posts/hello.md" }),
+    ).resolves.toEqual([
       expect.objectContaining({
         ok: true,
         pluginId: "hexo-cms-event-listener",
@@ -806,7 +832,9 @@ describe("plugin system", () => {
       throw new Error("Event failed with token=event-secret");
     });
 
-    const firstResults = await manager.emitEvent("post.afterSave", { path: "source/_posts/hello.md" });
+    const firstResults = await manager.emitEvent("post.afterSave", {
+      path: "source/_posts/hello.md",
+    });
     expect(firstResults).toEqual([
       expect.objectContaining({
         ok: false,
@@ -815,7 +843,9 @@ describe("plugin system", () => {
       }),
     ]);
     expect(
-      manager.snapshot().plugins.find(({ manifest }) => manifest.id === "hexo-cms-throwing-event-listener")?.record,
+      manager
+        .snapshot()
+        .plugins.find(({ manifest }) => manifest.id === "hexo-cms-throwing-event-listener")?.record,
     ).toEqual(
       expect.objectContaining({
         state: "enabled",
@@ -828,13 +858,17 @@ describe("plugin system", () => {
     );
 
     await manager.emitEvent("post.afterSave", { path: "source/_posts/second.md" });
-    const plugin = manager.snapshot().plugins.find(({ manifest }) => manifest.id === "hexo-cms-throwing-event-listener");
+    const plugin = manager
+      .snapshot()
+      .plugins.find(({ manifest }) => manifest.id === "hexo-cms-throwing-event-listener");
 
     expect(plugin?.record.state).toBe("error");
     expect(plugin?.record.lastError?.count).toBe(2);
     expect(plugin?.record.lastError?.message).not.toContain("event-secret");
 
-    await expect(manager.emitEvent("post.afterSave", { path: "source/_posts/third.md" })).resolves.toEqual([]);
+    await expect(
+      manager.emitEvent("post.afterSave", { path: "source/_posts/third.md" }),
+    ).resolves.toEqual([]);
   });
 
   it("records sanitized plugin runtime errors without disabling the plugin", () => {
@@ -867,7 +901,9 @@ describe("plugin system", () => {
       stack: "Error: Renderer failed\n    at C:\\Users\\demo\\project\\.env:1:1",
     });
 
-    const plugin = snapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
+    const plugin = snapshot.plugins.find(
+      ({ manifest }) => manifest.id === "hexo-cms-test-comments",
+    );
 
     expect(plugin?.record.state).toBe("enabled");
     expect(snapshot.extensions.dashboardWidgets).toEqual([
@@ -923,7 +959,8 @@ describe("plugin system", () => {
     });
 
     expect(
-      secondSnapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments")?.record.state,
+      secondSnapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments")
+        ?.record.state,
     ).toBe("enabled");
     expect(secondSnapshot.extensions.dashboardWidgets).toHaveLength(1);
 
@@ -932,14 +969,18 @@ describe("plugin system", () => {
       contributionType: "dashboard.widget",
       message: "Renderer failed three times",
     });
-    const plugin = trippedSnapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
+    const plugin = trippedSnapshot.plugins.find(
+      ({ manifest }) => manifest.id === "hexo-cms-test-comments",
+    );
 
     expect(plugin?.record.state).toBe("error");
     expect(plugin?.record.lastError?.count).toBe(3);
     expect(trippedSnapshot.extensions.dashboardWidgets).toHaveLength(0);
 
     const retriedSnapshot = manager.enable("hexo-cms-test-comments");
-    const retriedPlugin = retriedSnapshot.plugins.find(({ manifest }) => manifest.id === "hexo-cms-test-comments");
+    const retriedPlugin = retriedSnapshot.plugins.find(
+      ({ manifest }) => manifest.id === "hexo-cms-test-comments",
+    );
 
     expect(retriedPlugin?.record.state).toBe("enabled");
     expect(retriedPlugin?.record.lastError).toBeUndefined();
@@ -985,7 +1026,9 @@ describe("plugin system", () => {
         getMediaFiles: vi.fn().mockResolvedValue([]),
         uploadMedia: vi.fn(),
         deleteMedia: vi.fn(),
-        getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+        getStats: vi
+          .fn()
+          .mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
         getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
         switchTheme: vi.fn(),
         getDeployments: vi.fn().mockResolvedValue([]),
@@ -997,7 +1040,11 @@ describe("plugin system", () => {
       if (target.scope !== "post" || !target.post) return [];
       const issues = [];
       if (!target.post.title) {
-        issues.push({ id: "test.title.missing", severity: "error" as const, message: "Title missing" });
+        issues.push({
+          id: "test.title.missing",
+          severity: "error" as const,
+          message: "Title missing",
+        });
       }
       return issues;
     };
@@ -1019,7 +1066,7 @@ describe("plugin system", () => {
       store: new MemoryPluginStateStore(),
       dataProvider: createMockDataProvider(),
       diagnosticsHandlers: {
-        [`hexo-cms-test-seo:seo.post-checks`]: postHandler,
+        "hexo-cms-test-seo:seo.post-checks": postHandler,
       },
     });
 

@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { createPluginStoreHandlers } from "../../../lib/server-utils";
-import { loadPluginStorage, savePluginStorage } from "../../../lib/plugin-storage-db";
 import type { PluginStorageStoreValue } from "@hexo-cms/core";
+import { createFileRoute } from "@tanstack/react-router";
+import { loadPluginStorage, savePluginStorage } from "../../../lib/plugin-storage-db";
+import { createPluginStoreHandlers } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/plugin/storage")({
   server: {

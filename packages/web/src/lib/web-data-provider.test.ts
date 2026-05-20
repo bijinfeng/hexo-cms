@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
 import { DataProviderError } from "@hexo-cms/core";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { WebDataProvider } from "./web-data-provider";
 
 describe("WebDataProvider auth errors", () => {
@@ -68,15 +68,17 @@ describe("WebDataProvider auth errors", () => {
 
   it("loads a single post through the path query parameter", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({
-        post: {
-          path: "source/_posts/hello.md",
-          title: "Hello",
-          date: "2026-05-12",
-          content: "Body",
-          frontmatter: { title: "Hello" },
-        },
-      })),
+      new Response(
+        JSON.stringify({
+          post: {
+            path: "source/_posts/hello.md",
+            title: "Hello",
+            date: "2026-05-12",
+            content: "Body",
+            frontmatter: { title: "Hello" },
+          },
+        }),
+      ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -84,7 +86,10 @@ describe("WebDataProvider auth errors", () => {
       path: "source/_posts/hello.md",
       title: "Hello",
     });
-    expect(fetchMock).toHaveBeenCalledWith("/api/github/posts?path=source%2F_posts%2Fhello.md", undefined);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/github/posts?path=source%2F_posts%2Fhello.md",
+      undefined,
+    );
   });
 
   it("saves posts with the HexoPost payload instead of relying on a top-level slug", async () => {
@@ -112,9 +117,19 @@ describe("WebDataProvider auth errors", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({
-          files: [{ name: "hero.png", path: "source/images/hero.png", size: 123, url: "/hero.png", sha: "abc" }],
-        })),
+        new Response(
+          JSON.stringify({
+            files: [
+              {
+                name: "hero.png",
+                path: "source/images/hero.png",
+                size: 123,
+                url: "/hero.png",
+                sha: "abc",
+              },
+            ],
+          }),
+        ),
       ),
     );
 
@@ -127,9 +142,19 @@ describe("WebDataProvider auth errors", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({
-          runs: [{ id: "1", status: "success", createdAt: "2026-05-12T00:00:00.000Z", duration: 1000, conclusion: "success" }],
-        })),
+        new Response(
+          JSON.stringify({
+            runs: [
+              {
+                id: "1",
+                status: "success",
+                createdAt: "2026-05-12T00:00:00.000Z",
+                duration: 1000,
+                conclusion: "success",
+              },
+            ],
+          }),
+        ),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify({ success: true })));
     vi.stubGlobal("fetch", fetchMock);

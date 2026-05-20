@@ -1,6 +1,10 @@
-import { PluginCatalog, PluginHost, StaticPluginSourceResolver, type PluginConfigValue } from "@hexo-cms/core";
-import type { ComponentType } from "react";
-import { officialPlugins, localDevPlugins } from "@hexo-cms/plugins";
+import {
+  PluginCatalog,
+  type PluginConfigValue,
+  PluginHost,
+  StaticPluginSourceResolver,
+} from "@hexo-cms/core";
+import { localDevPlugins, officialPlugins } from "@hexo-cms/plugins";
 import {
   createPlatformPluginConfigStore,
   createPlatformPluginFetch,
@@ -9,7 +13,8 @@ import {
   createPlatformPluginStateStore,
   createPlatformPluginStorageStore,
 } from "@hexo-cms/ui";
-import { zh, en, getElectronAPI } from "@hexo-cms/ui";
+import { en, getElectronAPI, zh } from "@hexo-cms/ui";
+import type { ComponentType } from "react";
 import { desktopDataProvider } from "./desktop-data-provider-instance";
 
 export async function createDesktopPluginHost() {

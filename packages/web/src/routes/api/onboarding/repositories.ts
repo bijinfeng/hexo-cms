@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { GITHUB_API_VERSION } from "@hexo-cms/core";
-import { getGitHubErrorStatus, listWritableRepositories, type OctokitLike } from "@hexo-cms/core";
+import { type OctokitLike, getGitHubErrorStatus, listWritableRepositories } from "@hexo-cms/core";
+import { createFileRoute } from "@tanstack/react-router";
 import { getAuth, getGitHubAccessTokenFromAuth, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/onboarding/repositories")({
@@ -17,12 +17,15 @@ export const Route = createFileRoute("/api/onboarding/repositories")({
         const { Octokit } = await import("octokit");
         const url = new URL(request.url);
         try {
-          const repositories = await listWritableRepositories(new Octokit({
-            auth: accessToken,
-            headers: { "X-GitHub-Api-Version": GITHUB_API_VERSION },
-          }) as OctokitLike, {
-            query: url.searchParams.get("q") ?? undefined,
-          });
+          const repositories = await listWritableRepositories(
+            new Octokit({
+              auth: accessToken,
+              headers: { "X-GitHub-Api-Version": GITHUB_API_VERSION },
+            }) as OctokitLike,
+            {
+              query: url.searchParams.get("q") ?? undefined,
+            },
+          );
 
           return json({ repositories });
         } catch (error) {

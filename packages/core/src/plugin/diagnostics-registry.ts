@@ -63,7 +63,11 @@ export class DiagnosticsRegistry {
         ];
       } else {
         try {
-          this.options.permissionBroker.assert(diagnostics.pluginId, "content.read", "diagnostics.run");
+          this.options.permissionBroker.assert(
+            diagnostics.pluginId,
+            "content.read",
+            "diagnostics.run",
+          );
           const content = this.options.contentFactory(diagnostics.pluginId);
           const result = await handler({
             pluginId: diagnostics.pluginId,

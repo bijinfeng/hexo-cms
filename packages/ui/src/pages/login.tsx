@@ -1,5 +1,5 @@
+import { ArrowRight, GitBranch, Loader2, Shield, Sparkles, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Zap, ArrowRight, Shield, GitBranch, Sparkles, Loader2 } from "lucide-react";
 import { GithubIcon } from "../components/ui/github-icon";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AuthClient, AuthSession } from "../types/auth";
@@ -124,9 +124,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
             <br />
             {t("login.subtitle")}
           </h1>
-          <p className="text-white/80 text-lg leading-relaxed">
-            {t("login.description")}
-          </p>
+          <p className="text-white/80 text-lg leading-relaxed">{t("login.description")}</p>
 
           <div className="space-y-4">
             {LOGIN_FEATURES.map(({ key, icon: Icon }) => (
@@ -141,9 +139,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
         </div>
 
         {/* Footer */}
-        <div className="relative text-white/60 text-sm">
-          {t("login.techStack")}
-        </div>
+        <div className="relative text-white/60 text-sm">{t("login.techStack")}</div>
       </div>
 
       {/* Right panel — login form */}
@@ -158,10 +154,10 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{t("login.welcomeBack")}</h2>
-            <p className="text-[var(--text-secondary)] text-sm">
-              {t("login.loginPrompt")}
-            </p>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+              {t("login.welcomeBack")}
+            </h2>
+            <p className="text-[var(--text-secondary)] text-sm">{t("login.loginPrompt")}</p>
           </div>
 
           {/* GitHub Login Button */}
@@ -170,18 +166,12 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 h-11 px-6 rounded-xl bg-[#24292e] dark:bg-[#f0f6ff] text-white dark:text-[#24292e] font-semibold text-sm hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <GithubIcon size={18} />
-            )}
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <GithubIcon size={18} />}
             {loading ? t("login.redirecting") : t("login.loginBtn")}
             {!loading && <ArrowRight size={16} className="ml-auto" />}
           </button>
 
-          {error && (
-            <p className="mt-3 text-sm text-[var(--status-error)] text-center">{error}</p>
-          )}
+          {error && <p className="mt-3 text-sm text-[var(--status-error)] text-center">{error}</p>}
 
           {deviceFlow && (
             <div className="mt-5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] p-4 text-center">
@@ -198,9 +188,7 @@ export function LoginPage({ authClient, signIn, onComplete }: LoginPageProps) {
                 {t("settings.auth.openGitHub")}
                 <ArrowRight size={14} />
               </a>
-              <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-                {t("login.autoContinue")}
-              </p>
+              <p className="mt-3 text-xs text-[var(--text-tertiary)]">{t("login.autoContinue")}</p>
             </div>
           )}
 

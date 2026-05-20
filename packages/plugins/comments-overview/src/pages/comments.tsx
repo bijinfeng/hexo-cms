@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { COMMENTS_OVERVIEW_PLUGIN_ID } from "../manifest";
 import {
   Badge,
   Button,
@@ -16,19 +13,22 @@ import {
   useI18n,
   usePluginSystem,
 } from "@hexo-cms/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
-  MessageSquare,
-  Search,
-  EyeOff,
-  Eye,
+  AlertTriangle,
   ChevronDown,
   ExternalLink,
-  Settings,
-  AlertTriangle,
+  Eye,
+  EyeOff,
+  MessageSquare,
   Puzzle,
   RefreshCw,
+  Search,
+  Settings,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { COMMENTS_OVERVIEW_PLUGIN_ID } from "../manifest";
 
 interface DiscussionAuthor {
   login: string;
@@ -71,7 +71,10 @@ const filterOptions = [
   { id: "ANSWERED", label: "comments.filter.answered" },
 ];
 
-function timeAgo(dateStr: string, t: (key: string, params?: Record<string, string | number>) => string): string {
+function timeAgo(
+  dateStr: string,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return t("comments.time.justNow");
@@ -85,11 +88,18 @@ function timeAgo(dateStr: string, t: (key: string, params?: Record<string, strin
 
 function truncateBody(body: string, maxLen = 150): string {
   if (!body) return "";
-  const cleaned = body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-  return cleaned.length > maxLen ? cleaned.slice(0, maxLen) + "..." : cleaned;
+  const cleaned = body
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.length > maxLen ? `${cleaned.slice(0, maxLen)}...` : cleaned;
 }
 
-async function fetchGitHubGraphQL(token: string, query: string, variables: Record<string, unknown>) {
+async function fetchGitHubGraphQL(
+  token: string,
+  query: string,
+  variables: Record<string, unknown>,
+) {
   const res = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: {
@@ -114,14 +124,14 @@ export function CommentsPage() {
   const { snapshot, enablePlugin } = usePluginSystem();
   const { t } = useI18n();
 
-  const commentsPlugin = snapshot.plugins.find((p) => p.manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID);
+  const commentsPlugin = snapshot.plugins.find(
+    (p) => p.manifest.id === COMMENTS_OVERVIEW_PLUGIN_ID,
+  );
   const isPluginEnabled = commentsPlugin?.record.state === "enabled";
   const pluginConfig = commentsPlugin?.config ?? {};
 
   const isConfigured = Boolean(
-    pluginConfig.giscusRepo &&
-    pluginConfig.giscusRepoId &&
-    pluginConfig.giscusCategoryId
+    pluginConfig.giscusRepo && pluginConfig.giscusRepoId && pluginConfig.giscusCategoryId,
   );
 
   const [search, setSearch] = useState("");
@@ -131,7 +141,12 @@ export function CommentsPage() {
   const queryClient = useQueryClient();
 
   const discussionsQuery = useQuery({
-    queryKey: ["comments-overview", "discussions", pluginConfig.giscusRepo, pluginConfig.giscusCategoryId],
+    queryKey: [
+      "comments-overview",
+      "discussions",
+      pluginConfig.giscusRepo,
+      pluginConfig.giscusCategoryId,
+    ],
     queryFn: async (): Promise<DiscussionThread[]> => {
       const token = await dataProvider.getToken();
       if (!token) {
@@ -172,7 +187,7 @@ export function CommentsPage() {
           createdAt: n.createdAt as string,
           updatedAt: n.updatedAt as string,
           state,
-          category: ((n.category as { name: string })?.name) ?? "",
+          category: (n.category as { name: string })?.name ?? "",
           author: (n.author as DiscussionAuthor) ?? { login: "unknown", avatarUrl: "" },
           comments: [],
         };
@@ -224,11 +239,18 @@ export function CommentsPage() {
   }
 
   function getCommentCache(discussionId: string): DiscussionComment[] | undefined {
-    return queryClient.getQueryData<DiscussionComment[]>(["comments-overview", "comments", discussionId]);
+    return queryClient.getQueryData<DiscussionComment[]>([
+      "comments-overview",
+      "comments",
+      discussionId,
+    ]);
   }
 
   function isLoadingComments(discussionId: string): boolean {
-    return queryClient.getQueryState(["comments-overview", "comments", discussionId])?.fetchStatus === "fetching";
+    return (
+      queryClient.getQueryState(["comments-overview", "comments", discussionId])?.fetchStatus ===
+      "fetching"
+    );
   }
 
   async function handleToggleExpand(discussionId: string) {
@@ -248,9 +270,10 @@ export function CommentsPage() {
     mutationFn: async ({ commentId, action }: { commentId: string; action: "hide" | "unhide" }) => {
       const token = await dataProvider.getToken();
       if (!token) throw new Error("Missing GitHub token");
-      const mutation = action === "hide"
-        ? `mutation($id: ID!) { hideDiscussionComment(input: { commentId: $id }) { clientMutationId } }`
-        : `mutation($id: ID!) { unhideDiscussionComment(input: { commentId: $id }) { clientMutationId } }`;
+      const mutation =
+        action === "hide"
+          ? "mutation($id: ID!) { hideDiscussionComment(input: { commentId: $id }) { clientMutationId } }"
+          : "mutation($id: ID!) { unhideDiscussionComment(input: { commentId: $id }) { clientMutationId } }";
       await fetchGitHubGraphQL(token, mutation, { id: commentId });
       return { commentId, action };
     },
@@ -262,9 +285,7 @@ export function CommentsPage() {
         if (!comments) continue;
         queryClient.setQueryData(
           key,
-          comments.map((c) =>
-            c.id === commentId ? { ...c, isHidden: action === "hide" } : c
-          ),
+          comments.map((c) => (c.id === commentId ? { ...c, isHidden: action === "hide" } : c)),
         );
       }
     },
@@ -279,7 +300,8 @@ export function CommentsPage() {
   }
 
   const filtered = discussions.filter((d) => {
-    const matchSearch = !search ||
+    const matchSearch =
+      !search ||
       d.title.toLowerCase().includes(search.toLowerCase()) ||
       d.body.toLowerCase().includes(search.toLowerCase());
     const matchFilter = activeFilter === "all" || d.state === activeFilter;
@@ -295,7 +317,9 @@ export function CommentsPage() {
               <Puzzle size={24} className="text-[var(--text-tertiary)]" />
             </div>
             <div>
-              <div className="text-lg font-semibold text-[var(--text-primary)] mb-1">{t("comments.page.notEnabled")}</div>
+              <div className="text-lg font-semibold text-[var(--text-primary)] mb-1">
+                {t("comments.page.notEnabled")}
+              </div>
               <p className="text-sm text-[var(--text-secondary)]">
                 {t("comments.page.notEnabledDesc")}
               </p>
@@ -319,12 +343,17 @@ export function CommentsPage() {
               <Settings size={24} className="text-[var(--text-tertiary)]" />
             </div>
             <div>
-              <div className="text-lg font-semibold text-[var(--text-primary)] mb-1">{t("comments.page.notConfigured")}</div>
+              <div className="text-lg font-semibold text-[var(--text-primary)] mb-1">
+                {t("comments.page.notConfigured")}
+              </div>
               <p className="text-sm text-[var(--text-secondary)]">
                 {t("comments.page.notConfiguredDesc")}
               </p>
             </div>
-            <Link to="/settings" search={{ section: "plugins", plugin: COMMENTS_OVERVIEW_PLUGIN_ID }}>
+            <Link
+              to="/settings"
+              search={{ section: "plugins", plugin: COMMENTS_OVERVIEW_PLUGIN_ID }}
+            >
               <Button variant="secondary">
                 <Settings size={16} />
                 {t("comments.page.configureComments")}
@@ -340,7 +369,9 @@ export function CommentsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t("comments.page.title")}</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+            {t("comments.page.title")}
+          </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
             {t("comments.page.totalDiscussions", { count: discussions.length })}
           </p>
@@ -353,7 +384,10 @@ export function CommentsPage() {
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -373,7 +407,9 @@ export function CommentsPage() {
       </div>
 
       {loading && (
-        <div className="text-center py-20 text-[var(--text-tertiary)]">{t("comments.page.loading")}</div>
+        <div className="text-center py-20 text-[var(--text-tertiary)]">
+          {t("comments.page.loading")}
+        </div>
       )}
 
       {error && (
@@ -381,7 +417,9 @@ export function CommentsPage() {
           <CardContent className="py-4 flex items-center gap-3">
             <AlertTriangle size={18} className="text-red-500" />
             <div>
-              <div className="text-sm font-medium text-red-700">{t("comments.page.loadFailed")}</div>
+              <div className="text-sm font-medium text-red-700">
+                {t("comments.page.loadFailed")}
+              </div>
               <div className="text-xs text-red-500 mt-0.5">{error}</div>
             </div>
           </CardContent>
@@ -421,12 +459,20 @@ export function CommentsPage() {
                       <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
                         {discussion.author && (
                           <span className="flex items-center gap-1">
-                            <img src={discussion.author.avatarUrl} alt="" className="w-4 h-4 rounded-full" />
+                            <img
+                              src={discussion.author.avatarUrl}
+                              alt=""
+                              className="w-4 h-4 rounded-full"
+                            />
                             {discussion.author.login}
                           </span>
                         )}
                         <span>{timeAgo(discussion.createdAt, t)}</span>
-                        {discussion.category && <Badge variant="default" className="text-[10px]">{discussion.category}</Badge>}
+                        {discussion.category && (
+                          <Badge variant="default" className="text-[10px]">
+                            {discussion.category}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 ml-4">
@@ -443,7 +489,14 @@ export function CommentsPage() {
                           onClick={() => handleToggleExpand(discussion.id)}
                           className="p-1.5 rounded-md hover:bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
                         >
-                          <ChevronDown size={14} className={isExpanded ? "rotate-180 transition-transform" : "transition-transform"} />
+                          <ChevronDown
+                            size={14}
+                            className={
+                              isExpanded
+                                ? "rotate-180 transition-transform"
+                                : "transition-transform"
+                            }
+                          />
                         </button>
                       </CollapsibleTrigger>
                     </div>
@@ -452,34 +505,64 @@ export function CommentsPage() {
                 <CollapsibleContent>
                   <div className="border-t border-[var(--border-secondary)] px-4 py-2">
                     {loadingDiscussionComments && (
-                      <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">{t("comments.page.loadingComments")}</div>
+                      <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">
+                        {t("comments.page.loadingComments")}
+                      </div>
                     )}
                     {!loadingDiscussionComments && comments.length === 0 && (
-                      <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">{t("comments.page.noComments")}</div>
+                      <div className="text-center py-3 text-xs text-[var(--text-tertiary)]">
+                        {t("comments.page.noComments")}
+                      </div>
                     )}
                     {comments.map((comment: DiscussionComment) => (
-                      <div key={comment.id} className="py-2.5 border-b border-[var(--border-secondary)] last:border-0">
+                      <div
+                        key={comment.id}
+                        className="py-2.5 border-b border-[var(--border-secondary)] last:border-0"
+                      >
                         <div className="flex items-start gap-2.5">
-                          <img src={comment.author.avatarUrl} alt="" className="w-5 h-5 rounded-full mt-0.5" />
+                          <img
+                            src={comment.author.avatarUrl}
+                            alt=""
+                            className="w-5 h-5 rounded-full mt-0.5"
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-medium text-[var(--text-primary)]">{comment.author.login}</span>
-                              <span className="text-[10px] text-[var(--text-tertiary)]">{timeAgo(comment.createdAt, t)}</span>
+                              <span className="text-xs font-medium text-[var(--text-primary)]">
+                                {comment.author.login}
+                              </span>
+                              <span className="text-[10px] text-[var(--text-tertiary)]">
+                                {timeAgo(comment.createdAt, t)}
+                              </span>
                               {comment.isAnswer && (
-                                <Badge variant="success" className="text-[10px] h-4 px-1.5">{t("comments.state.answered")}</Badge>
+                                <Badge variant="success" className="text-[10px] h-4 px-1.5">
+                                  {t("comments.state.answered")}
+                                </Badge>
                               )}
                               {comment.isHidden && (
-                                <Badge variant="default" className="text-[10px] h-4 px-1.5">{t("comments.comment.hidden")}</Badge>
+                                <Badge variant="default" className="text-[10px] h-4 px-1.5">
+                                  {t("comments.comment.hidden")}
+                                </Badge>
                               )}
                             </div>
-                            <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-3">{comment.body}</p>
+                            <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-3">
+                              {comment.body}
+                            </p>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
                             <button
-                              onClick={() => handleModerateComment(comment.id, comment.isHidden ? "unhide" : "hide")}
+                              onClick={() =>
+                                handleModerateComment(
+                                  comment.id,
+                                  comment.isHidden ? "unhide" : "hide",
+                                )
+                              }
                               disabled={isModerating(comment.id)}
                               className="p-1 rounded hover:bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
-                              title={comment.isHidden ? t("comments.comment.unhide") : t("comments.comment.hide")}
+                              title={
+                                comment.isHidden
+                                  ? t("comments.comment.unhide")
+                                  : t("comments.comment.hide")
+                              }
                             >
                               {comment.isHidden ? <Eye size={13} /> : <EyeOff size={13} />}
                             </button>
@@ -501,7 +584,9 @@ export function CommentsPage() {
             <MessageSquare size={20} className="text-[var(--text-tertiary)]" />
           </div>
           <div className="text-sm text-[var(--text-tertiary)]">
-            {search || activeFilter !== "all" ? t("comments.page.noMatch") : t("comments.page.noComments")}
+            {search || activeFilter !== "all"
+              ? t("comments.page.noMatch")
+              : t("comments.page.noComments")}
           </div>
         </div>
       )}

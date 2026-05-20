@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { getErrorMessage, parseYamlScalar, setYamlScalar } from "@hexo-cms/core";
+import { createFileRoute } from "@tanstack/react-router";
 import { getGitHubCtx, githubCtxErrorResponse, json } from "../../../lib/server-utils";
 
 export const Route = createFileRoute("/api/github/themes")({
@@ -18,11 +18,16 @@ export const Route = createFileRoute("/api/github/themes")({
           const installedThemes = themeEntries
             .filter((entry) => entry.type === "dir")
             .map((entry) => ({ name: entry.name, path: entry.path }));
-          const currentTheme = configFile ? (parseYamlScalar(configFile.content, "theme") ?? "") : "";
+          const currentTheme = configFile
+            ? (parseYamlScalar(configFile.content, "theme") ?? "")
+            : "";
 
           return json({ currentTheme, installedThemes });
         } catch (error) {
-          return json({ error: getErrorMessage(error), currentTheme: "", installedThemes: [] }, 500);
+          return json(
+            { error: getErrorMessage(error), currentTheme: "", installedThemes: [] },
+            500,
+          );
         }
       },
 
@@ -37,7 +42,11 @@ export const Route = createFileRoute("/api/github/themes")({
           const configFile = await ctx.github.getRawFile("_config.yml");
           if (!configFile) return json({ error: "CONFIG_NOT_FOUND" }, 404);
 
-          await ctx.github.writeRawFile("_config.yml", setYamlScalar(configFile.content, "theme", theme), `Switch theme to ${theme}`);
+          await ctx.github.writeRawFile(
+            "_config.yml",
+            setYamlScalar(configFile.content, "theme", theme),
+            `Switch theme to ${theme}`,
+          );
           return json({ success: true });
         } catch (error) {
           return json({ error: getErrorMessage(error) }, 500);

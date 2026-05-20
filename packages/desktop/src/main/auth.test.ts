@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createAnonymousSession, createDeviceFlowSession, pollGitHubDeviceFlowToken, startGitHubDeviceFlow } from "./auth";
+import {
+  createAnonymousSession,
+  createDeviceFlowSession,
+  pollGitHubDeviceFlowToken,
+  startGitHubDeviceFlow,
+} from "./auth";
 
 describe("desktop GitHub OAuth", () => {
   it("creates an anonymous session when no local OAuth token exists", () => {

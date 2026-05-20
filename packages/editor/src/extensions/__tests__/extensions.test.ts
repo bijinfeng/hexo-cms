@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import { Editor } from "@tiptap/core";
+import { describe, expect, it } from "vitest";
 import { getBuiltinExtensions } from "../index";
 
 interface LowlightCodeBlockOptions {

@@ -1,9 +1,9 @@
-import { autoUpdater } from "electron-updater";
-import type { BrowserWindow } from "electron";
+import { join } from "node:path";
 import type { UpdateChannel, UpdateStatusPayload } from "@hexo-cms/ui/types/electron-api";
-import { readJsonFile, writeJsonFile } from "./json-file-store";
-import { join } from "path";
+import type { BrowserWindow } from "electron";
 import { app } from "electron";
+import { autoUpdater } from "electron-updater";
+import { readJsonFile, writeJsonFile } from "./json-file-store";
 
 const UPDATE_CONFIG_FILENAME = "update-config.json";
 

@@ -1,6 +1,6 @@
+import { AlertCircle, Inbox, Loader2, Search } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState, useMemo } from "react";
-import { Search, Loader2, AlertCircle, Inbox } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { Alert } from "./ui/alert";
 import { Input } from "./ui/input";
@@ -51,7 +51,7 @@ export function ListPage<T>({
       searchFields.some((field) => {
         const val = item[field];
         return typeof val === "string" && val.toLowerCase().includes(q);
-      })
+      }),
     );
   }, [items, searchQuery, searchFields]);
 
@@ -110,11 +110,7 @@ export function ListPage<T>({
         {renderFilters}
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          {error}
-        </Alert>
-      )}
+      {error && <Alert variant="destructive">{error}</Alert>}
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[300px] gap-2">
@@ -124,9 +120,7 @@ export function ListPage<T>({
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map((item, i) => renderItem(item, i))}
-        </div>
+        <div className="space-y-2">{filtered.map((item, i) => renderItem(item, i))}</div>
       )}
     </div>
   );

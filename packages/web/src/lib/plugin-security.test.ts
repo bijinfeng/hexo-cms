@@ -76,12 +76,17 @@ describe("plugin security API routes", () => {
     const response = await getHandlers(Route).POST({
       request: new Request("http://localhost/api/plugin/fetch", {
         method: "POST",
-        body: JSON.stringify({ pluginId: "hexo-cms-attachments-helper", url: "https://api.example.com/status" }),
+        body: JSON.stringify({
+          pluginId: "hexo-cms-attachments-helper",
+          url: "https://api.example.com/status",
+        }),
       }),
     });
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toMatchObject({ error: expect.stringMatching(/permission|not found|Unknown/i) });
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringMatching(/permission|not found|Unknown/i),
+    });
   });
 
   it("does not expose plaintext plugin secrets and supports scoped has/set operations", async () => {
@@ -90,7 +95,9 @@ describe("plugin security API routes", () => {
 
     const { Route } = await import("../routes/api/plugin/secrets");
     const hasResponse = await getHandlers(Route).GET({
-      request: new Request("http://localhost/api/plugin/secrets?pluginId=hexo-cms-analytics&key=apiKey"),
+      request: new Request(
+        "http://localhost/api/plugin/secrets?pluginId=hexo-cms-analytics&key=apiKey",
+      ),
     });
 
     expect(hasResponse.status).toBe(200);
@@ -109,7 +116,12 @@ describe("plugin security API routes", () => {
     });
 
     expect(setResponse.status).toBe(200);
-    expect(secretDb.setPluginSecret).toHaveBeenCalledWith("user-1", "hexo-cms-analytics", "apiKey", "secret-value");
+    expect(secretDb.setPluginSecret).toHaveBeenCalledWith(
+      "user-1",
+      "hexo-cms-analytics",
+      "apiKey",
+      "secret-value",
+    );
   });
 
   it("persists plugin logs through authenticated scoped API route", async () => {

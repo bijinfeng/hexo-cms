@@ -12,8 +12,8 @@
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @hexo-cms/web test:e2e",
     "test:coverage": "pnpm --filter @hexo-cms/core test:coverage && pnpm --filter @hexo-cms/ui test:coverage",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "type-check": "pnpm -r exec tsc --noEmit",
     "postinstall": "pnpm --filter @hexo-cms/ui generate-icons",
     "prepare": "husky"
@@ -26,9 +26,9 @@
     "react-dom": "catalog:react"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:lint",
     "@commitlint/cli": "catalog:git-hooks",
     "@commitlint/config-conventional": "catalog:git-hooks",
-    "@eslint/js": "catalog:lint",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "catalog:build",
     "@testing-library/jest-dom": "catalog:test",
@@ -37,14 +37,9 @@
     "@types/node": "catalog:types",
     "@types/react": "catalog:types",
     "@types/react-dom": "catalog:types",
-    "@typescript-eslint/eslint-plugin": "catalog:lint",
-    "@typescript-eslint/parser": "catalog:lint",
     "@vitejs/plugin-react": "catalog:build",
     "@vitest/coverage-v8": "catalog:test",
     "@vitest/ui": "catalog:test",
-    "eslint": "catalog:lint",
-    "eslint-plugin-react": "catalog:lint",
-    "eslint-plugin-react-hooks": "catalog:lint",
     "husky": "catalog:git-hooks",
     "jsdom": "catalog:test",
     "lint-staged": "catalog:git-hooks",
@@ -54,7 +49,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix"
+      "biome check --write"
     ]
   }
 }

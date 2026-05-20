@@ -1,4 +1,4 @@
-import { ArrowDown, CheckCircle2, Loader2, AlertCircle, RotateCw } from "lucide-react";
+import { AlertCircle, ArrowDown, CheckCircle2, Loader2, RotateCw } from "lucide-react";
 import type { UseUpdaterReturn } from "../hooks/useUpdater";
 
 interface UpdateBannerProps {
@@ -6,7 +6,8 @@ interface UpdateBannerProps {
 }
 
 export function UpdateBanner({ updater }: UpdateBannerProps) {
-  const { status, version, progress, error, downloadUpdate, quitAndInstall, checkForUpdates } = updater;
+  const { status, version, progress, error, downloadUpdate, quitAndInstall, checkForUpdates } =
+    updater;
 
   if (status === "idle" || status === "up-to-date") return null;
 

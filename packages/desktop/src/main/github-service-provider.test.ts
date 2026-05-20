@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
 import type { GitHubConfig } from "@hexo-cms/core";
+import { describe, expect, it, vi } from "vitest";
 import { createGitHubServiceProvider } from "./github-service-provider";
 
 interface FakeGitHubService {
@@ -10,10 +10,12 @@ interface FakeGitHubService {
 function createProvider(initialConfig: GitHubConfig | null, initialToken: string | null) {
   let config = initialConfig;
   let token = initialToken;
-  const createService = vi.fn((serviceToken: string, serviceConfig: GitHubConfig): FakeGitHubService => ({
-    token: serviceToken,
-    config: serviceConfig,
-  }));
+  const createService = vi.fn(
+    (serviceToken: string, serviceConfig: GitHubConfig): FakeGitHubService => ({
+      token: serviceToken,
+      config: serviceConfig,
+    }),
+  );
   const provider = createGitHubServiceProvider<FakeGitHubService>({
     loadConfig: () => config,
     getAccessToken: async () => token,
@@ -47,7 +49,13 @@ describe("desktop GitHub service provider", () => {
 
   it("reuses the cached service while token and service config stay the same", async () => {
     const { provider, createService } = createProvider(
-      { owner: "hexo", repo: "blog", branch: "main", postsDir: "source/_posts", mediaDir: "source/images" },
+      {
+        owner: "hexo",
+        repo: "blog",
+        branch: "main",
+        postsDir: "source/_posts",
+        mediaDir: "source/images",
+      },
       "token-1",
     );
 

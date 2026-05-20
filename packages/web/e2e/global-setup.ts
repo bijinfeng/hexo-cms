@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
@@ -98,7 +98,12 @@ export default async function setup() {
   });
 
   try {
-    await waitForServer(baseURL, serverStartTimeout, () => startupError, () => exitCode);
+    await waitForServer(
+      baseURL,
+      serverStartTimeout,
+      () => startupError,
+      () => exitCode,
+    );
   } catch (error) {
     await stopServer(server);
     const message = error instanceof Error ? error.message : String(error);

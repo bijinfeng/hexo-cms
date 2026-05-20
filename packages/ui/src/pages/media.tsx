@@ -1,28 +1,28 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { useDataProvider } from "../context/data-provider-context";
-import { useMediaFiles, useDeleteMedia } from "../hooks/use-media-query";
-import { useI18n } from "../i18n/I18nProvider";
-import { Card, CardContent } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Alert } from "../components/ui/alert";
-import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
-import { usePluginSystem } from "../plugin";
 import {
-  Upload,
-  Search,
-  Grid3x3,
-  List,
-  Image as ImageIcon,
+  CheckCircle2,
+  Copy,
   FileText,
   Film,
-  Music,
-  Trash2,
+  Grid3x3,
+  Image as ImageIcon,
+  List,
   Loader2,
-  Copy,
-  CheckCircle2,
+  Music,
+  Search,
+  Trash2,
+  Upload,
 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert } from "../components/ui/alert";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
 import { Checkbox } from "../components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import { useDataProvider } from "../context/data-provider-context";
+import { useDeleteMedia, useMediaFiles } from "../hooks/use-media-query";
+import { useI18n } from "../i18n/I18nProvider";
+import { usePluginSystem } from "../plugin";
 
 const typeConfig = {
   image: { icon: ImageIcon, color: "var(--brand-primary)" },
@@ -60,9 +60,7 @@ export function MediaPage() {
   const hasDocumentFilter = snapshot.extensions.uiFlags.some(
     (flag) => flag.flag === "media.documentFilter",
   );
-  const hasMediaSearch = snapshot.extensions.uiFlags.some(
-    (flag) => flag.flag === "media.search",
-  );
+  const hasMediaSearch = snapshot.extensions.uiFlags.some((flag) => flag.flag === "media.search");
   const filterOptions = hasDocumentFilter
     ? [...CORE_FILTER_OPTIONS, ATTACHMENT_FILTER_OPTION]
     : CORE_FILTER_OPTIONS;
@@ -76,20 +74,26 @@ export function MediaPage() {
   const [batchDeleting, setBatchDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filterLabels = useMemo<Record<FilterKey, string>>(() => ({
-    all: t("media.all"),
-    image: t("media.typeImage"),
-    video: t("media.typeVideo"),
-    audio: t("media.typeAudio"),
-    document: t("media.typeDocument"),
-  }), [t]);
+  const filterLabels = useMemo<Record<FilterKey, string>>(
+    () => ({
+      all: t("media.all"),
+      image: t("media.typeImage"),
+      video: t("media.typeVideo"),
+      audio: t("media.typeAudio"),
+      document: t("media.typeDocument"),
+    }),
+    [t],
+  );
 
-  const typeLabels = useMemo<Record<keyof typeof typeConfig, string>>(() => ({
-    image: t("media.typeImage"),
-    video: t("media.typeVideo"),
-    audio: t("media.typeAudio"),
-    document: t("media.typeDocument"),
-  }), [t]);
+  const typeLabels = useMemo<Record<keyof typeof typeConfig, string>>(
+    () => ({
+      image: t("media.typeImage"),
+      video: t("media.typeVideo"),
+      audio: t("media.typeAudio"),
+      document: t("media.typeDocument"),
+    }),
+    [t],
+  );
 
   const mediaQuery = useMediaFiles();
   const deleteMediaMutation = useDeleteMedia();
@@ -228,12 +232,7 @@ export function MediaPage() {
       </div>
 
       {/* Error */}
-      {(error || actionError) && (
-        <Alert variant="destructive">
-          {error || actionError}
-        </Alert>
-      )}
-
+      {(error || actionError) && <Alert variant="destructive">{error || actionError}</Alert>}
 
       {/* Batch actions */}
       {selectedPaths.size > 0 && (
@@ -286,7 +285,11 @@ export function MediaPage() {
         )}
 
         <div className="flex items-center gap-2">
-          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "grid" | "list")}>
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(v) => v && setViewMode(v as "grid" | "list")}
+          >
             <ToggleGroupItem value="grid" size="sm" className="w-7 h-7">
               <Grid3x3 size={14} />
             </ToggleGroupItem>
@@ -332,9 +335,13 @@ export function MediaPage() {
                     <button
                       onClick={() => copyPath(item)}
                       className="w-6 h-6 rounded bg-[var(--bg-surface)] shadow-sm flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
-                          title={t("media.copyMarkdown")}
+                      title={t("media.copyMarkdown")}
                     >
-                      {copiedPath === item.path ? <CheckCircle2 size={12} className="text-[var(--status-success)]" /> : <Copy size={12} />}
+                      {copiedPath === item.path ? (
+                        <CheckCircle2 size={12} className="text-[var(--status-success)]" />
+                      ) : (
+                        <Copy size={12} />
+                      )}
                     </button>
                     <button
                       onClick={() => handleDelete(item.path)}
@@ -410,7 +417,9 @@ export function MediaPage() {
                         <div className="text-sm font-medium text-[var(--text-primary)] truncate">
                           {item.name}
                         </div>
-                        <div className="text-xs text-[var(--text-tertiary)] font-mono truncate">{item.path}</div>
+                        <div className="text-xs text-[var(--text-tertiary)] font-mono truncate">
+                          {item.path}
+                        </div>
                       </div>
                       <span className="hidden md:block text-xs text-[var(--text-secondary)] whitespace-nowrap">
                         {typeLabels[type]}
@@ -422,9 +431,13 @@ export function MediaPage() {
                         <button
                           onClick={() => copyPath(item)}
                           className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary-subtle)] transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
-                      title={t("media.copyMarkdown")}
+                          title={t("media.copyMarkdown")}
                         >
-                          {copiedPath === item.path ? <CheckCircle2 size={14} className="text-[var(--status-success)]" /> : <Copy size={14} />}
+                          {copiedPath === item.path ? (
+                            <CheckCircle2 size={14} className="text-[var(--status-success)]" />
+                          ) : (
+                            <Copy size={14} />
+                          )}
                         </button>
                         <button
                           onClick={() => handleDelete(item.path)}

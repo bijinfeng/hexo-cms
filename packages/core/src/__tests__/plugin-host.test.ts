@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  type DataProvider,
   MemoryPluginConfigStore,
   MemoryPluginLogStore,
   MemoryPluginSecretStore,
@@ -8,7 +9,6 @@ import {
   PluginCatalog,
   PluginHost,
   definePlugin,
-  type DataProvider,
 } from "../index";
 
 function createDataProvider(): DataProvider {
@@ -33,7 +33,9 @@ function createDataProvider(): DataProvider {
     getMediaFiles: vi.fn().mockResolvedValue([]),
     uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
     deleteMedia: vi.fn().mockResolvedValue(undefined),
-    getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+    getStats: vi
+      .fn()
+      .mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
     getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),
@@ -70,7 +72,9 @@ function createHost() {
         commands: [{ id: "host.run", title: "Run" }],
         diagnostics: [{ id: "host.diagnostics", title: "Diagnostics", scope: "site" }],
         events: [{ name: "post.afterSave" }],
-        uiFlags: [{ id: "media-documents", flag: "media.documentFilter", title: "Media documents" }],
+        uiFlags: [
+          { id: "media-documents", flag: "media.documentFilter", title: "Media documents" },
+        ],
       },
     },
     renderers: {
@@ -106,13 +110,17 @@ describe("PluginHost", () => {
 
     const snapshot = host.snapshot();
     expect(snapshot.plugins[0].record.state).toBe("enabled");
-    expect(snapshot.extensions.dashboardWidgets[0]).toEqual(expect.objectContaining({
-      renderer: "host.widget",
-      pluginId: "hexo-cms-host-test",
-    }));
-    expect(snapshot.extensions.uiFlags[0]).toEqual(expect.objectContaining({
-      flag: "media.documentFilter",
-    }));
+    expect(snapshot.extensions.dashboardWidgets[0]).toEqual(
+      expect.objectContaining({
+        renderer: "host.widget",
+        pluginId: "hexo-cms-host-test",
+      }),
+    );
+    expect(snapshot.extensions.uiFlags[0]).toEqual(
+      expect.objectContaining({
+        flag: "media.documentFilter",
+      }),
+    );
     expect(host.getDashboardWidgetRenderer(snapshot.extensions.dashboardWidgets[0])).toBe(renderer);
 
     await expect(host.executePluginCommand("hexo-cms-host-test", "host.run")).resolves.toEqual(

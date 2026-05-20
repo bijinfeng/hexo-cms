@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
-import { DesktopBackedPluginStore, WebBackedPluginStore, type SyncPluginStore } from "../plugin/platform-sync-store";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  DesktopBackedPluginStore,
+  type SyncPluginStore,
+  WebBackedPluginStore,
+} from "../plugin/platform-sync-store";
 
 type TestValue = Record<string, { enabled: boolean }>;
 

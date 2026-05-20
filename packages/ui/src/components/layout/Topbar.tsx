@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
-import { cn } from "../../utils";
-import { Button } from "../ui/button";
-import { Sun, Moon, Bell, Search, Menu, Globe } from "lucide-react";
-import { WindowControls } from "./WindowControls";
-import { UserMenu } from "../user-menu";
-import { CommandPalette } from "../command-palette";
+import { Bell, Globe, Menu, Moon, Search, Sun } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AuthClient } from "../../types/auth";
+import { cn } from "../../utils";
+import { CommandPalette } from "../command-palette";
+import { Button } from "../ui/button";
+import { UserMenu } from "../user-menu";
+import { WindowControls } from "./WindowControls";
 
 interface TopbarProps {
   title?: string;
@@ -17,7 +17,14 @@ interface TopbarProps {
   onSignedOut?: () => void;
 }
 
-export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, authClient, onSignedOut }: TopbarProps) {
+export function Topbar({
+  title,
+  isElectron,
+  onMenuToggle,
+  showSearch = true,
+  authClient,
+  onSignedOut,
+}: TopbarProps) {
   const { t, locale, setLocale } = useI18n();
   const [isDark, setIsDark] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -50,15 +57,15 @@ export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, aut
     <header
       className={cn(
         "h-12 flex items-center gap-3 px-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-10",
-        isElectron && isMac && "pl-20"
+        isElectron && isMac && "pl-20",
       )}
-      style={isElectron ? { WebkitAppRegion: "drag" } as React.CSSProperties : undefined}
+      style={isElectron ? ({ WebkitAppRegion: "drag" } as React.CSSProperties) : undefined}
     >
       {/* Mobile menu toggle */}
       <button
         onClick={onMenuToggle}
         className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
-        style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : undefined}
+        style={isElectron ? ({ WebkitAppRegion: "no-drag" } as React.CSSProperties) : undefined}
       >
         <Menu size={18} />
       </button>
@@ -74,7 +81,7 @@ export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, aut
         <button
           onClick={() => setPaletteOpen(true)}
           className="flex-1 max-w-sm hidden md:flex items-center gap-2 h-8 px-3 rounded-lg bg-[var(--bg-muted)] border border-[var(--border-default)] text-sm text-[var(--text-tertiary)] cursor-text hover:border-[var(--border-strong)] transition-colors"
-          style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : undefined}
+          style={isElectron ? ({ WebkitAppRegion: "no-drag" } as React.CSSProperties) : undefined}
         >
           <Search size={14} />
           <span>{t("common.search")}</span>
@@ -84,7 +91,10 @@ export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, aut
         </button>
       )}
 
-      <div className="ml-auto flex items-center gap-1" style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : undefined}>
+      <div
+        className="ml-auto flex items-center gap-1"
+        style={isElectron ? ({ WebkitAppRegion: "no-drag" } as React.CSSProperties) : undefined}
+      >
         {/* 
           通知铃铛 — 当前阶段保留代码，功能暂不启用。
           待评论插件（Giscus / Waline webhook）接入后重新激活：
@@ -92,7 +102,12 @@ export function Topbar({ title, isElectron, onMenuToggle, showSearch = true, aut
           - 添加下拉通知列表
           详见 docs/superpowers/specs/2026-05-15-topbar-features-design.md
         */}
-        <Button variant="ghost" size="icon" className="relative opacity-50 pointer-events-none" disabled>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative opacity-50 pointer-events-none"
+          disabled
+        >
           <Bell size={18} />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--brand-primary)]" />
         </Button>

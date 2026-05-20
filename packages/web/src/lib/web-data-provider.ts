@@ -1,8 +1,13 @@
 import { DataProviderError, DataProviderErrorCode } from "@hexo-cms/core";
-import type { DataProvider, HexoPost, GitHubConfig } from "@hexo-cms/core";
+import type { DataProvider, GitHubConfig, HexoPost } from "@hexo-cms/core";
 
 class WebDataProviderError extends DataProviderError {
-  constructor(message: string, code: DataProviderErrorCode, statusCode?: number, originalError?: Error) {
+  constructor(
+    message: string,
+    code: DataProviderErrorCode,
+    statusCode?: number,
+    originalError?: Error,
+  ) {
     super(message, code, statusCode, originalError);
     this.name = "WebDataProviderError";
   }
@@ -12,18 +17,33 @@ async function checkResponse(res: Response, operation: string): Promise<void> {
   if (res.ok) return;
   const status = res.status;
   if (status === 401 || status === 403) {
-    throw new WebDataProviderError(`GitHub auth failed: ${res.statusText}`, DataProviderErrorCode.AUTH, status);
+    throw new WebDataProviderError(
+      `GitHub auth failed: ${res.statusText}`,
+      DataProviderErrorCode.AUTH,
+      status,
+    );
   }
   if (status === 429) {
     throw new WebDataProviderError("Rate limited", DataProviderErrorCode.RATE_LIMIT, status);
   }
   if (status === 404) {
-    throw new WebDataProviderError(`Not found: ${operation}`, DataProviderErrorCode.NOT_FOUND, status);
+    throw new WebDataProviderError(
+      `Not found: ${operation}`,
+      DataProviderErrorCode.NOT_FOUND,
+      status,
+    );
   }
-  throw new WebDataProviderError(`Request failed: ${operation} (${status})`, DataProviderErrorCode.NETWORK, status);
+  throw new WebDataProviderError(
+    `Request failed: ${operation} (${status})`,
+    DataProviderErrorCode.NETWORK,
+    status,
+  );
 }
 
-async function apiFetch(url: string, options?: Parameters<typeof fetch>[1] & { method?: string; headers?: Record<string, string> }): Promise<Response> {
+async function apiFetch(
+  url: string,
+  options?: Parameters<typeof fetch>[1] & { method?: string; headers?: Record<string, string> },
+): Promise<Response> {
   try {
     const res = await fetch(url, options);
     await checkResponse(res, url);
@@ -31,10 +51,20 @@ async function apiFetch(url: string, options?: Parameters<typeof fetch>[1] & { m
   } catch (error) {
     if (error instanceof WebDataProviderError) throw error;
     if (error instanceof TypeError && (error as Error).message === "Failed to fetch") {
-      throw new WebDataProviderError("Network error: unable to reach server", DataProviderErrorCode.NETWORK, undefined, error as Error);
+      throw new WebDataProviderError(
+        "Network error: unable to reach server",
+        DataProviderErrorCode.NETWORK,
+        undefined,
+        error as Error,
+      );
     }
     if (error instanceof DataProviderError) throw error;
-    throw new WebDataProviderError(`Request failed: ${url}`, DataProviderErrorCode.NETWORK, undefined, error as Error);
+    throw new WebDataProviderError(
+      `Request failed: ${url}`,
+      DataProviderErrorCode.NETWORK,
+      undefined,
+      error as Error,
+    );
   }
 }
 
@@ -154,7 +184,11 @@ export class WebDataProvider implements DataProvider {
     return res.json();
   }
 
-  async renameTag(type: "tag" | "category", oldName: string, newName: string): Promise<{ updatedCount: number }> {
+  async renameTag(
+    type: "tag" | "category",
+    oldName: string,
+    newName: string,
+  ): Promise<{ updatedCount: number }> {
     const res = await apiFetch("/api/github/tags", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -172,7 +206,11 @@ export class WebDataProvider implements DataProvider {
     return res.json();
   }
 
-  async mergeTag(type: "tag" | "category", sourceName: string, targetName: string): Promise<{ updatedCount: number }> {
+  async mergeTag(
+    type: "tag" | "category",
+    sourceName: string,
+    targetName: string,
+  ): Promise<{ updatedCount: number }> {
     const res = await apiFetch("/api/github/tags", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -183,7 +221,9 @@ export class WebDataProvider implements DataProvider {
 
   // ==================== 媒体管理 ====================
 
-  async getMediaFiles(): Promise<Array<{ name: string; path: string; size: number; url: string; sha: string }>> {
+  async getMediaFiles(): Promise<
+    Array<{ name: string; path: string; size: number; url: string; sha: string }>
+  > {
     const res = await optionalApiFetch("/api/github/media");
     if (!res) return [];
     const data = await res.json();
@@ -225,7 +265,10 @@ export class WebDataProvider implements DataProvider {
 
   // ==================== 主题管理 ====================
 
-  async getThemes(): Promise<{ currentTheme: string; installedThemes: Array<{ name: string; path: string }> }> {
+  async getThemes(): Promise<{
+    currentTheme: string;
+    installedThemes: Array<{ name: string; path: string }>;
+  }> {
     const res = await optionalApiFetch("/api/github/themes");
     if (!res) return { currentTheme: "", installedThemes: [] };
     return res.json();
@@ -241,7 +284,9 @@ export class WebDataProvider implements DataProvider {
 
   // ==================== 部署管理 ====================
 
-  async getDeployments(): Promise<Array<{ id: string; status: string; createdAt: string; duration: number; conclusion: string }>> {
+  async getDeployments(): Promise<
+    Array<{ id: string; status: string; createdAt: string; duration: number; conclusion: string }>
+  > {
     const res = await optionalApiFetch("/api/deploy");
     if (!res) return [];
     const data = await res.json();

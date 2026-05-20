@@ -9,7 +9,9 @@ export interface StaticPluginSourceResolverOptions {
   enabled?: boolean;
 }
 
-export class StaticPluginSourceResolver<TRenderer = unknown> implements PluginSourceResolver<TRenderer> {
+export class StaticPluginSourceResolver<TRenderer = unknown>
+  implements PluginSourceResolver<TRenderer>
+{
   readonly origin: PluginOrigin;
   private readonly enabled: boolean;
 

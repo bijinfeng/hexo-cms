@@ -1,5 +1,5 @@
-import type { AuthSession, AuthUser } from "@hexo-cms/ui/types/auth";
 import { GITHUB_API_VERSION } from "@hexo-cms/core";
+import type { AuthSession, AuthUser } from "@hexo-cms/ui/types/auth";
 
 export interface StoredOAuthSession {
   accessToken: string;
@@ -116,7 +116,7 @@ export async function startGitHubDeviceFlow({
     };
   }
 
-  const payload = await response.json() as {
+  const payload = (await response.json()) as {
     device_code?: string;
     user_code?: string;
     verification_uri?: string;
@@ -157,7 +157,11 @@ export async function pollGitHubDeviceFlowToken({
   clientId: string;
   deviceCode: string;
   fetcher?: Fetcher;
-}): Promise<{ status: "pending" | "slow_down"; intervalDelta?: number } | { status: "success"; token: string; tokenType?: string; scope?: string } | { status: "error"; error: string }> {
+}): Promise<
+  | { status: "pending" | "slow_down"; intervalDelta?: number }
+  | { status: "success"; token: string; tokenType?: string; scope?: string }
+  | { status: "error"; error: string }
+> {
   const body = new URLSearchParams({
     client_id: clientId,
     device_code: deviceCode,
@@ -175,7 +179,7 @@ export async function pollGitHubDeviceFlowToken({
 
   if (!response.ok) return { status: "error", error: "AUTH_NETWORK_ERROR" };
 
-  const payload = await response.json() as {
+  const payload = (await response.json()) as {
     access_token?: string;
     token_type?: string;
     scope?: string;
@@ -196,7 +200,10 @@ export async function pollGitHubDeviceFlowToken({
   return { status: "error", error: mapDeviceFlowError(payload.error) };
 }
 
-export async function fetchGitHubUser(accessToken: string, fetcher: Fetcher = fetch): Promise<AuthUser | null> {
+export async function fetchGitHubUser(
+  accessToken: string,
+  fetcher: Fetcher = fetch,
+): Promise<AuthUser | null> {
   const response = await fetcher(GITHUB_USER_URL, {
     headers: {
       Accept: "application/vnd.github+json",
@@ -207,7 +214,7 @@ export async function fetchGitHubUser(accessToken: string, fetcher: Fetcher = fe
 
   if (!response.ok) return null;
 
-  const user = await response.json() as {
+  const user = (await response.json()) as {
     id?: number;
     login?: string;
     name?: string | null;

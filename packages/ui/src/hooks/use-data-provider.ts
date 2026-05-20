@@ -1,1 +1,1 @@
-export { useDataProvider } from '../context/data-provider-context';
+export { useDataProvider } from "../context/data-provider-context";

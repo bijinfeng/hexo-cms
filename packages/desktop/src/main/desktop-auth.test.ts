@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
 import type { AuthUser } from "@hexo-cms/ui/types/auth";
+import { describe, expect, it, vi } from "vitest";
 import { createDesktopAuthManager } from "./desktop-auth";
 import type { KeychainAdapter } from "./desktop-persistence";
 
@@ -143,7 +143,9 @@ describe("desktop auth manager", () => {
           },
         },
       }),
-      pollGitHubDeviceFlowToken: vi.fn().mockResolvedValue({ status: "error", error: "AUTH_REJECTED" }),
+      pollGitHubDeviceFlowToken: vi
+        .fn()
+        .mockResolvedValue({ status: "error", error: "AUTH_REJECTED" }),
     });
 
     await manager.startDeviceFlow();
@@ -154,7 +156,10 @@ describe("desktop auth manager", () => {
 
   it("signs out idempotently and clears current and legacy keychain accounts", async () => {
     const { adapter, values } = createMemoryKeychain({
-      "github-oauth-session": JSON.stringify({ accessToken: "token-1", createdAt: "2026-05-14T10:00:00.000Z" }),
+      "github-oauth-session": JSON.stringify({
+        accessToken: "token-1",
+        createdAt: "2026-05-14T10:00:00.000Z",
+      }),
       "github-token": "legacy-token",
     });
     const invalidateGitHubService = vi.fn();

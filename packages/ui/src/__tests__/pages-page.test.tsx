@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { PagesPage } from '../pages/pages';
-import { DataProviderProvider } from '../context/data-provider-context';
-import type { DataProvider } from '@hexo-cms/core';
-import { I18nTestWrapper } from './i18n-test-wrapper';
+import type { DataProvider } from "@hexo-cms/core";
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DataProviderProvider } from "../context/data-provider-context";
+import { PagesPage } from "../pages/pages";
+import { I18nTestWrapper } from "./i18n-test-wrapper";
 
 const routerState = vi.hoisted(() => ({
-  pathname: '/pages',
+  pathname: "/pages",
 }));
 
-vi.mock('@tanstack/react-router', () => ({
+vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
   useRouterState: () => ({ location: { pathname: routerState.pathname } }),
   Outlet: () => <div data-testid="nested-page-route" />,
@@ -35,10 +35,12 @@ function createMockProvider(overrides: Partial<DataProvider> = {}): DataProvider
     deleteTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
     mergeTag: vi.fn().mockResolvedValue({ updatedCount: 0 }),
     getMediaFiles: vi.fn().mockResolvedValue([]),
-    uploadMedia: vi.fn().mockResolvedValue({ url: '' }),
+    uploadMedia: vi.fn().mockResolvedValue({ url: "" }),
     deleteMedia: vi.fn().mockResolvedValue(undefined),
-    getStats: vi.fn().mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
-    getThemes: vi.fn().mockResolvedValue({ currentTheme: '', installedThemes: [] }),
+    getStats: vi
+      .fn()
+      .mockResolvedValue({ totalPosts: 0, publishedPosts: 0, draftPosts: 0, totalViews: 0 }),
+    getThemes: vi.fn().mockResolvedValue({ currentTheme: "", installedThemes: [] }),
     switchTheme: vi.fn().mockResolvedValue(undefined),
     getDeployments: vi.fn().mockResolvedValue([]),
     triggerDeploy: vi.fn().mockResolvedValue(undefined),
@@ -54,24 +56,24 @@ function renderWithProvider(provider: DataProvider) {
       <DataProviderProvider provider={provider}>
         <PagesPage />
       </DataProviderProvider>
-    </I18nTestWrapper>
+    </I18nTestWrapper>,
   );
 }
 
-describe('PagesPage', () => {
+describe("PagesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    routerState.pathname = '/pages';
+    routerState.pathname = "/pages";
   });
 
-  it('should render child route content for new page route', () => {
+  it("should render child route content for new page route", () => {
     const provider = createMockProvider();
-    routerState.pathname = '/pages/new';
+    routerState.pathname = "/pages/new";
 
     renderWithProvider(provider);
 
-    expect(screen.getByTestId('nested-page-route')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: '页面管理' })).not.toBeInTheDocument();
+    expect(screen.getByTestId("nested-page-route")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "页面管理" })).not.toBeInTheDocument();
     expect(provider.getPages).not.toHaveBeenCalled();
   });
 });

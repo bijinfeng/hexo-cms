@@ -1,10 +1,10 @@
+import { AlertCircle } from "lucide-react";
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { AlertCircle } from "lucide-react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -28,7 +28,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    const log = { level: "error", message: "ErrorBoundary caught error", error: error.message, stack: error.stack, componentStack: errorInfo.componentStack };
+    const log = {
+      level: "error",
+      message: "ErrorBoundary caught error",
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+    };
     console.error(JSON.stringify(log));
     this.props.onError?.(error, errorInfo);
   }
@@ -36,7 +42,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render(): ReactNode {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
-      return <DefaultFallback error={this.state.error ?? new Error("Unknown error")} onRetry={() => this.setState({ hasError: false, error: null })} />;
+      return (
+        <DefaultFallback
+          error={this.state.error ?? new Error("Unknown error")}
+          onRetry={() => this.setState({ hasError: false, error: null })}
+        />
+      );
     }
     return this.props.children;
   }
@@ -49,9 +60,7 @@ function DefaultFallback({ error, onRetry }: { error: Error; onRetry: () => void
       <AlertCircle className="w-12 h-12 text-[var(--status-error)] mb-4" />
       <Alert variant="destructive" className="mb-6 max-w-md">
         <AlertTitle>{t("components.errorBoundary.title")}</AlertTitle>
-        <AlertDescription>
-          {t("components.errorBoundary.message")}
-        </AlertDescription>
+        <AlertDescription>{t("components.errorBoundary.message")}</AlertDescription>
         {error && (
           <Collapsible>
             <CollapsibleTrigger className="text-xs cursor-pointer hover:opacity-80 block mt-3">

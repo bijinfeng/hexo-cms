@@ -1,5 +1,5 @@
-import type { ElectronIpcChannel } from "../types/electron-api";
 import { getElectronAPI } from "../lib/electron-api";
+import type { ElectronIpcChannel } from "../types/electron-api";
 
 export interface SyncPluginStore<T extends Record<string, unknown>> {
   load(): T;
@@ -66,7 +66,9 @@ interface DesktopBackedPluginStoreOptions<T extends Record<string, unknown>> {
   fallback: SyncPluginStore<T>;
 }
 
-export class DesktopBackedPluginStore<T extends Record<string, unknown>> implements SyncPluginStore<T> {
+export class DesktopBackedPluginStore<T extends Record<string, unknown>>
+  implements SyncPluginStore<T>
+{
   private cache: T;
   private loaded = false;
 
@@ -85,9 +87,11 @@ export class DesktopBackedPluginStore<T extends Record<string, unknown>> impleme
   save(value: T): void {
     this.cache = { ...value };
     this.options.fallback.save(value);
-    getElectronAPI()?.invoke(this.options.saveChannel, value).catch((err) => {
-      console.error(`Plugin store IPC save failed (${String(this.options.saveChannel)}):`, err);
-    });
+    getElectronAPI()
+      ?.invoke(this.options.saveChannel, value)
+      .catch((err) => {
+        console.error(`Plugin store IPC save failed (${String(this.options.saveChannel)}):`, err);
+      });
   }
 
   private fetchFromIPC(): void {
@@ -106,5 +110,10 @@ export class DesktopBackedPluginStore<T extends Record<string, unknown>> impleme
 }
 
 function hasEntries<T extends Record<string, unknown>>(value: unknown): value is T {
-  return typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length > 0
+  );
 }

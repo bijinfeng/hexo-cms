@@ -1,7 +1,7 @@
-import { type CSSProperties } from "react";
+import type { CSSProperties } from "react";
+import { cn } from "../utils";
 import { Card } from "./ui/card";
 import { Skeleton as ShadcnSkeleton } from "./ui/skeleton";
-import { cn } from "../utils";
 
 type SkeletonVariant = "text" | "card" | "circle" | "rect";
 

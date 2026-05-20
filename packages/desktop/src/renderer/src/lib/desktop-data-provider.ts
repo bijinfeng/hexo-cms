@@ -1,5 +1,5 @@
 import type { DataProvider } from "@hexo-cms/core";
-import type { HexoPost, GitHubConfig } from "@hexo-cms/core";
+import type { GitHubConfig, HexoPost } from "@hexo-cms/core";
 import { requireElectronAPI } from "@hexo-cms/ui/lib/electron-api";
 
 /**
@@ -78,7 +78,11 @@ export class DesktopDataProvider implements DataProvider {
     return requireElectronAPI().invoke("github:get-tags");
   }
 
-  async renameTag(type: "tag" | "category", oldName: string, newName: string): Promise<{ updatedCount: number }> {
+  async renameTag(
+    type: "tag" | "category",
+    oldName: string,
+    newName: string,
+  ): Promise<{ updatedCount: number }> {
     return requireElectronAPI().invoke("github:rename-tag", { type, oldName, newName });
   }
 
@@ -86,20 +90,31 @@ export class DesktopDataProvider implements DataProvider {
     return requireElectronAPI().invoke("github:delete-tag", { type, name });
   }
 
-  async mergeTag(type: "tag" | "category", sourceName: string, targetName: string): Promise<{ updatedCount: number }> {
+  async mergeTag(
+    type: "tag" | "category",
+    sourceName: string,
+    targetName: string,
+  ): Promise<{ updatedCount: number }> {
     return requireElectronAPI().invoke("github:merge-tag", { type, sourceName, targetName });
   }
 
   // ==================== 媒体管理 ====================
 
-  async getMediaFiles(): Promise<Array<{ name: string; path: string; size: number; url: string; sha: string }>> {
+  async getMediaFiles(): Promise<
+    Array<{ name: string; path: string; size: number; url: string; sha: string }>
+  > {
     return requireElectronAPI().invoke("github:get-media");
   }
 
   async uploadMedia(file: File, path: string): Promise<{ url: string }> {
     // 将 File 转换为 ArrayBuffer 以便通过 IPC 传输
     const buffer = await file.arrayBuffer();
-    return requireElectronAPI().invoke("github:upload-media", { buffer, path, name: file.name, type: file.type });
+    return requireElectronAPI().invoke("github:upload-media", {
+      buffer,
+      path,
+      name: file.name,
+      type: file.type,
+    });
   }
 
   async deleteMedia(path: string): Promise<void> {
@@ -132,13 +147,15 @@ export class DesktopDataProvider implements DataProvider {
 
   // ==================== 部署管理 ====================
 
-  async getDeployments(): Promise<Array<{
-    id: string;
-    status: string;
-    createdAt: string;
-    duration: number;
-    conclusion: string;
-  }>> {
+  async getDeployments(): Promise<
+    Array<{
+      id: string;
+      status: string;
+      createdAt: string;
+      duration: number;
+      conclusion: string;
+    }>
+  > {
     return requireElectronAPI().invoke("github:get-deployments");
   }
 

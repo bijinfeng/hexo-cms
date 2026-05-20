@@ -1,4 +1,9 @@
-import type { PluginHttpAPI, PluginHttpRequestOptions, PluginManifest, PluginPermission } from "./types";
+import type {
+  PluginHttpAPI,
+  PluginHttpRequestOptions,
+  PluginManifest,
+  PluginPermission,
+} from "./types";
 
 export const PLUGIN_HTTP_DEFAULT_TIMEOUT_MS = 10_000;
 export const PLUGIN_HTTP_MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
@@ -45,7 +50,9 @@ export function createPluginHttpAPI(
       }
 
       const controller =
-        typeof globalThis.AbortController === "function" ? new globalThis.AbortController() : undefined;
+        typeof globalThis.AbortController === "function"
+          ? new globalThis.AbortController()
+          : undefined;
       const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : undefined;
 
       try {
@@ -59,7 +66,9 @@ export function createPluginHttpAPI(
         });
 
         if (!response.ok) {
-          throw new Error(`Plugin HTTP request failed with ${response.status} ${response.statusText}`);
+          throw new Error(
+            `Plugin HTTP request failed with ${response.status} ${response.statusText}`,
+          );
         }
 
         const contentType = response.headers?.get("content-type") ?? "";
@@ -107,7 +116,9 @@ function hostMatches(hostname: string, allowedHost: string): boolean {
   return hostname === normalized;
 }
 
-export function sanitizeHeaders(headers: Record<string, string> | undefined): Record<string, string> | undefined {
+export function sanitizeHeaders(
+  headers: Record<string, string> | undefined,
+): Record<string, string> | undefined {
   if (!headers) return undefined;
   return Object.fromEntries(
     Object.entries(headers).filter(([key]) => {
@@ -117,9 +128,15 @@ export function sanitizeHeaders(headers: Record<string, string> | undefined): Re
   );
 }
 
-function defaultFetch(url: string, options: Parameters<PluginFetch>[1]): Promise<PluginFetchResponse> {
+function defaultFetch(
+  url: string,
+  options: Parameters<PluginFetch>[1],
+): Promise<PluginFetchResponse> {
   if (typeof globalThis.fetch !== "function") {
     return Promise.reject(new Error("fetch is not available in this runtime"));
   }
-  return globalThis.fetch(url, options as Parameters<typeof globalThis.fetch>[1]) as Promise<PluginFetchResponse>;
+  return globalThis.fetch(
+    url,
+    options as Parameters<typeof globalThis.fetch>[1],
+  ) as Promise<PluginFetchResponse>;
 }

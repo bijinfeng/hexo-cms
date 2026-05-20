@@ -1,7 +1,8 @@
-import { createRootRoute, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import type { PluginConfigValue, PluginHost } from "@hexo-cms/core";
+import { en, zh } from "@hexo-cms/ui";
+import { getElectronAPI } from "@hexo-cms/ui";
 import {
+  type AuthSession,
   CMSLayout,
   DataProviderProvider,
   ErrorBoundary,
@@ -10,15 +11,14 @@ import {
   getAuthRedirect,
   isOnboardingRoute,
   isPublicAuthRoute,
-  type AuthSession,
 } from "@hexo-cms/ui/app-shell";
-import { zh, en } from "@hexo-cms/ui";
+import { Outlet, createRootRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
+import { UpdateBanner } from "../components/UpdateBanner";
+import { useUpdater } from "../hooks/useUpdater";
 import { desktopAuthClient, subscribeToDesktopAuthChanges } from "../lib/desktop-auth-client";
 import { desktopDataProvider } from "../lib/desktop-data-provider-instance";
 import { createDesktopPluginHost } from "../lib/plugin-host";
-import { UpdateBanner } from "../components/UpdateBanner";
-import { useUpdater } from "../hooks/useUpdater";
-import { getElectronAPI } from "@hexo-cms/ui";
 
 function RootComponent() {
   const routerState = useRouterState();
@@ -29,7 +29,9 @@ function RootComponent() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [hasConfig, setHasConfig] = useState<boolean | null>(null);
   const [isPending, setIsPending] = useState(true);
-  const [pluginHost, setPluginHost] = useState<PluginHost<ComponentType<{ config?: PluginConfigValue }>> | null>(null);
+  const [pluginHost, setPluginHost] = useState<PluginHost<
+    ComponentType<{ config?: PluginConfigValue }>
+  > | null>(null);
   const loadingRef = useRef(false);
   const updater = useUpdater();
   const [locale, setLocale] = useState<"zh" | "en" | null>(null);
@@ -64,7 +66,8 @@ function RootComponent() {
       setIsPending(true);
       setHasConfig(null);
       setPluginHost(null);
-      desktopAuthClient.getSession()
+      desktopAuthClient
+        .getSession()
         .then(async (nextSession) => {
           if (!active) return;
           setSession(nextSession);
@@ -140,7 +143,12 @@ function RootComponent() {
 
   if (session?.state !== "authenticated" && !isPublicRoute) return null;
 
-  if (isPublicRoute || isSetupRoute) return <ErrorBoundary><Outlet /></ErrorBoundary>;
+  if (isPublicRoute || isSetupRoute)
+    return (
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
+    );
 
   if (!pluginHost) return null;
 
@@ -156,7 +164,7 @@ function RootComponent() {
       <DataProviderProvider provider={desktopDataProvider}>
         <PluginProvider
           host={pluginHost}
-          onStateChange={() => setPluginTranslationVersion(v => v + 1)}
+          onStateChange={() => setPluginTranslationVersion((v) => v + 1)}
         >
           <ErrorBoundary>
             {updater && <UpdateBanner updater={updater} />}

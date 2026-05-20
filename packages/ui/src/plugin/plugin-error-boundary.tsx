@@ -1,6 +1,6 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
-import { AlertTriangle } from "lucide-react";
 import type { PluginContributionType } from "@hexo-cms/core";
+import { AlertTriangle } from "lucide-react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Alert } from "../components/ui/alert";
 import { usePluginSystem } from "./plugin-provider";
 
@@ -16,7 +16,10 @@ interface PluginErrorBoundaryState {
   hasError: boolean;
 }
 
-class PluginErrorBoundaryInner extends Component<PluginErrorBoundaryProps, PluginErrorBoundaryState> {
+class PluginErrorBoundaryInner extends Component<
+  PluginErrorBoundaryProps,
+  PluginErrorBoundaryState
+> {
   state: PluginErrorBoundaryState = {
     hasError: false,
   };

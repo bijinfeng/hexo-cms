@@ -23,7 +23,10 @@ export function ensurePluginNetworkAuditTable(): void {
   );
 }
 
-export function appendPluginNetworkAudit(userId: string, entry: PluginNetworkAuditEntryInput): void {
+export function appendPluginNetworkAudit(
+  userId: string,
+  entry: PluginNetworkAuditEntryInput,
+): void {
   ensurePluginNetworkAuditTable();
   db.insert(pluginNetworkAudit)
     .values({

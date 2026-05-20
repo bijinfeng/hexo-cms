@@ -11,20 +11,53 @@ export const draftCoachManifest: PluginManifest = {
   runtime: "hosted",
   engine: { hexoCms: ">=0.1.0" },
   activation: ["onDashboard"],
-  permissions: ["content.read", "event.subscribe", "pluginStorage.read", "pluginStorage.write", "pluginConfig.write", "ui.contribute"],
+  permissions: [
+    "content.read",
+    "event.subscribe",
+    "pluginStorage.read",
+    "pluginStorage.write",
+    "pluginConfig.write",
+    "ui.contribute",
+  ],
   contributes: {
     dashboardWidgets: [
-      { id: "draft.overview", title: "Draft Coach", renderer: "draft.overview", size: "medium", order: 70 },
+      {
+        id: "draft.overview",
+        title: "Draft Coach",
+        renderer: "draft.overview",
+        size: "medium",
+        order: 70,
+      },
     ],
     settingsPanels: [{ id: "draft.settings", title: "Draft Coach", schema: "draft.settings" }],
     settingsSchemas: {
       "draft.settings": {
         id: "draft.settings",
         fields: [
-          { key: "draftAgeThreshold", label: "Stale draft days", type: "string", defaultValue: "7" },
-          { key: "wordCountTarget", label: "Target word count", type: "string", defaultValue: "800" },
-          { key: "requireCover", label: "Require cover image", type: "boolean", defaultValue: true },
-          { key: "enableNotifications", label: "Enable notifications", type: "boolean", defaultValue: true },
+          {
+            key: "draftAgeThreshold",
+            label: "Stale draft days",
+            type: "string",
+            defaultValue: "7",
+          },
+          {
+            key: "wordCountTarget",
+            label: "Target word count",
+            type: "string",
+            defaultValue: "800",
+          },
+          {
+            key: "requireCover",
+            label: "Require cover image",
+            type: "boolean",
+            defaultValue: true,
+          },
+          {
+            key: "enableNotifications",
+            label: "Enable notifications",
+            type: "boolean",
+            defaultValue: true,
+          },
         ],
       },
     },
@@ -49,12 +82,14 @@ export const draftCoachManifest: PluginManifest = {
       en: {
         "draft.name": "Draft Coach",
         "draft.widget.title": "Draft Coach",
-        "draft.widget.disabled": "Plugin is disabled. Go to settings to enable Draft Coach for draft reminders.",
+        "draft.widget.disabled":
+          "Plugin is disabled. Go to settings to enable Draft Coach for draft reminders.",
         "draft.widget.loading": "Checking drafts...",
         "draft.widget.reminders": "{{{count}}} reminders",
         "draft.widget.allGood": "All drafts are in good shape",
         "draft.widget.unnamed": "Untitled draft",
-        "draft.check.overdue": "Draft created {{days}} days ago, exceeds {{threshold}}-day threshold",
+        "draft.check.overdue":
+          "Draft created {{days}} days ago, exceeds {{threshold}}-day threshold",
         "draft.check.overdueHint": "Consider finishing and publishing, or removing unneeded drafts",
         "draft.check.wordCount": "Current count {{current}}, target {{target}}",
         "draft.check.wordCountHint": "{{remaining}} more words needed",

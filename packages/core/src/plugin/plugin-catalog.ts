@@ -1,7 +1,7 @@
 import { PluginManifestError } from "./errors";
 import { validatePluginManifest } from "./manifest";
-import type { PluginDefinition, PluginManifest } from "./types";
 import type { PluginSourceResolver } from "./source-resolver";
+import type { PluginDefinition, PluginManifest } from "./types";
 
 export class PluginCatalog<TRenderer = unknown> {
   private readonly pluginDefinitions: Array<PluginDefinition<TRenderer>>;
@@ -39,7 +39,7 @@ export class PluginCatalog<TRenderer = unknown> {
         const discovered = await resolver.discover();
         definitions.push(...discovered);
       } catch (error) {
-        console.error(`Plugin resolver failed to discover plugins:`, error);
+        console.error("Plugin resolver failed to discover plugins:", error);
       }
     }
 

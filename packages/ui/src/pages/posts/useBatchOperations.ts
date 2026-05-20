@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useDataProvider } from "../../context/data-provider-context";
 import { queryKeys } from "../../lib/query-keys";
 import type { PostDisplayItem } from "./usePostsFilter";
@@ -9,7 +9,9 @@ export function useBatchOperations(posts: PostDisplayItem[]) {
   const queryClient = useQueryClient();
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [batchProcessing, setBatchProcessing] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(
+    null,
+  );
 
   const toggleSelectAll = (filtered: PostDisplayItem[]) => {
     if (selectedPosts.size === filtered.length) {
@@ -56,7 +58,9 @@ export function useBatchOperations(posts: PostDisplayItem[]) {
     setSelectedPosts(new Set());
 
     if (failedPosts.length > 0) {
-      setError(`删除完成，${successCount} 篇成功，${failedPosts.length} 篇失败：${failedPosts.join(", ")}`);
+      setError(
+        `删除完成，${successCount} 篇成功，${failedPosts.length} 篇失败：${failedPosts.join(", ")}`,
+      );
     }
   };
 
@@ -91,15 +95,23 @@ export function useBatchOperations(posts: PostDisplayItem[]) {
     setSelectedPosts(new Set());
 
     if (failedPosts.length > 0) {
-      setError(`操作完成，${successCount} 篇成功，${failedPosts.length} 篇失败：${failedPosts.join(", ")}`);
+      setError(
+        `操作完成，${successCount} 篇成功，${failedPosts.length} 篇失败：${failedPosts.join(", ")}`,
+      );
     }
   };
 
   return {
-    selectedPosts, setSelectedPosts,
-    batchProcessing, batchProgress,
-    selectedPostsData, selectedDrafts, selectedPublished,
-    toggleSelectAll, toggleSelectPost,
-    handleBatchDelete, handleBatchPublish,
+    selectedPosts,
+    setSelectedPosts,
+    batchProcessing,
+    batchProgress,
+    selectedPostsData,
+    selectedDrafts,
+    selectedPublished,
+    toggleSelectAll,
+    toggleSelectPost,
+    handleBatchDelete,
+    handleBatchPublish,
   };
 }

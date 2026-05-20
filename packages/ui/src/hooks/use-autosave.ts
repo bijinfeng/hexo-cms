@@ -1,11 +1,15 @@
-import { useRef, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getEditorPreferencesSync } from "./use-editor-preferences";
 
 function getStorageKey(key: string): string {
   return `hexo-draft-${key}`;
 }
 
-export function useAutoSave(key: string, content: string, delay?: number): {
+export function useAutoSave(
+  key: string,
+  content: string,
+  delay?: number,
+): {
   saved: boolean;
   error: string;
   restore: () => string | null;
@@ -18,21 +22,24 @@ export function useAutoSave(key: string, content: string, delay?: number): {
 
   const actualDelay = delay ?? getEditorPreferencesSync().autoSaveInterval;
 
-  const save = useCallback((text: string) => {
-    if (!text || text === lastSavedRef.current) return;
+  const save = useCallback(
+    (text: string) => {
+      if (!text || text === lastSavedRef.current) return;
 
-    try {
-      const storageKey = getStorageKey(key);
-      localStorage.setItem(storageKey, text);
-      lastSavedRef.current = text;
-      setSaved(true);
-      setError("");
-      setTimeout(() => setSaved(false), 2000);
-    } catch {
-      setSaved(false);
-      setError("草稿保存失败，存储空间不足");
-    }
-  }, [key]);
+      try {
+        const storageKey = getStorageKey(key);
+        localStorage.setItem(storageKey, text);
+        lastSavedRef.current = text;
+        setSaved(true);
+        setError("");
+        setTimeout(() => setSaved(false), 2000);
+      } catch {
+        setSaved(false);
+        setError("草稿保存失败，存储空间不足");
+      }
+    },
+    [key],
+  );
 
   // Auto-save effect
   useEffect(() => {

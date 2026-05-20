@@ -1,23 +1,23 @@
+import type { RegisteredSidebarItem } from "@hexo-cms/core";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { cn } from "../../utils";
-import { useI18n } from "../../i18n/I18nProvider";
 import {
-  LayoutDashboard,
   FileText,
-  Tags,
   FolderOpen,
+  GitBranch,
   Image,
+  LayoutDashboard,
+  Menu,
   MessageSquare,
   Palette,
-  Settings,
-  GitBranch,
   PanelLeftClose,
-  Zap,
   Puzzle,
-  Menu,
+  Settings,
+  Tags,
+  Zap,
 } from "lucide-react";
-import type { RegisteredSidebarItem } from "@hexo-cms/core";
+import { useMemo } from "react";
+import { useI18n } from "../../i18n/I18nProvider";
+import { cn } from "../../utils";
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -30,37 +30,45 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
 
-  const navItems = useMemo(() => [
-    {
-      group: t("sidebar.content"),
-      items: [
-        { icon: LayoutDashboard, label: t("sidebar.dashboard"), to: "/" },
-        { icon: FileText, label: t("sidebar.posts"), to: "/posts" },
-        { icon: Tags, label: t("sidebar.tags"), to: "/tags" },
-        { icon: Image, label: t("sidebar.media"), to: "/media" },
-      ],
-    },
-    {
-      group: t("sidebar.site"),
-      items: [
-        { icon: Palette, label: t("sidebar.themes"), to: "/themes" },
-        { icon: Menu, label: t("sidebar.menus"), to: "/menus" },
-        { icon: FolderOpen, label: t("sidebar.pages"), to: "/pages" },
-        { icon: GitBranch, label: t("sidebar.deploy"), to: "/deploy" },
-        { icon: Settings, label: t("sidebar.settings"), to: "/settings" },
-      ],
-    },
-  ], [t]);
+  const navItems = useMemo(
+    () => [
+      {
+        group: t("sidebar.content"),
+        items: [
+          { icon: LayoutDashboard, label: t("sidebar.dashboard"), to: "/" },
+          { icon: FileText, label: t("sidebar.posts"), to: "/posts" },
+          { icon: Tags, label: t("sidebar.tags"), to: "/tags" },
+          { icon: Image, label: t("sidebar.media"), to: "/media" },
+        ],
+      },
+      {
+        group: t("sidebar.site"),
+        items: [
+          { icon: Palette, label: t("sidebar.themes"), to: "/themes" },
+          { icon: Menu, label: t("sidebar.menus"), to: "/menus" },
+          { icon: FolderOpen, label: t("sidebar.pages"), to: "/pages" },
+          { icon: GitBranch, label: t("sidebar.deploy"), to: "/deploy" },
+          { icon: Settings, label: t("sidebar.settings"), to: "/settings" },
+        ],
+      },
+    ],
+    [t],
+  );
 
   return (
     <aside
       className={cn(
         "cms-sidebar flex flex-col transition-all duration-300 ease-in-out",
-        collapsed ? "w-14" : "w-60"
+        collapsed ? "w-14" : "w-60",
       )}
     >
       {/* Logo */}
-      <div className={cn("flex items-center h-12 px-3 border-b border-[var(--sidebar-border)] shrink-0", collapsed && "justify-center")}>
+      <div
+        className={cn(
+          "flex items-center h-12 px-3 border-b border-[var(--sidebar-border)] shrink-0",
+          collapsed && "justify-center",
+        )}
+      >
         <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-hover)] flex items-center justify-center shadow-sm">
           <Zap size={16} className="text-white" />
         </div>
@@ -90,7 +98,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                       isActive
                         ? "bg-[var(--sidebar-item-active-bg)] text-[var(--sidebar-item-active-text)]"
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
-                      collapsed && "justify-center px-2"
+                      collapsed && "justify-center px-2",
                     )}
                     title={collapsed ? item.label : undefined}
                     aria-current={isActive ? "page" : undefined}
@@ -99,7 +107,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                       size={18}
                       className={cn(
                         "flex-shrink-0",
-                        isActive ? "text-[var(--sidebar-item-active-icon)]" : ""
+                        isActive ? "text-[var(--sidebar-item-active-icon)]" : "",
                       )}
                     />
                     {!collapsed && <span className="truncate">{item.label}</span>}
@@ -116,12 +124,15 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
           const commentsItems = pluginItems.filter((item) => item.target === "/comments");
           const otherItems = pluginItems.filter((item) => item.target !== "/comments");
 
-          const renderItem = (item: typeof pluginItems[0]) => {
+          const renderItem = (item: (typeof pluginItems)[0]) => {
             const isCommentsPage = item.target === "/comments";
             const isActive = isCommentsPage ? pathname === "/comments" : pathname === "/settings";
-            const linkProps = isCommentsPage ? {} : { search: { section: "plugins", plugin: item.pluginId } };
+            const linkProps = isCommentsPage
+              ? {}
+              : { search: { section: "plugins", plugin: item.pluginId } };
             const prefix = item.pluginId.replace("hexo-cms-", "").split("-")[0];
-            const displayName = t(`${prefix}.name`) !== `${prefix}.name` ? t(`${prefix}.name`) : item.title;
+            const displayName =
+              t(`${prefix}.name`) !== `${prefix}.name` ? t(`${prefix}.name`) : item.title;
             return (
               <Link
                 key={`${item.pluginId}:${item.id}`}
@@ -132,7 +143,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                   isActive
                     ? "bg-[var(--sidebar-item-active-bg)] text-[var(--sidebar-item-active-text)]"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
-                  collapsed && "justify-center px-2"
+                  collapsed && "justify-center px-2",
                 )}
                 title={collapsed ? displayName : undefined}
                 aria-current={isActive ? "page" : undefined}
@@ -142,7 +153,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                     size={18}
                     className={cn(
                       "flex-shrink-0",
-                      isActive ? "text-[var(--sidebar-item-active-icon)]" : ""
+                      isActive ? "text-[var(--sidebar-item-active-icon)]" : "",
                     )}
                   />
                 ) : (
@@ -150,7 +161,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                     size={18}
                     className={cn(
                       "flex-shrink-0",
-                      isActive ? "text-[var(--sidebar-item-active-icon)]" : ""
+                      isActive ? "text-[var(--sidebar-item-active-icon)]" : "",
                     )}
                   />
                 )}
@@ -171,9 +182,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                       {t("sidebar.interact")}
                     </div>
                   )}
-                  <div className="space-y-0.5">
-                    {commentsItems.map(renderItem)}
-                  </div>
+                  <div className="space-y-0.5">{commentsItems.map(renderItem)}</div>
                 </div>
               )}
               {otherItems.length > 0 && (
@@ -183,9 +192,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
                       {t("sidebar.plugins")}
                     </div>
                   )}
-                  <div className="space-y-0.5">
-                    {otherItems.map(renderItem)}
-                  </div>
+                  <div className="space-y-0.5">{otherItems.map(renderItem)}</div>
                 </div>
               )}
             </>
@@ -199,22 +206,28 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
           onClick={onToggle}
           className={cn(
             "w-full flex items-center hover:bg-[var(--bg-muted)] transition-colors cursor-pointer",
-            collapsed ? "justify-center py-3" : "px-4 py-2.5 gap-2"
+            collapsed ? "justify-center py-3" : "px-4 py-2.5 gap-2",
           )}
         >
-          <span className={cn(
-            "rounded-full bg-[var(--brand-accent)] flex-shrink-0 transition-all duration-200",
-            collapsed ? "w-0 opacity-0 overflow-hidden" : "w-1.5 h-1.5 opacity-100"
-          )} />
-          <span className={cn(
-            "text-xs text-[var(--text-secondary)] whitespace-nowrap transition-all duration-200",
-            collapsed ? "w-0 opacity-0 overflow-hidden" : "flex-1 text-left opacity-100"
-          )}>{t("sidebar.connected")}</span>
+          <span
+            className={cn(
+              "rounded-full bg-[var(--brand-accent)] flex-shrink-0 transition-all duration-200",
+              collapsed ? "w-0 opacity-0 overflow-hidden" : "w-1.5 h-1.5 opacity-100",
+            )}
+          />
+          <span
+            className={cn(
+              "text-xs text-[var(--text-secondary)] whitespace-nowrap transition-all duration-200",
+              collapsed ? "w-0 opacity-0 overflow-hidden" : "flex-1 text-left opacity-100",
+            )}
+          >
+            {t("sidebar.connected")}
+          </span>
           <PanelLeftClose
             size={14}
             className={cn(
               "flex-shrink-0 transition-transform duration-300 text-[var(--text-tertiary)]",
-              collapsed ? "rotate-180" : ""
+              collapsed ? "rotate-180" : "",
             )}
           />
         </button>

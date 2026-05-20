@@ -1,22 +1,31 @@
-import { PluginNotFoundError } from "./errors";
+import type { DataProvider } from "../data-provider";
 import { CommandRegistry } from "./command-registry";
 import { DiagnosticsRegistry } from "./diagnostics-registry";
-import { createPluginEventAPI, EventBus } from "./event-bus";
+import { PluginNotFoundError } from "./errors";
+import { EventBus, createPluginEventAPI } from "./event-bus";
 import { ExtensionRegistry } from "./extension-registry";
 import { validatePluginManifests } from "./manifest";
 import { PermissionBroker } from "./permissions";
-import { createPluginHttpAPI, type PluginFetch } from "./plugin-http";
-import { BrowserJsonStore, MemoryStore } from "./stores";
+import { type PluginFetch, createPluginHttpAPI } from "./plugin-http";
 import {
+  MemoryPluginLogStore,
+  type PluginLogStore,
   appendPluginLogEntry,
   createPluginLogger,
-  MemoryPluginLogStore,
   readPluginLogs,
-  type PluginLogStore,
 } from "./plugin-logger";
-import { createPluginSecretAPI, MemoryPluginSecretStore, type PluginSecretStore } from "./plugin-secret";
-import { createPluginStorageAPI, MemoryPluginStorageStore, type PluginStorageStore } from "./plugin-storage";
+import {
+  MemoryPluginSecretStore,
+  type PluginSecretStore,
+  createPluginSecretAPI,
+} from "./plugin-secret";
+import {
+  MemoryPluginStorageStore,
+  type PluginStorageStore,
+  createPluginStorageAPI,
+} from "./plugin-storage";
 import { redactPluginRuntimeText } from "./redaction";
+import { BrowserJsonStore, MemoryStore } from "./stores";
 import type {
   ContentReadAPI,
   DiagnosticsHandler,
@@ -32,15 +41,14 @@ import type {
   PluginHttpAPI,
   PluginLogEntry,
   PluginLogger,
-  PluginManifest,
   PluginManagerSnapshot,
+  PluginManifest,
   PluginRuntimeErrorInput,
   PluginSecretAPI,
-  PluginStorageAPI,
   PluginStateStoreValue,
+  PluginStorageAPI,
 } from "./types";
 import { createContentReadAPI } from "./types";
-import type { DataProvider } from "../data-provider";
 
 export interface PluginStateStore {
   load(): PluginStateStoreValue;
@@ -54,7 +62,10 @@ export interface PluginConfigStore {
 
 export class MemoryPluginStateStore extends MemoryStore<PluginStateStoreValue> {}
 
-export class BrowserPluginStateStore extends BrowserJsonStore<PluginStateStoreValue> implements PluginStateStore {
+export class BrowserPluginStateStore
+  extends BrowserJsonStore<PluginStateStoreValue>
+  implements PluginStateStore
+{
   constructor(key = "hexo-cms:plugin-state") {
     super(key);
   }
@@ -62,7 +73,10 @@ export class BrowserPluginStateStore extends BrowserJsonStore<PluginStateStoreVa
 
 export class MemoryPluginConfigStore extends MemoryStore<PluginConfigStoreValue> {}
 
-export class BrowserPluginConfigStore extends BrowserJsonStore<PluginConfigStoreValue> implements PluginConfigStore {
+export class BrowserPluginConfigStore
+  extends BrowserJsonStore<PluginConfigStoreValue>
+  implements PluginConfigStore
+{
   constructor(key = "hexo-cms:plugin-config") {
     super(key);
   }
@@ -213,7 +227,11 @@ export class PluginManager {
     this.commandRegistry.registerHandler(pluginId, commandId, handler);
   }
 
-  executeCommand(pluginId: string, commandId: string, args: unknown[] = []): Promise<PluginCommandExecutionResult> {
+  executeCommand(
+    pluginId: string,
+    commandId: string,
+    args: unknown[] = [],
+  ): Promise<PluginCommandExecutionResult> {
     this.getManifest(pluginId);
     return this.commandRegistry.execute(pluginId, commandId, args).then((result) => {
       if (result.ok) {
@@ -233,7 +251,11 @@ export class PluginManager {
     return createPluginStorageAPI(pluginId, this.storageStore, this.permissionBroker);
   }
 
-  registerDiagnosticsHandler(pluginId: string, contributionId: string, handler: DiagnosticsHandler): void {
+  registerDiagnosticsHandler(
+    pluginId: string,
+    contributionId: string,
+    handler: DiagnosticsHandler,
+  ): void {
     this.getManifest(pluginId);
     this.diagnosticsRegistry.registerHandler(pluginId, contributionId, handler);
   }
@@ -244,7 +266,11 @@ export class PluginManager {
       return record?.state === "enabled";
     });
 
-    const reports = await this.diagnosticsRegistry.runDiagnostics(registered, this.manifestsById, target);
+    const reports = await this.diagnosticsRegistry.runDiagnostics(
+      registered,
+      this.manifestsById,
+      target,
+    );
 
     reports.forEach((report) => {
       const errorIssue = report.issues.find((issue) => issue.id.endsWith(".handler-error"));
@@ -322,7 +348,7 @@ export class PluginManager {
     const manifest = this.getManifest(pluginId);
     const existing = this.records[pluginId];
     const errorCount = (existing?.lastError?.count ?? 0) + 1;
-    const state = errorCount >= this.errorThreshold ? "error" : existing?.state ?? "installed";
+    const state = errorCount >= this.errorThreshold ? "error" : (existing?.state ?? "installed");
     if (state === "error") this.eventBus.unregisterPlugin(pluginId);
     const at = error.at ?? new Date().toISOString();
     const message = redactPluginRuntimeText(error.message);

@@ -37,7 +37,9 @@ export interface TaxonomySummary {
   total: number;
 }
 
-export async function getTaxonomySummary(repository: Pick<TaxonomyRepository, "getPosts">): Promise<TaxonomySummary> {
+export async function getTaxonomySummary(
+  repository: Pick<TaxonomyRepository, "getPosts">,
+): Promise<TaxonomySummary> {
   return summarizeTaxonomies(await repository.getPosts());
 }
 
@@ -106,7 +108,10 @@ export function summarizeTaxonomies(posts: HexoPost[]): TaxonomySummary {
   };
 }
 
-export function renamePostTaxonomy(post: HexoPost, { type, oldName, newName }: TaxonomyMutation): HexoPost | null {
+export function renamePostTaxonomy(
+  post: HexoPost,
+  { type, oldName, newName }: TaxonomyMutation,
+): HexoPost | null {
   let changed = false;
   const frontmatter = { ...post.frontmatter };
 
@@ -136,7 +141,10 @@ export function renamePostTaxonomy(post: HexoPost, { type, oldName, newName }: T
   return changed ? { ...post, frontmatter } : null;
 }
 
-export function deletePostTaxonomy(post: HexoPost, { type, name }: TaxonomyDeleteInput): HexoPost | null {
+export function deletePostTaxonomy(
+  post: HexoPost,
+  { type, name }: TaxonomyDeleteInput,
+): HexoPost | null {
   let changed = false;
   const frontmatter = { ...post.frontmatter };
 
@@ -153,11 +161,11 @@ export function deletePostTaxonomy(post: HexoPost, { type, name }: TaxonomyDelet
     }
   } else {
     if (frontmatter.category === name) {
-      delete frontmatter.category;
+      frontmatter.category = undefined;
       changed = true;
     }
     if (frontmatter.categories === name) {
-      delete frontmatter.categories;
+      frontmatter.categories = undefined;
       changed = true;
     }
   }
@@ -183,7 +191,10 @@ export async function mergeTaxonomy(
   return { updatedCount };
 }
 
-export function mergePostTaxonomy(post: HexoPost, { type, sourceName, targetName }: TaxonomyMergeInput): HexoPost | null {
+export function mergePostTaxonomy(
+  post: HexoPost,
+  { type, sourceName, targetName }: TaxonomyMergeInput,
+): HexoPost | null {
   let changed = false;
   const frontmatter = { ...post.frontmatter };
 
@@ -215,6 +226,11 @@ export function mergePostTaxonomy(post: HexoPost, { type, sourceName, targetName
 
 function toTaxonomyItems(map: Map<string, number>): TaxonomyItem[] {
   return Array.from(map.entries())
-    .map(([name, count], index) => ({ id: String(index + 1), name, slug: name.toLowerCase().replace(/\s+/g, "-"), count }))
+    .map(([name, count], index) => ({
+      id: String(index + 1),
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, "-"),
+      count,
+    }))
     .sort((left, right) => right.count - left.count);
 }

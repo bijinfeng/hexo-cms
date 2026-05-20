@@ -1,16 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  deletePluginSecret,
+  hasPluginSecret,
+  setPluginSecret,
+} from "../../../lib/plugin-secret-db";
 import { getAuth, json } from "../../../lib/server-utils";
-import { deletePluginSecret, hasPluginSecret, setPluginSecret } from "../../../lib/plugin-secret-db";
 
 type PluginSecretOperation =
   | { op: "has"; pluginId?: string; key?: string }
   | { op: "set"; pluginId?: string; key?: string; value?: string }
   | { op: "delete"; pluginId?: string; key?: string };
 
-function getSecretTarget(pluginId: unknown, key: unknown): { pluginId: string; key: string } | null {
+function getSecretTarget(
+  pluginId: unknown,
+  key: unknown,
+): { pluginId: string; key: string } | null {
   if (
-    typeof pluginId === "string" && pluginId.trim().length > 0
-    && typeof key === "string" && key.trim().length > 0
+    typeof pluginId === "string" &&
+    pluginId.trim().length > 0 &&
+    typeof key === "string" &&
+    key.trim().length > 0
   ) {
     return { pluginId, key };
   }
@@ -42,7 +51,9 @@ export const Route = createFileRoute("/api/plugin/secrets")({
         if (!target) return json({ error: "Invalid secret target" }, 400);
 
         if (body.op === "has") {
-          return json({ configured: hasPluginSecret(session.user.id, target.pluginId, target.key) });
+          return json({
+            configured: hasPluginSecret(session.user.id, target.pluginId, target.key),
+          });
         }
 
         if (body.op === "set") {

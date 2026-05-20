@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
-import { Activity, AlertCircle, CheckCircle, Clock, ExternalLink, RefreshCw, XCircle } from "lucide-react";
 import type { PluginHttpAuditEntry } from "@hexo-cms/core";
-import { getAuditLogStore } from "./platform-plugin-http";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  ExternalLink,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { getAuditLogStore } from "./platform-plugin-http";
 
 interface AuditLogPanelProps {
   pluginId?: string;
@@ -50,9 +58,7 @@ export function AuditLogPanel({ pluginId, limit = 20 }: AuditLogPanelProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-[var(--text-secondary)]">
-            暂无 HTTP 请求记录
-          </p>
+          <p className="text-sm text-[var(--text-secondary)]">暂无 HTTP 请求记录</p>
         </CardContent>
       </Card>
     );
@@ -110,7 +116,9 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
           <div className="flex items-start gap-2 flex-1 min-w-0">
             {entry.error ? (
               <XCircle className="h-4 w-4 text-[var(--status-error)] shrink-0 mt-0.5" />
-            ) : entry.responseStatus && entry.responseStatus >= 200 && entry.responseStatus < 300 ? (
+            ) : entry.responseStatus &&
+              entry.responseStatus >= 200 &&
+              entry.responseStatus < 300 ? (
               <CheckCircle className="h-4 w-4 text-[var(--status-success)] shrink-0 mt-0.5" />
             ) : (
               <AlertCircle className="h-4 w-4 text-[var(--status-warning)] shrink-0 mt-0.5" />
@@ -135,9 +143,7 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-[var(--text-secondary)] mt-1 truncate">
-                {entry.url}
-              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1 truncate">{entry.url}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -157,9 +163,7 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
       {expanded && (
         <div className="border-t border-[var(--border-default)] p-3 bg-[var(--bg-subtle)] space-y-3">
           <div>
-            <h4 className="text-xs font-medium text-[var(--text-secondary)] mb-1">
-              完整 URL
-            </h4>
+            <h4 className="text-xs font-medium text-[var(--text-secondary)] mb-1">完整 URL</h4>
             <div className="flex items-center gap-2">
               <code className="text-xs bg-[var(--bg-default)] px-2 py-1 rounded border border-[var(--border-default)] flex-1 overflow-x-auto">
                 {entry.url}
@@ -182,7 +186,10 @@ function AuditLogEntry({ entry, expanded, onToggle }: AuditLogEntryProps) {
           {entry.requestBody && <DetailSection title="请求体" content={entry.requestBody} />}
 
           {entry.responseHeaders && Object.keys(entry.responseHeaders).length > 0 && (
-            <DetailSection title="响应头" content={JSON.stringify(entry.responseHeaders, null, 2)} />
+            <DetailSection
+              title="响应头"
+              content={JSON.stringify(entry.responseHeaders, null, 2)}
+            />
           )}
 
           {entry.responseBody && (
