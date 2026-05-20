@@ -9,6 +9,7 @@ import {
   createPlatformPluginStateStore,
   createPlatformPluginStorageStore,
 } from "@hexo-cms/ui";
+import { zh, en, getElectronAPI } from "@hexo-cms/ui";
 import { desktopDataProvider } from "./desktop-data-provider-instance";
 
 export async function createDesktopPluginHost() {
@@ -19,6 +20,13 @@ export async function createDesktopPluginHost() {
     }),
   ]);
 
+  const api = getElectronAPI();
+  let locale = "zh";
+  if (api) {
+    const stored = await api.getLocale();
+    if (stored === "zh" || stored === "en") locale = stored;
+  }
+
   return new PluginHost<ComponentType<{ config?: PluginConfigValue }>>({
     catalog,
     stateStore: createPlatformPluginStateStore(),
@@ -28,5 +36,7 @@ export async function createDesktopPluginHost() {
     logStore: createPlatformPluginLogStore(),
     fetchImpl: createPlatformPluginFetch(),
     dataProvider: desktopDataProvider,
+    builtinTranslations: { zh, en },
+    currentLocale: locale,
   });
 }

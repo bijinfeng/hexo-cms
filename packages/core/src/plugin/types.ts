@@ -409,6 +409,8 @@ export interface PluginRuntimeContext {
   readonly http: PluginHttpAPI;
   readonly logger: PluginLogger;
   getConfig(): PluginConfigValue;
+  /** 翻译函数，查找给定 key 在当前 locale 的翻译 */
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export type PluginRuntimeFactory<T> = (context: PluginRuntimeContext) => T;

@@ -18,6 +18,7 @@ import type {
   RegisteredDashboardWidget,
 } from "./types";
 import type { DataProvider } from "../data-provider";
+import type { TranslationResource } from "../i18n/types";
 
 export interface PluginHostOptions<TRenderer = unknown> {
   catalog: PluginCatalog<TRenderer>;
@@ -28,6 +29,10 @@ export interface PluginHostOptions<TRenderer = unknown> {
   logStore: PluginLogStore;
   fetchImpl?: PluginFetch;
   dataProvider: DataProvider;
+  /** 内置翻译资源（来自 @hexo-cms/ui），嵌套结构 */
+  builtinTranslations?: Record<string, TranslationResource>;
+  /** 当前语言标识 */
+  currentLocale?: string;
 }
 
 export class PluginHost<TRenderer = unknown> {
@@ -200,6 +205,52 @@ export class PluginHost<TRenderer = unknown> {
 
   private createRuntimeContext(definition: PluginDefinition<TRenderer>): PluginRuntimeContext {
     const pluginId = definition.manifest.id;
+    const defaultLocale = "zh";
+    const locale = this.options.currentLocale ?? defaultLocale;
+
+    function interpolate(template: string, params?: Record<string, string | number>): string {
+      if (!params) return template;
+      return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(params[key] ?? `{{${key}}}`));
+    }
+
+    function flattenResource(
+      resource: Record<string, unknown>,
+      prefix = "",
+    ): Record<string, string> {
+      const result: Record<string, string> = {};
+      for (const [key, value] of Object.entries(resource)) {
+        const fullKey = prefix ? `${prefix}.${key}` : key;
+        if (typeof value === "string") {
+          result[fullKey] = value;
+        } else if (value && typeof value === "object") {
+          Object.assign(result, flattenResource(value as Record<string, unknown>, fullKey));
+        }
+      }
+      return result;
+    }
+
+    const builtin = this.options.builtinTranslations ?? {};
+    const pluginTranslations = this.collectPluginTranslations();
+
+    const mergedMaps: Record<string, Record<string, string>> = {};
+    for (const loc of [locale, defaultLocale]) {
+      const flatBuiltin = builtin[loc] ? flattenResource(builtin[loc]) : {};
+      mergedMaps[loc] = {
+        ...flatBuiltin,
+        ...(pluginTranslations[loc] ?? {}),
+      };
+    }
+
+    const t = (key: string, params?: Record<string, string | number>): string => {
+      const currentMap = mergedMaps[locale];
+      if (currentMap?.[key]) return interpolate(currentMap[key], params);
+      const defaultMap = mergedMaps[defaultLocale];
+      if (locale !== defaultLocale && defaultMap?.[key]) {
+        return interpolate(defaultMap[key], params);
+      }
+      return key;
+    };
+
     return {
       plugin: definition.manifest,
       content: this.manager.createContentAPI(pluginId),
@@ -209,6 +260,7 @@ export class PluginHost<TRenderer = unknown> {
       http: this.manager.createHttpAPI(pluginId),
       logger: this.manager.createLogger(pluginId),
       getConfig: () => this.manager.getPluginConfig(pluginId),
+      t,
     };
   }
 }

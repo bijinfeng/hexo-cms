@@ -9,7 +9,15 @@ import {
   createPlatformPluginStateStore,
   createPlatformPluginStorageStore,
 } from "@hexo-cms/ui";
+import { zh, en } from "@hexo-cms/ui";
 import { webDataProvider } from "./web-data-provider-instance";
+
+function getCurrentLocale(): string {
+  if (typeof window === "undefined") return "zh";
+  const stored = localStorage.getItem("hexo-cms-locale");
+  if (stored === "zh" || stored === "en") return stored;
+  return "zh";
+}
 
 export async function createWebPluginHost() {
   const catalog = await PluginCatalog.discover<ComponentType<{ config?: PluginConfigValue }>>([
@@ -28,6 +36,8 @@ export async function createWebPluginHost() {
     logStore: createPlatformPluginLogStore(),
     fetchImpl: createPlatformPluginFetch(),
     dataProvider: webDataProvider,
+    builtinTranslations: { zh, en },
+    currentLocale: getCurrentLocale(),
   });
 }
 
