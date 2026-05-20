@@ -71,7 +71,7 @@ const filterOptions = [
   { id: "ANSWERED", label: "comments.filter.answered" },
 ];
 
-function timeAgo(dateStr: string, t: (key: string, vars?: Record<string, unknown>) => string): string {
+function timeAgo(dateStr: string, t: (key: string, params?: Record<string, string | number>) => string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return t("comments.time.justNow");

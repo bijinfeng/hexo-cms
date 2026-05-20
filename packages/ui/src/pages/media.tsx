@@ -31,8 +31,9 @@ const typeConfig = {
   document: { icon: FileText, color: "var(--text-secondary)" },
 };
 
-const CORE_FILTER_OPTIONS = ["全部", "图片", "视频", "音频"];
-const ATTACHMENT_FILTER_OPTION = "文档";
+const CORE_FILTER_OPTIONS = ["all", "image", "video", "audio"] as const;
+const ATTACHMENT_FILTER_OPTION = "document" as const;
+type FilterKey = (typeof CORE_FILTER_OPTIONS)[number] | typeof ATTACHMENT_FILTER_OPTION;
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "gif", "webp", "svg", "avif"];
 const VIDEO_EXTS = ["mp4", "webm", "mov", "avi"];
@@ -67,7 +68,7 @@ export function MediaPage() {
     : CORE_FILTER_OPTIONS;
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [activeFilter, setActiveFilter] = useState("全部");
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [uploading, setUploading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [copiedPath, setCopiedPath] = useState("");
@@ -75,12 +76,12 @@ export function MediaPage() {
   const [batchDeleting, setBatchDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filterLabels = useMemo<Record<string, string>>(() => ({
-    "全部": t("media.all"),
-    "图片": t("media.typeImage"),
-    "视频": t("media.typeVideo"),
-    "音频": t("media.typeAudio"),
-    "文档": t("media.typeDocument"),
+  const filterLabels = useMemo<Record<FilterKey, string>>(() => ({
+    all: t("media.all"),
+    image: t("media.typeImage"),
+    video: t("media.typeVideo"),
+    audio: t("media.typeAudio"),
+    document: t("media.typeDocument"),
   }), [t]);
 
   const typeLabels = useMemo<Record<keyof typeof typeConfig, string>>(() => ({
@@ -98,7 +99,7 @@ export function MediaPage() {
 
   useEffect(() => {
     if (!hasDocumentFilter && activeFilter === ATTACHMENT_FILTER_OPTION) {
-      setActiveFilter("全部");
+      setActiveFilter("all");
     }
     if (!hasMediaSearch && search) {
       setSearch("");
@@ -190,10 +191,10 @@ export function MediaPage() {
     const type = getFileType(item.name);
     const matchSearch = !search || item.name.toLowerCase().includes(search.toLowerCase());
     const matchFilter =
-      activeFilter === "全部" ||
-      (activeFilter === "图片" && type === "image") ||
-      (activeFilter === "视频" && type === "video") ||
-      (activeFilter === "音频" && type === "audio") ||
+      activeFilter === "all" ||
+      (activeFilter === "image" && type === "image") ||
+      (activeFilter === "video" && type === "video") ||
+      (activeFilter === "audio" && type === "audio") ||
       (hasDocumentFilter && activeFilter === ATTACHMENT_FILTER_OPTION && type === "document");
     return matchSearch && matchFilter;
   });
@@ -261,7 +262,7 @@ export function MediaPage() {
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <Tabs value={activeFilter} onValueChange={setActiveFilter}>
+        <Tabs value={activeFilter} onValueChange={(v) => setActiveFilter(v as FilterKey)}>
           <TabsList>
             {filterOptions.map((opt) => (
               <TabsTrigger key={opt} value={opt}>
