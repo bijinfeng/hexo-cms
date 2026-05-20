@@ -27,9 +27,13 @@ function NotFound() {
 }
 
 function detectWebLocale(): "zh" | "en" {
-  const stored = localStorage.getItem("hexo-cms-locale");
+  if (typeof document !== "undefined") {
+    const fromCookie = document.cookie.split("; ").find(r => r.startsWith("hexo-cms-locale="))?.split("=")[1];
+    if (fromCookie === "zh" || fromCookie === "en") return fromCookie;
+  }
+  const stored = typeof window !== "undefined" ? localStorage.getItem("hexo-cms-locale") : null;
   if (stored === "zh" || stored === "en") return stored;
-  const browserLang = navigator.language.split("-")[0];
+  const browserLang = typeof navigator !== "undefined" ? navigator.language.split("-")[0] : "zh";
   if (browserLang === "zh" || browserLang === "en") return browserLang;
   return "zh";
 }
@@ -187,6 +191,9 @@ function RootComponent() {
       initialLocale={locale}
       onLocaleChange={(newLocale) => {
         localStorage.setItem("hexo-cms-locale", newLocale);
+        if (typeof document !== "undefined") {
+          document.cookie = `hexo-cms-locale=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+        }
         pluginHost?.setCurrentLocale(newLocale);
       }}
     >

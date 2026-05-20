@@ -19,6 +19,19 @@ export interface I18nConfig {
   resources: Record<Locale, TranslationResource>;
 }
 
+/**
+ * 从嵌套翻译资源类型中提取所有点号分隔的 key 路径。
+ * 用法: type Keys = TranslationKeys<typeof zh>;
+ * 结果: "common.save" | "common.cancel" | "sidebar.dashboard" | ...
+ */
+export type TranslationKeys<T, Prefix extends string = ""> = {
+  [K in keyof T & string]: T[K] extends string
+    ? `${Prefix}${K}`
+    : T[K] extends Record<string, unknown>
+      ? TranslationKeys<T[K], `${Prefix}${K}.`>
+      : never;
+}[keyof T & string];
+
 /** useI18n() 返回值 */
 export interface I18nContextValue {
   /** 当前语言 */
