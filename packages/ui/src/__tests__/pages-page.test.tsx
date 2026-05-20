@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { PagesPage } from '../pages/pages';
 import { DataProviderProvider } from '../context/data-provider-context';
 import type { DataProvider } from '@hexo-cms/core';
+import { I18nTestWrapper } from './i18n-test-wrapper';
 
 const routerState = vi.hoisted(() => ({
   pathname: '/pages',
@@ -49,9 +50,11 @@ function createMockProvider(overrides: Partial<DataProvider> = {}): DataProvider
 
 function renderWithProvider(provider: DataProvider) {
   return render(
-    <DataProviderProvider provider={provider}>
-      <PagesPage />
-    </DataProviderProvider>
+    <I18nTestWrapper>
+      <DataProviderProvider provider={provider}>
+        <PagesPage />
+      </DataProviderProvider>
+    </I18nTestWrapper>
   );
 }
 

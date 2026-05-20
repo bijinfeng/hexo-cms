@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UserMenu } from "../components/user-menu";
 import type { AuthClient, AuthSession } from "../types/auth";
+import { I18nTestWrapper } from "./i18n-test-wrapper";
 
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
@@ -32,7 +33,9 @@ function createMockAuthClient(userOverrides?: Partial<NonNullable<AuthSession["u
 
 function renderUserMenu(authClient?: AuthClient, onSignedOut = vi.fn()) {
   return render(
-    <UserMenu authClient={authClient ?? createMockAuthClient()} onSignedOut={onSignedOut} />
+    <I18nTestWrapper>
+      <UserMenu authClient={authClient ?? createMockAuthClient()} onSignedOut={onSignedOut} />
+    </I18nTestWrapper>
   );
 }
 

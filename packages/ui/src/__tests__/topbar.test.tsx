@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Topbar } from "../components/layout/Topbar";
 import { DataProviderProvider } from "../context/data-provider-context";
 import type { DataProvider } from "@hexo-cms/core";
+import { I18nTestWrapper } from "./i18n-test-wrapper";
 
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
@@ -44,9 +45,11 @@ const mockDataProvider: DataProvider = {
 
 function renderTopbar(props: Partial<Parameters<typeof Topbar>[0]> = {}) {
   return render(
-    <DataProviderProvider provider={mockDataProvider}>
-      <Topbar title="测试" {...props} />
-    </DataProviderProvider>
+    <I18nTestWrapper>
+      <DataProviderProvider provider={mockDataProvider}>
+        <Topbar title="测试" {...props} />
+      </DataProviderProvider>
+    </I18nTestWrapper>
   );
 }
 

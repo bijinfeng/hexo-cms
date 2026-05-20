@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { SettingsPage } from "../pages/settings";
 import { PluginProvider } from "../plugin";
 import { createMockPluginHost } from "./test-utils";
+import { I18nTestWrapper } from "./i18n-test-wrapper";
 
 describe("SettingsPage switches", () => {
   beforeEach(() => {
@@ -12,9 +13,11 @@ describe("SettingsPage switches", () => {
 
   it("can open directly on the plugin settings section", () => {
     render(
-      <PluginProvider host={createMockPluginHost()}>
-        <SettingsPage initialSection="plugins" />
-      </PluginProvider>,
+      <I18nTestWrapper>
+        <PluginProvider host={createMockPluginHost()}>
+          <SettingsPage initialSection="plugins" />
+        </PluginProvider>
+      </I18nTestWrapper>,
     );
 
     expect(screen.getByRole("heading", { name: "插件管理" })).toBeInTheDocument();
@@ -25,7 +28,7 @@ describe("SettingsPage switches", () => {
   it("anchors switch thumbs inside the track", async () => {
     const user = userEvent.setup();
 
-    render(<SettingsPage />);
+    render(<I18nTestWrapper><SettingsPage /></I18nTestWrapper>);
 
     await user.click(screen.getByRole("tab", { name: "通知设置" }));
 

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { PostsPage } from '../pages/posts';
 import { DataProviderProvider } from '../context/data-provider-context';
 import type { DataProvider } from '@hexo-cms/core';
+import { I18nTestWrapper } from './i18n-test-wrapper';
 
 const routerState = vi.hoisted(() => ({
   pathname: '/posts',
@@ -53,9 +54,11 @@ function createMockProvider(overrides: Partial<DataProvider> = {}): DataProvider
 
 function renderWithProvider(provider: DataProvider) {
   return render(
-    <DataProviderProvider provider={provider}>
-      <PostsPage />
-    </DataProviderProvider>
+    <I18nTestWrapper>
+      <DataProviderProvider provider={provider}>
+        <PostsPage />
+      </DataProviderProvider>
+    </I18nTestWrapper>
   );
 }
 

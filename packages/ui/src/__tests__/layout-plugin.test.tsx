@@ -7,6 +7,7 @@ import { PluginProvider } from "../plugin";
 import { PluginSettingsPanel } from "../plugin/plugin-settings";
 import type { DataProvider } from "@hexo-cms/core";
 import { createTestPluginHost } from "./test-utils";
+import { I18nTestWrapper } from "./i18n-test-wrapper";
 
 vi.mock("@tanstack/react-router", () => ({
   useRouterState: () => ({ location: { pathname: "/media" } }),
@@ -70,14 +71,16 @@ describe("CMSLayout plugin policy", () => {
     const host = await createTestPluginHost();
 
     render(
-      <DataProviderProvider provider={createDataProvider()}>
-        <PluginProvider host={host}>
-          <PluginSettingsPanel />
-          <CMSLayout>
-            <div>媒体内容</div>
-          </CMSLayout>
-        </PluginProvider>
-      </DataProviderProvider>,
+      <I18nTestWrapper>
+        <DataProviderProvider provider={createDataProvider()}>
+          <PluginProvider host={host}>
+            <PluginSettingsPanel />
+            <CMSLayout>
+              <div>媒体内容</div>
+            </CMSLayout>
+          </PluginProvider>
+        </DataProviderProvider>
+      </I18nTestWrapper>,
     );
 
     expect(screen.getByText("搜索...")).toBeInTheDocument();
@@ -92,14 +95,16 @@ describe("CMSLayout plugin policy", () => {
     const host = await createTestPluginHost();
 
     render(
-      <DataProviderProvider provider={createDataProvider()}>
-        <PluginProvider host={host}>
-          <PluginSettingsPanel />
-          <CMSLayout>
-            <div>媒体内容</div>
-          </CMSLayout>
-        </PluginProvider>
-      </DataProviderProvider>,
+      <I18nTestWrapper>
+        <DataProviderProvider provider={createDataProvider()}>
+          <PluginProvider host={host}>
+            <PluginSettingsPanel />
+            <CMSLayout>
+              <div>媒体内容</div>
+            </CMSLayout>
+          </PluginProvider>
+        </DataProviderProvider>
+      </I18nTestWrapper>,
     );
 
     expect(screen.getByRole("link", { name: "附件助手" })).toHaveAttribute(

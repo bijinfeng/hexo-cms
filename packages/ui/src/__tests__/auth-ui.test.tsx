@@ -13,6 +13,7 @@ import type {
   RepositoryValidation,
 } from "../types/onboarding";
 import type { DataProvider } from "@hexo-cms/core";
+import { I18nTestWrapper } from "./i18n-test-wrapper";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -141,7 +142,7 @@ describe("OAuth UI", () => {
     const user = userEvent.setup();
     const authClient = createAuthClient();
 
-    render(<LoginPage authClient={authClient} />);
+    render(<I18nTestWrapper><LoginPage authClient={authClient} /></I18nTestWrapper>);
 
     await user.click(screen.getByRole("button", { name: /使用 GitHub 登录/ }));
 
@@ -165,7 +166,7 @@ describe("OAuth UI", () => {
       }),
     });
 
-    render(<LoginPage authClient={authClient} />);
+    render(<I18nTestWrapper><LoginPage authClient={authClient} /></I18nTestWrapper>);
 
     await user.click(screen.getByRole("button", { name: /使用 GitHub 登录/ }));
 
@@ -196,7 +197,7 @@ describe("OAuth UI", () => {
         }),
       });
 
-      render(<LoginPage authClient={authClient} onComplete={onComplete} />);
+      render(<I18nTestWrapper><LoginPage authClient={authClient} onComplete={onComplete} /></I18nTestWrapper>);
 
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: /使用 GitHub 登录/ }));
@@ -232,7 +233,7 @@ describe("OAuth UI", () => {
         }),
       });
 
-      render(<LoginPage authClient={authClient} />);
+      render(<I18nTestWrapper><LoginPage authClient={authClient} /></I18nTestWrapper>);
 
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: /使用 GitHub 登录/ }));
@@ -250,7 +251,7 @@ describe("OAuth UI", () => {
   it("shows repository import as the onboarding primary path", async () => {
     const onboardingClient = createOnboardingClient();
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     expect(await screen.findByText("导入 Hexo 仓库")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("搜索仓库")).toBeInTheDocument();
@@ -286,7 +287,7 @@ describe("OAuth UI", () => {
     });
     const onboardingClient = createOnboardingClient({ listRepositories });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     await screen.findByText("kebai/blog");
     await user.type(screen.getByPlaceholderText("搜索仓库"), "notes");
@@ -323,7 +324,7 @@ describe("OAuth UI", () => {
     });
     const onboardingClient = createOnboardingClient({ listRepositories });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
     listRepositories.mockClear();
@@ -378,7 +379,7 @@ describe("OAuth UI", () => {
     });
     const onboardingClient = createOnboardingClient({ listRepositories });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
     listRepositories.mockClear();
@@ -422,7 +423,7 @@ describe("OAuth UI", () => {
     });
     const onboardingClient = createOnboardingClient({ listRepositories });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
     listRepositories.mockClear();
@@ -470,7 +471,7 @@ describe("OAuth UI", () => {
     });
     const onboardingClient = createOnboardingClient({ listRepositories });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
     listRepositories.mockClear();
@@ -529,7 +530,7 @@ describe("OAuth UI", () => {
     });
     const onboardingClient = createOnboardingClient({ listRepositories });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     expect(await screen.findByText("kebai/blog")).toBeInTheDocument();
     listRepositories.mockClear();
@@ -551,7 +552,7 @@ describe("OAuth UI", () => {
       expect(screen.getByText("仓库加载失败，请重试")).toBeInTheDocument();
 
       await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "重试搜索" }));
+        fireEvent.click(screen.getByRole("button", { name: "重试" }));
         await Promise.resolve();
       });
 
@@ -596,7 +597,7 @@ describe("OAuth UI", () => {
     });
     const onboardingClient = createOnboardingClient({ listRepositories });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     await user.click(await screen.findByText("kebai/blog"));
     expect(await screen.findByText("开始管理")).toBeInTheDocument();
@@ -625,7 +626,7 @@ describe("OAuth UI", () => {
       }) as OnboardingClient["reauthorize"],
     });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     await screen.findByText("kebai/blog");
     fireEvent.click(screen.getByRole("button", { name: /重新授权/ }));
@@ -666,7 +667,7 @@ describe("OAuth UI", () => {
       }),
     });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     await screen.findByText("kebai/blog");
     expect(listRepositories).toHaveBeenCalledTimes(1);
@@ -694,7 +695,7 @@ describe("OAuth UI", () => {
     const user = userEvent.setup();
     const onboardingClient = createOnboardingClient();
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     await user.click(await screen.findByText("kebai/blog"));
     expect(await screen.findByText("检测到 Hexo 结构")).toBeInTheDocument();
@@ -733,7 +734,7 @@ describe("OAuth UI", () => {
       }),
     });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     await user.click(await screen.findByText("kebai/blog"));
 
@@ -774,7 +775,7 @@ describe("OAuth UI", () => {
         .mockReturnValueOnce(secondValidation.promise),
     });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     await user.click(await screen.findByText("kebai/blog"));
     await user.click(await screen.findByText("kebai/notes"));
@@ -833,7 +834,7 @@ describe("OAuth UI", () => {
       saveRepositoryConfig: vi.fn().mockRejectedValue(new Error("save failed")),
     });
 
-    render(<OnboardingPage onboardingClient={onboardingClient} />);
+    render(<I18nTestWrapper><OnboardingPage onboardingClient={onboardingClient} /></I18nTestWrapper>);
 
     await user.click(await screen.findByText("kebai/blog"));
     expect(await screen.findByText("检测到 Hexo 结构")).toBeInTheDocument();
@@ -846,9 +847,11 @@ describe("OAuth UI", () => {
 
   it("does not render a PAT management card in settings", async () => {
     render(
-      <DataProviderProvider provider={createDataProvider()}>
-        <SettingsPage />
-      </DataProviderProvider>,
+      <I18nTestWrapper>
+        <DataProviderProvider provider={createDataProvider()}>
+          <SettingsPage />
+        </DataProviderProvider>
+      </I18nTestWrapper>,
     );
 
     await userEvent.click(screen.getByRole("tab", { name: /GitHub 集成/ }));
@@ -875,9 +878,11 @@ describe("OAuth UI", () => {
     });
 
     render(
-      <DataProviderProvider provider={createDataProvider()}>
-        <SettingsPage authClient={authClient} onSignedOut={onSignedOut} />
-      </DataProviderProvider>,
+      <I18nTestWrapper>
+        <DataProviderProvider provider={createDataProvider()}>
+          <SettingsPage authClient={authClient} onSignedOut={onSignedOut} />
+        </DataProviderProvider>
+      </I18nTestWrapper>,
     );
 
     await user.click(screen.getByRole("tab", { name: /GitHub 集成/ }));
@@ -921,9 +926,11 @@ describe("OAuth UI", () => {
       });
 
       render(
-        <DataProviderProvider provider={createDataProvider()}>
-          <SettingsPage authClient={authClient} initialSection="github" />
-        </DataProviderProvider>,
+        <I18nTestWrapper>
+          <DataProviderProvider provider={createDataProvider()}>
+            <SettingsPage authClient={authClient} initialSection="github" />
+          </DataProviderProvider>
+        </I18nTestWrapper>,
       );
 
       await act(async () => {
