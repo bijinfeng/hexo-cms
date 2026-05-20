@@ -42,8 +42,8 @@ export const webOnboardingClient: OnboardingClient = {
     };
   },
 
-  async reauthorize(): Promise<void> {
-    await webAuthClient.reauthorize();
+  async reauthorize() {
+    return webAuthClient.reauthorize();
   },
 
   async listRepositories(input): Promise<RepositoryOption[]> {

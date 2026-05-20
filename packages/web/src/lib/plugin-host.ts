@@ -1,6 +1,7 @@
 import {
   PluginCatalog,
   type PluginConfigValue,
+  type PluginDefinition,
   PluginHost,
   StaticPluginSourceResolver,
 } from "@hexo-cms/core";
@@ -27,10 +28,17 @@ function getCurrentLocale(): string {
 
 export async function createWebPluginHost() {
   const catalog = await PluginCatalog.discover<ComponentType<{ config?: PluginConfigValue }>>([
-    new StaticPluginSourceResolver("official", officialPlugins),
-    new StaticPluginSourceResolver("local-dev", localDevPlugins, {
-      enabled: import.meta.env.DEV,
-    }),
+    new StaticPluginSourceResolver<ComponentType<{ config?: PluginConfigValue }>>(
+      "official",
+      officialPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[],
+    ),
+    new StaticPluginSourceResolver<ComponentType<{ config?: PluginConfigValue }>>(
+      "local-dev",
+      localDevPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[],
+      {
+        enabled: import.meta.env.DEV,
+      },
+    ),
   ]);
 
   return new PluginHost<ComponentType<{ config?: PluginConfigValue }>>({
@@ -50,8 +58,15 @@ export async function createWebPluginHost() {
 export async function getWebPluginManifests() {
   const localDevEnabled = import.meta.env.DEV;
   const catalog = await PluginCatalog.discover([
-    new StaticPluginSourceResolver("official", officialPlugins),
-    new StaticPluginSourceResolver("local-dev", localDevPlugins, { enabled: localDevEnabled }),
+    new StaticPluginSourceResolver<ComponentType<{ config?: PluginConfigValue }>>(
+      "official",
+      officialPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[],
+    ),
+    new StaticPluginSourceResolver<ComponentType<{ config?: PluginConfigValue }>>(
+      "local-dev",
+      localDevPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[],
+      { enabled: localDevEnabled },
+    ),
   ]);
   return catalog.manifests();
 }

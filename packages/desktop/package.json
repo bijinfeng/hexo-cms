@@ -18,6 +18,7 @@
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
     "@hexo-cms/core": "workspace:*",
+    "@hexo-cms/plugin-comments-overview": "workspace:*",
     "@hexo-cms/plugins": "workspace:*",
     "@hexo-cms/ui": "workspace:*",
     "@tanstack/react-router": "catalog:tanstack",

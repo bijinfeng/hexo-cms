@@ -3,6 +3,12 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "target": "ES2022",
+    "types": ["node"],
     "paths": {
       "@hexo-cms/ui/components/*": ["./packages/ui/src/components/*"],
       "@hexo-cms/ui/hooks/*": ["./packages/ui/src/hooks/*"],

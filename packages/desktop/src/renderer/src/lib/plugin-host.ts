@@ -1,6 +1,7 @@
 import {
   PluginCatalog,
   type PluginConfigValue,
+  type PluginDefinition,
   PluginHost,
   StaticPluginSourceResolver,
 } from "@hexo-cms/core";
@@ -21,10 +22,17 @@ import { desktopDataProvider } from "./desktop-data-provider-instance";
 
 export async function createDesktopPluginHost() {
   const catalog = await PluginCatalog.discover<ComponentType<{ config?: PluginConfigValue }>>([
-    new StaticPluginSourceResolver("official", officialPlugins),
-    new StaticPluginSourceResolver("local-dev", localDevPlugins, {
-      enabled: import.meta.env.DEV,
-    }),
+    new StaticPluginSourceResolver<ComponentType<{ config?: PluginConfigValue }>>(
+      "official",
+      officialPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[],
+    ),
+    new StaticPluginSourceResolver<ComponentType<{ config?: PluginConfigValue }>>(
+      "local-dev",
+      localDevPlugins as PluginDefinition<ComponentType<{ config?: PluginConfigValue }>>[],
+      {
+        enabled: import.meta.env.DEV,
+      },
+    ),
   ]);
 
   const api = getElectronAPI();

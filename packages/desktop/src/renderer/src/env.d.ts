@@ -1,3 +1,16 @@
-declare module "@hexo-cms/ui/styles";
-
 export {};
+
+declare global {
+  interface ImportMetaEnv {
+    readonly DEV: boolean;
+    readonly PROD: boolean;
+    readonly MODE: string;
+    readonly BASE_URL: string;
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}
+
+declare module "@hexo-cms/ui/styles";
