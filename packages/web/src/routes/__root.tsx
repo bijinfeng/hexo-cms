@@ -187,11 +187,13 @@ function RootComponent() {
 
   if (isPublicRoute || isSetupRoute) {
     return (
-      <DataProviderProvider provider={webDataProvider}>
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
-      </DataProviderProvider>
+      <I18nProvider config={i18nConfig} initialLocale={locale}>
+        <DataProviderProvider provider={webDataProvider}>
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </DataProviderProvider>
+      </I18nProvider>
     );
   }
 

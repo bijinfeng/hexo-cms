@@ -230,7 +230,7 @@ describe("Comments & Menus pages", () => {
   });
 
   it("loads comments page", async () => {
-    await page.goto("/comments");
+    await page.goto("/plugins/hexo-cms-comments-overview/comments");
     await expectVisible(page.locator("text=评论插件未启用"), 10_000);
   });
 

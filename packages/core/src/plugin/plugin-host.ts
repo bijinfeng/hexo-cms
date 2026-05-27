@@ -18,6 +18,7 @@ import type {
   PluginRuntimeContext,
   PluginRuntimeErrorInput,
   RegisteredDashboardWidget,
+  RegisteredPluginPage,
 } from "./types";
 
 export interface PluginHostOptions<TRenderer = unknown> {
@@ -110,6 +111,10 @@ export class PluginHost<TRenderer = unknown> {
 
   getDashboardWidgetRenderer(widget: RegisteredDashboardWidget): TRenderer | undefined {
     return this.renderers.get(`${widget.pluginId}:${widget.renderer}`);
+  }
+
+  getPluginPageRenderer(page: RegisteredPluginPage): TRenderer | undefined {
+    return this.renderers.get(`${page.pluginId}:${page.renderer}`);
   }
 
   setCurrentLocale(locale: string): void {

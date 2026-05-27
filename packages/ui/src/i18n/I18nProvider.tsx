@@ -90,3 +90,7 @@ export function useI18n(): I18nContextValue {
   if (!ctx) throw new Error("useI18n() must be used within <I18nProvider>");
   return ctx;
 }
+
+export function useOptionalI18n(): I18nContextValue | null {
+  return useContext(I18nContext);
+}

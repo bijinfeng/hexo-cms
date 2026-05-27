@@ -1,7 +1,7 @@
 import { AlertCircle } from "lucide-react";
 import type { ErrorInfo, ReactNode } from "react";
 import { Component } from "react";
-import { useI18n } from "../i18n/I18nProvider";
+import { useOptionalI18n } from "../i18n/I18nProvider";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
@@ -54,7 +54,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 function DefaultFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
-  const { t } = useI18n();
+  const i18n = useOptionalI18n();
+  const t = i18n?.t ?? ((key: string) => FALLBACK_COPY[key] ?? key);
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
       <AlertCircle className="w-12 h-12 text-[var(--status-error)] mb-4" />
@@ -80,3 +81,10 @@ function DefaultFallback({ error, onRetry }: { error: Error; onRetry: () => void
     </div>
   );
 }
+
+const FALLBACK_COPY: Record<string, string> = {
+  "common.retry": "Retry",
+  "components.errorBoundary.details": "Details",
+  "components.errorBoundary.message": "Please retry or refresh the app.",
+  "components.errorBoundary.title": "Something went wrong",
+};

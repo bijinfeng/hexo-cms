@@ -44,6 +44,7 @@ export interface PluginContributions {
   dashboardWidgets?: DashboardWidgetContribution[];
   settingsPanels?: SettingsPanelContribution[];
   settingsSchemas?: Record<string, PluginSettingsSchema>;
+  pages?: PluginPageContribution[];
   sidebarItems?: SidebarItemContribution[];
   commands?: CommandContribution[];
   diagnostics?: DiagnosticsContribution[];
@@ -98,10 +99,22 @@ export interface PluginSettingsSchema {
   fields: PluginSettingsField[];
 }
 
+export interface PluginPageContribution {
+  id: string;
+  route: string;
+  title: string;
+  renderer: string;
+  section?: string;
+  icon?: string;
+  order?: number;
+}
+
 export interface SidebarItemContribution {
   id: string;
   title: string;
-  target: "plugin.settings" | "/comments";
+  target: string;
+  section?: string;
+  icon?: string;
 }
 
 export interface CommandContribution {
@@ -345,6 +358,11 @@ export interface RegisteredSidebarItem extends SidebarItemContribution {
   pluginName: string;
 }
 
+export interface RegisteredPluginPage extends PluginPageContribution {
+  pluginId: string;
+  pluginName: string;
+}
+
 export interface RegisteredCommand extends CommandContribution {
   pluginId: string;
   pluginName: string;
@@ -354,6 +372,7 @@ export interface PluginExtensionRegistrySnapshot {
   dashboardWidgets: RegisteredDashboardWidget[];
   settingsPanels: RegisteredSettingsPanel[];
   sidebarItems: RegisteredSidebarItem[];
+  pages: RegisteredPluginPage[];
   commands: RegisteredCommand[];
   diagnostics: RegisteredDiagnostics[];
   uiFlags: RegisteredUiFlag[];

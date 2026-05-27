@@ -33,13 +33,19 @@ export function CMSLayout({
       "/pages/new": t("pages.editor.newTitle"),
       "/tags": t("sidebar.tags"),
       "/media": t("sidebar.media"),
-      "/comments": t("sidebar.comments"),
       "/themes": t("sidebar.themes"),
       "/deploy": t("sidebar.deploy"),
       "/settings": t("sidebar.settings"),
     };
-    return titles[pathname] ?? "";
-  }, [pathname, t]);
+    if (titles[pathname]) return titles[pathname];
+    const sidebarItem = snapshot.extensions.sidebarItems.find((item) => item.target === pathname);
+    if (sidebarItem) return sidebarItem.title;
+    const page = snapshot.extensions.pages.find(
+      (p) => `/plugins/${p.pluginId}/${p.route}` === pathname,
+    );
+    if (page) return page.title;
+    return "";
+  }, [pathname, t, snapshot.extensions.sidebarItems, snapshot.extensions.pages]);
   const showTopbarSearch =
     pathname !== "/media" ||
     snapshot.extensions.uiFlags.some((flag) => flag.flag === "media.search");

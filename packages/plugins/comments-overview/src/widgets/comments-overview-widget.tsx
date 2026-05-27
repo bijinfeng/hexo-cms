@@ -43,7 +43,7 @@ export function CommentsOverviewWidget({ config = {} }: { config?: PluginConfigV
   const moderationUrl =
     typeof config.moderationUrl === "string" && config.moderationUrl
       ? config.moderationUrl
-      : "/comments";
+      : "/plugins/hexo-cms-comments-overview/comments";
 
   const isConfigured = Boolean(config.giscusRepo && config.giscusRepoId && config.giscusCategoryId);
 

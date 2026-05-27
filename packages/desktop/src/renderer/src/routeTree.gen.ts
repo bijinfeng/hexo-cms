@@ -19,12 +19,12 @@ import { Route as MenusRouteImport } from './routes/menus'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DeployRouteImport } from './routes/deploy'
-import { Route as CommentsRouteImport } from './routes/comments'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsNewRouteImport } from './routes/posts.new'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 import { Route as PagesNewRouteImport } from './routes/pages.new'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
+import { Route as PluginsPluginIdPageIdRouteImport } from './routes/plugins.$pluginId.$pageId'
 
 const ThemesRoute = ThemesRouteImport.update({
   id: '/themes',
@@ -76,11 +76,6 @@ const DeployRoute = DeployRouteImport.update({
   path: '/deploy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CommentsRoute = CommentsRouteImport.update({
-  id: '/comments',
-  path: '/comments',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -106,10 +101,14 @@ const PagesSlugRoute = PagesSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => PagesRoute,
 } as any)
+const PluginsPluginIdPageIdRoute = PluginsPluginIdPageIdRouteImport.update({
+  id: '/plugins/$pluginId/$pageId',
+  path: '/plugins/$pluginId/$pageId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/comments': typeof CommentsRoute
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
@@ -124,10 +123,10 @@ export interface FileRoutesByFullPath {
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
+  '/plugins/$pluginId/$pageId': typeof PluginsPluginIdPageIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/comments': typeof CommentsRoute
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
@@ -142,11 +141,11 @@ export interface FileRoutesByTo {
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
+  '/plugins/$pluginId/$pageId': typeof PluginsPluginIdPageIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/comments': typeof CommentsRoute
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
@@ -161,12 +160,12 @@ export interface FileRoutesById {
   '/pages/new': typeof PagesNewRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/posts/new': typeof PostsNewRoute
+  '/plugins/$pluginId/$pageId': typeof PluginsPluginIdPageIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/comments'
     | '/deploy'
     | '/login'
     | '/media'
@@ -181,10 +180,10 @@ export interface FileRouteTypes {
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
+    | '/plugins/$pluginId/$pageId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/comments'
     | '/deploy'
     | '/login'
     | '/media'
@@ -199,10 +198,10 @@ export interface FileRouteTypes {
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
+    | '/plugins/$pluginId/$pageId'
   id:
     | '__root__'
     | '/'
-    | '/comments'
     | '/deploy'
     | '/login'
     | '/media'
@@ -217,11 +216,11 @@ export interface FileRouteTypes {
     | '/pages/new'
     | '/posts/$slug'
     | '/posts/new'
+    | '/plugins/$pluginId/$pageId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CommentsRoute: typeof CommentsRoute
   DeployRoute: typeof DeployRoute
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
@@ -232,6 +231,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TagsRoute: typeof TagsRoute
   ThemesRoute: typeof ThemesRoute
+  PluginsPluginIdPageIdRoute: typeof PluginsPluginIdPageIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -306,13 +306,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeployRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/comments': {
-      id: '/comments'
-      path: '/comments'
-      fullPath: '/comments'
-      preLoaderRoute: typeof CommentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -348,6 +341,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagesSlugRouteImport
       parentRoute: typeof PagesRoute
     }
+    '/plugins/$pluginId/$pageId': {
+      id: '/plugins/$pluginId/$pageId'
+      path: '/plugins/$pluginId/$pageId'
+      fullPath: '/plugins/$pluginId/$pageId'
+      preLoaderRoute: typeof PluginsPluginIdPageIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -377,7 +377,6 @@ const PostsRouteWithChildren = PostsRoute._addFileChildren(PostsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CommentsRoute: CommentsRoute,
   DeployRoute: DeployRoute,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
@@ -388,6 +387,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TagsRoute: TagsRoute,
   ThemesRoute: ThemesRoute,
+  PluginsPluginIdPageIdRoute: PluginsPluginIdPageIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

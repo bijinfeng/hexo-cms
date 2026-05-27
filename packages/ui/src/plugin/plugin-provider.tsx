@@ -7,6 +7,7 @@ import type {
   PluginManagerSnapshot,
   PluginRuntimeErrorInput,
   RegisteredDashboardWidget,
+  RegisteredPluginPage,
 } from "@hexo-cms/core";
 import {
   type ComponentType,
@@ -35,6 +36,7 @@ interface PluginContextValue {
   getDashboardWidgetRenderer: (
     widget: RegisteredDashboardWidget,
   ) => ComponentType<{ config?: PluginConfigValue }> | undefined;
+  getPluginPageRenderer: (page: RegisteredPluginPage) => ComponentType<object> | undefined;
   setPluginLocale: (locale: string) => void;
 }
 
@@ -123,6 +125,11 @@ export function PluginProvider({
     [host],
   );
 
+  const getPluginPageRenderer = useCallback(
+    (page: RegisteredPluginPage) => host.getPluginPageRenderer(page),
+    [host],
+  );
+
   const setPluginLocale = useCallback(
     (locale: string) => {
       host.setCurrentLocale(locale);
@@ -142,6 +149,7 @@ export function PluginProvider({
       executePluginCommand,
       runDiagnostics,
       getDashboardWidgetRenderer,
+      getPluginPageRenderer,
       setPluginLocale,
     }),
     [
@@ -154,6 +162,7 @@ export function PluginProvider({
       executePluginCommand,
       runDiagnostics,
       getDashboardWidgetRenderer,
+      getPluginPageRenderer,
       setPluginLocale,
     ],
   );

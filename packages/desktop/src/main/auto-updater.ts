@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { UpdateChannel, UpdateStatusPayload } from "@hexo-cms/ui/types/electron-api";
 import type { BrowserWindow } from "electron";
 import { app } from "electron";
-import { autoUpdater } from "electron-updater";
+import updater from "electron-updater";
 import { readJsonFile, writeJsonFile } from "./json-file-store";
 
 const UPDATE_CONFIG_FILENAME = "update-config.json";
@@ -34,14 +34,14 @@ function sendStatus(payload: UpdateStatusPayload): void {
 export function initUpdater(window: BrowserWindow, channel: UpdateChannel): void {
   mainWindow = window;
 
-  autoUpdater.autoDownload = false;
-  autoUpdater.allowPrerelease = channel === "beta";
+  updater.autoUpdater.autoDownload = false;
+  updater.autoUpdater.allowPrerelease = channel === "beta";
 
-  autoUpdater.on("checking-for-update", () => {
+  updater.autoUpdater.on("checking-for-update", () => {
     sendStatus({ status: "checking" });
   });
 
-  autoUpdater.on("update-available", (info) => {
+  updater.autoUpdater.on("update-available", (info) => {
     sendStatus({
       status: "available",
       version: info.version,
@@ -49,11 +49,11 @@ export function initUpdater(window: BrowserWindow, channel: UpdateChannel): void
     });
   });
 
-  autoUpdater.on("update-not-available", () => {
+  updater.autoUpdater.on("update-not-available", () => {
     sendStatus({ status: "up-to-date" });
   });
 
-  autoUpdater.on("download-progress", (progress) => {
+  updater.autoUpdater.on("download-progress", (progress) => {
     sendStatus({
       status: "downloading",
       percent: Math.round(progress.percent),
@@ -61,14 +61,14 @@ export function initUpdater(window: BrowserWindow, channel: UpdateChannel): void
     });
   });
 
-  autoUpdater.on("update-downloaded", (info) => {
+  updater.autoUpdater.on("update-downloaded", (info) => {
     sendStatus({
       status: "downloaded",
       version: info.version,
     });
   });
 
-  autoUpdater.on("error", (error) => {
+  updater.autoUpdater.on("error", (error) => {
     sendStatus({
       status: "error",
       message: error.message,
@@ -77,24 +77,24 @@ export function initUpdater(window: BrowserWindow, channel: UpdateChannel): void
 }
 
 export function checkForUpdates(): void {
-  autoUpdater.checkForUpdates().catch(() => {
+  updater.autoUpdater.checkForUpdates().catch(() => {
     // Startup check failures are silent
   });
 }
 
 export function downloadUpdate(): void {
-  autoUpdater.downloadUpdate().catch((error) => {
+  updater.autoUpdater.downloadUpdate().catch((error) => {
     sendStatus({ status: "error", message: String(error) });
   });
 }
 
 export function quitAndInstall(): void {
-  autoUpdater.quitAndInstall();
+  updater.autoUpdater.quitAndInstall();
 }
 
 export function setChannel(channel: UpdateChannel): void {
   saveChannel(channel);
-  autoUpdater.allowPrerelease = channel === "beta";
+  updater.autoUpdater.allowPrerelease = channel === "beta";
 }
 
 export function getCurrentChannel(): UpdateChannel {

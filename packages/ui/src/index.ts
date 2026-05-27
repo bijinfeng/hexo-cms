@@ -97,7 +97,7 @@ export type { EditorPreferences } from "./hooks/use-editor-preferences";
 export { getEditorPreferencesSync, useEditorPreferences } from "./hooks/use-editor-preferences";
 export type { TranslationKey } from "./i18n";
 // I18n
-export { en, I18nProvider, useI18n, zh } from "./i18n";
+export { en, I18nProvider, useI18n, useOptionalI18n, zh } from "./i18n";
 export { getAuthRedirect, isOnboardingRoute, isPublicAuthRoute } from "./lib/auth-route-guard";
 export { getElectronAPI, requireElectronAPI } from "./lib/electron-api";
 export { toGitHubConfig } from "./lib/repository-config";

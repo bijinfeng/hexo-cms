@@ -24,7 +24,7 @@
     "@tanstack/react-router": "catalog:tanstack",
     "@tanstack/router-plugin": "catalog:tanstack",
     "better-sqlite3": "^12.9.0",
-    "electron-updater": "^6.3.9",
+    "electron-updater": "^6.8.3",
     "keytar": "^7.9.0"
   },
   "devDependencies": {

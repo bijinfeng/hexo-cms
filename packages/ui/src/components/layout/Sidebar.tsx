@@ -1,11 +1,12 @@
 import type { RegisteredSidebarItem } from "@hexo-cms/core";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   FileText,
   FolderOpen,
   GitBranch,
   Image,
   LayoutDashboard,
+  type LucideIcon,
   Menu,
   MessageSquare,
   Palette,
@@ -19,6 +20,28 @@ import { useMemo } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { cn } from "../../utils";
 
+const PLUGIN_ICON_MAP: Record<string, LucideIcon> = {
+  "message-square": MessageSquare,
+  puzzle: Puzzle,
+  "file-text": FileText,
+  tags: Tags,
+  image: Image,
+  settings: Settings,
+  "layout-dashboard": LayoutDashboard,
+  "folder-open": FolderOpen,
+  "git-branch": GitBranch,
+  palette: Palette,
+  menu: Menu,
+  zap: Zap,
+  "panel-left-close": PanelLeftClose,
+};
+
+function resolvePluginIcon(iconName: string | undefined): LucideIcon {
+  if (!iconName) return Puzzle;
+  const normalized = iconName.toLowerCase().replace(/_/g, "-");
+  return PLUGIN_ICON_MAP[normalized] ?? Puzzle;
+}
+
 interface SidebarProps {
   collapsed?: boolean;
   onToggle?: () => void;
@@ -29,6 +52,7 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
   const { t } = useI18n();
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
+  const navigate = useNavigate();
 
   const navItems = useMemo(
     () => [
@@ -54,6 +78,17 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
     ],
     [t],
   );
+
+  const pluginGroups = useMemo(() => {
+    const grouped = new Map<string, RegisteredSidebarItem[]>();
+    const defaultGroup = t("sidebar.plugins");
+    for (const item of pluginItems) {
+      const section = item.section ?? defaultGroup;
+      if (!grouped.has(section)) grouped.set(section, []);
+      grouped.get(section)!.push(item);
+    }
+    return [...grouped.entries()];
+  }, [pluginItems, t]);
 
   return (
     <aside
@@ -120,84 +155,122 @@ export function Sidebar({ collapsed = false, onToggle, pluginItems = [] }: Sideb
             </div>
           </div>
         ))}
-        {(() => {
-          const commentsItems = pluginItems.filter((item) => item.target === "/comments");
-          const otherItems = pluginItems.filter((item) => item.target !== "/comments");
+        {pluginGroups.map(([section, items]) => (
+          <div key={section}>
+            {!collapsed && (
+              <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                {section}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {items.map((item) => {
+                const isPluginSettings = item.target === "plugin.settings";
+                const pluginPageMatch = item.target.match(/^\/plugins\/([^/]+)\/(.+)$/);
+                const isPluginPage = pluginPageMatch !== null;
+                const isActive = isPluginSettings
+                  ? pathname === "/settings"
+                  : pathname === item.target;
+                const Icon = resolvePluginIcon(item.icon);
+                const displayName = item.title;
 
-          const renderItem = (item: (typeof pluginItems)[0]) => {
-            const isCommentsPage = item.target === "/comments";
-            const isActive = isCommentsPage ? pathname === "/comments" : pathname === "/settings";
-            const linkProps = isCommentsPage
-              ? {}
-              : { search: { section: "plugins", plugin: item.pluginId } };
-            const prefix = item.pluginId.replace("hexo-cms-", "").split("-")[0];
-            const displayName =
-              t(`${prefix}.name`) !== `${prefix}.name` ? t(`${prefix}.name`) : item.title;
-            return (
-              <Link
-                key={`${item.pluginId}:${item.id}`}
-                to={isCommentsPage ? "/comments" : "/settings"}
-                {...linkProps}
-                className={cn(
-                  "flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer no-underline",
-                  isActive
-                    ? "bg-[var(--sidebar-item-active-bg)] text-[var(--sidebar-item-active-text)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
-                  collapsed && "justify-center px-2",
-                )}
-                title={collapsed ? displayName : undefined}
-                aria-current={isActive ? "page" : undefined}
-              >
-                {isCommentsPage ? (
-                  <MessageSquare
-                    size={18}
-                    className={cn(
-                      "flex-shrink-0",
-                      isActive ? "text-[var(--sidebar-item-active-icon)]" : "",
-                    )}
-                  />
-                ) : (
-                  <Puzzle
-                    size={18}
-                    className={cn(
-                      "flex-shrink-0",
-                      isActive ? "text-[var(--sidebar-item-active-icon)]" : "",
-                    )}
-                  />
-                )}
-                {!collapsed && <span className="truncate">{displayName}</span>}
-                {isActive && !collapsed && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)]" />
-                )}
-              </Link>
-            );
-          };
+                if (isPluginSettings) {
+                  return (
+                    <button
+                      key={`${item.pluginId}:${item.id}`}
+                      type="button"
+                      onClick={() =>
+                        navigate({
+                          to: "/settings",
+                          search: { section: "plugins", plugin: item.pluginId } as any,
+                        })
+                      }
+                      className={cn(
+                        "flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer border-none bg-transparent w-full text-left",
+                        isActive
+                          ? "bg-[var(--sidebar-item-active-bg)] text-[var(--sidebar-item-active-text)]"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
+                        collapsed && "justify-center px-2",
+                      )}
+                      title={collapsed ? displayName : undefined}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <Icon
+                        size={18}
+                        className={cn(
+                          "flex-shrink-0",
+                          isActive ? "text-[var(--sidebar-item-active-icon)]" : "",
+                        )}
+                      />
+                      {!collapsed && <span className="truncate">{displayName}</span>}
+                      {isActive && !collapsed && (
+                        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)]" />
+                      )}
+                    </button>
+                  );
+                }
 
-          return (
-            <>
-              {commentsItems.length > 0 && (
-                <div>
-                  {!collapsed && (
-                    <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-                      {t("sidebar.interact")}
-                    </div>
-                  )}
-                  <div className="space-y-0.5">{commentsItems.map(renderItem)}</div>
-                </div>
-              )}
-              {otherItems.length > 0 && (
-                <div>
-                  {!collapsed && (
-                    <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-                      {t("sidebar.plugins")}
-                    </div>
-                  )}
-                  <div className="space-y-0.5">{otherItems.map(renderItem)}</div>
-                </div>
-              )}
-            </>
-          );
-        })()}
+                if (isPluginPage) {
+                  return (
+                    <Link
+                      key={`${item.pluginId}:${item.id}`}
+                      to="/plugins/$pluginId/$pageId"
+                      params={{ pluginId: pluginPageMatch[1], pageId: pluginPageMatch[2] }}
+                      className={cn(
+                        "flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer no-underline",
+                        isActive
+                          ? "bg-[var(--sidebar-item-active-bg)] text-[var(--sidebar-item-active-text)]"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
+                        collapsed && "justify-center px-2",
+                      )}
+                      title={collapsed ? displayName : undefined}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <Icon
+                        size={18}
+                        className={cn(
+                          "flex-shrink-0",
+                          isActive ? "text-[var(--sidebar-item-active-icon)]" : "",
+                        )}
+                      />
+                      {!collapsed && <span className="truncate">{displayName}</span>}
+                      {isActive && !collapsed && (
+                        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)]" />
+                      )}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={`${item.pluginId}:${item.id}`}
+                    to={item.target as any}
+                    className={cn(
+                      "flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer no-underline",
+                      isActive
+                        ? "bg-[var(--sidebar-item-active-bg)] text-[var(--sidebar-item-active-text)]"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]",
+                      collapsed && "justify-center px-2",
+                    )}
+                    title={collapsed ? displayName : undefined}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <Icon
+                      size={18}
+                      className={cn(
+                        "flex-shrink-0",
+                        isActive ? "text-[var(--sidebar-item-active-icon)]" : "",
+                      )}
+                    />
+                    {!collapsed && <span className="truncate">{displayName}</span>}
+                    {isActive && !collapsed && (
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)]" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Footer */}

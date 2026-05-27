@@ -68,11 +68,15 @@ export const commentsOverviewManifest: PluginManifest = {
         ],
       },
     },
-    sidebarItems: [
+    pages: [
       {
         id: "comments.entry",
+        route: "comments",
         title: "评论管理",
-        target: "/comments",
+        renderer: "comments.page",
+        section: "交互",
+        icon: "message-square",
+        order: 10,
       },
     ],
     commands: [

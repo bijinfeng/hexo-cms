@@ -19,13 +19,13 @@ import { Route as MenusRouteImport } from './routes/menus'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DeployRouteImport } from './routes/deploy'
-import { Route as CommentsRouteImport } from './routes/comments'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsNewRouteImport } from './routes/posts.new'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 import { Route as PagesNewRouteImport } from './routes/pages.new'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as ApiDeployRouteImport } from './routes/api/deploy'
+import { Route as PluginsPluginIdPageIdRouteImport } from './routes/plugins.$pluginId.$pageId'
 import { Route as ApiPluginStorageRouteImport } from './routes/api/plugin/storage'
 import { Route as ApiPluginStateRouteImport } from './routes/api/plugin/state'
 import { Route as ApiPluginSecretsRouteImport } from './routes/api/plugin/secrets'
@@ -95,11 +95,6 @@ const DeployRoute = DeployRouteImport.update({
   path: '/deploy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CommentsRoute = CommentsRouteImport.update({
-  id: '/comments',
-  path: '/comments',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -128,6 +123,11 @@ const PagesSlugRoute = PagesSlugRouteImport.update({
 const ApiDeployRoute = ApiDeployRouteImport.update({
   id: '/api/deploy',
   path: '/api/deploy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PluginsPluginIdPageIdRoute = PluginsPluginIdPageIdRouteImport.update({
+  id: '/plugins/$pluginId/$pageId',
+  path: '/plugins/$pluginId/$pageId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPluginStorageRoute = ApiPluginStorageRouteImport.update({
@@ -224,7 +224,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/comments': typeof CommentsRoute
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
@@ -258,10 +257,10 @@ export interface FileRoutesByFullPath {
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
+  '/plugins/$pluginId/$pageId': typeof PluginsPluginIdPageIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/comments': typeof CommentsRoute
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
@@ -295,11 +294,11 @@ export interface FileRoutesByTo {
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
+  '/plugins/$pluginId/$pageId': typeof PluginsPluginIdPageIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/comments': typeof CommentsRoute
   '/deploy': typeof DeployRoute
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
@@ -333,12 +332,12 @@ export interface FileRoutesById {
   '/api/plugin/secrets': typeof ApiPluginSecretsRoute
   '/api/plugin/state': typeof ApiPluginStateRoute
   '/api/plugin/storage': typeof ApiPluginStorageRoute
+  '/plugins/$pluginId/$pageId': typeof PluginsPluginIdPageIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/comments'
     | '/deploy'
     | '/login'
     | '/media'
@@ -372,10 +371,10 @@ export interface FileRouteTypes {
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
+    | '/plugins/$pluginId/$pageId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/comments'
     | '/deploy'
     | '/login'
     | '/media'
@@ -409,10 +408,10 @@ export interface FileRouteTypes {
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
+    | '/plugins/$pluginId/$pageId'
   id:
     | '__root__'
     | '/'
-    | '/comments'
     | '/deploy'
     | '/login'
     | '/media'
@@ -446,11 +445,11 @@ export interface FileRouteTypes {
     | '/api/plugin/secrets'
     | '/api/plugin/state'
     | '/api/plugin/storage'
+    | '/plugins/$pluginId/$pageId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CommentsRoute: typeof CommentsRoute
   DeployRoute: typeof DeployRoute
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
@@ -480,6 +479,7 @@ export interface RootRouteChildren {
   ApiPluginSecretsRoute: typeof ApiPluginSecretsRoute
   ApiPluginStateRoute: typeof ApiPluginStateRoute
   ApiPluginStorageRoute: typeof ApiPluginStorageRoute
+  PluginsPluginIdPageIdRoute: typeof PluginsPluginIdPageIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -554,13 +554,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeployRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/comments': {
-      id: '/comments'
-      path: '/comments'
-      fullPath: '/comments'
-      preLoaderRoute: typeof CommentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -601,6 +594,13 @@ declare module '@tanstack/react-router' {
       path: '/api/deploy'
       fullPath: '/api/deploy'
       preLoaderRoute: typeof ApiDeployRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plugins/$pluginId/$pageId': {
+      id: '/plugins/$pluginId/$pageId'
+      path: '/plugins/$pluginId/$pageId'
+      fullPath: '/plugins/$pluginId/$pageId'
+      preLoaderRoute: typeof PluginsPluginIdPageIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/plugin/storage': {
@@ -758,7 +758,6 @@ const PostsRouteWithChildren = PostsRoute._addFileChildren(PostsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CommentsRoute: CommentsRoute,
   DeployRoute: DeployRoute,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
@@ -788,6 +787,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPluginSecretsRoute: ApiPluginSecretsRoute,
   ApiPluginStateRoute: ApiPluginStateRoute,
   ApiPluginStorageRoute: ApiPluginStorageRoute,
+  PluginsPluginIdPageIdRoute: PluginsPluginIdPageIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

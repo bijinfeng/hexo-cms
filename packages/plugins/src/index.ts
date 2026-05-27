@@ -1,2 +1,2 @@
-export * from "./local-dev";
-export * from "./official";
+export * from "./local-dev.ts";
+export * from "./official.ts";

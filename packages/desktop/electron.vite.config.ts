@@ -11,6 +11,15 @@ const electronRuntimeExternals = [
   /^electron\/.+/,
   ...builtinModules.flatMap((moduleName) => [moduleName, `node:${moduleName}`]),
 ];
+const workspacePackagesToBundleInMain = [
+  "@hexo-cms/core",
+  "@hexo-cms/plugins",
+  "@hexo-cms/plugin-attachments-helper",
+  "@hexo-cms/plugin-comments-overview",
+  "@hexo-cms/plugin-draft-coach",
+  "@hexo-cms/plugin-seo-inspector",
+  "@hexo-cms/ui",
+];
 
 const loadWorkspaceEnv = (mode: string) => {
   const env = loadEnv(mode, workspaceRoot, "");
@@ -28,7 +37,7 @@ export default defineConfig(({ mode }) => {
       envDir: workspaceRoot,
       build: {
         externalizeDeps: {
-          exclude: ["@hexo-cms/core"],
+          exclude: workspacePackagesToBundleInMain,
         },
       },
     },

@@ -144,9 +144,13 @@ function RootComponent() {
 
   if (isPublicRoute || isSetupRoute)
     return (
-      <ErrorBoundary>
-        <Outlet />
-      </ErrorBoundary>
+      <I18nProvider config={i18nConfig} initialLocale={locale}>
+        <DataProviderProvider provider={desktopDataProvider}>
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </DataProviderProvider>
+      </I18nProvider>
     );
 
   if (!pluginHost) return null;

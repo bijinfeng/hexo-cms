@@ -15,17 +15,28 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({
     children,
     to,
+    params,
     search,
     ...props
   }: {
     children: React.ReactNode;
     to: string;
+    params?: Record<string, string>;
     search?: Record<string, string>;
-  }) => (
-    <a href={`${to}${search ? `?${new URLSearchParams(search).toString()}` : ""}`} {...props}>
-      {children}
-    </a>
-  ),
+  }) => {
+    let href = to;
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        href = href.replace(`$${key}`, value);
+      }
+    }
+    const query = search ? `?${new URLSearchParams(search).toString()}` : "";
+    return (
+      <a href={`${href}${query}`} {...props}>
+        {children}
+      </a>
+    );
+  },
 }));
 
 function createDataProvider(overrides: Partial<DataProvider> = {}): DataProvider {
@@ -109,16 +120,16 @@ describe("CMSLayout plugin policy", () => {
       </I18nTestWrapper>,
     );
 
-    expect(screen.getByRole("link", { name: "附件助手" })).toHaveAttribute(
-      "href",
-      "/settings?section=plugins&plugin=hexo-cms-attachments-helper",
-    );
+    expect(screen.getByRole("button", { name: "附件助手" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "评论管理" })).not.toBeInTheDocument();
 
     const commentsCard = screen.getByText("Comments Overview").closest(".rounded-xl");
     expect(commentsCard).not.toBeNull();
     await user.click(within(commentsCard as HTMLElement).getByRole("button", { name: "启用" }));
 
-    expect(screen.getByRole("link", { name: "评论管理" })).toHaveAttribute("href", "/comments");
+    expect(screen.getByRole("link", { name: "评论管理" })).toHaveAttribute(
+      "href",
+      "/plugins/hexo-cms-comments-overview/comments",
+    );
   });
 });
