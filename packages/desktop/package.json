@@ -27,7 +27,7 @@
     "@hexo-cms/ui": "workspace:*",
     "@tanstack/react-router": "catalog:tanstack",
     "@tanstack/router-plugin": "catalog:tanstack",
-    "electron": "41.5.0",
+    "electron": "42.3.0",
     "electron-builder": "^26.11.1",
     "electron-vite": "^5.0.0"
   }
