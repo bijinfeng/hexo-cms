@@ -214,15 +214,6 @@ importers:
       '@hexo-cms/ui':
         specifier: workspace:*
         version: link:../ui
-      '@tanstack/react-router':
-        specifier: catalog:tanstack
-        version: 1.170.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@tanstack/router-plugin':
-        specifier: catalog:tanstack
-        version: 1.168.6(@tanstack/react-router@1.170.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vite@8.0.13(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
-      better-sqlite3:
-        specifier: ^12.9.0
-        version: 12.10.0
       electron-updater:
         specifier: ^6.8.3
         version: 6.8.3
@@ -230,9 +221,12 @@ importers:
         specifier: ^7.9.0
         version: 7.9.0
     devDependencies:
-      '@types/better-sqlite3':
-        specifier: ^7.6.13
-        version: 7.6.13
+      '@tanstack/react-router':
+        specifier: catalog:tanstack
+        version: 1.170.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@tanstack/router-plugin':
+        specifier: catalog:tanstack
+        version: 1.168.6(@tanstack/react-router@1.170.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vite@8.0.13(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
       electron:
         specifier: 41.5.0
         version: 41.5.0
