@@ -17,14 +17,14 @@
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
-    "@hexo-cms/core": "workspace:*",
-    "@hexo-cms/plugin-comments-overview": "workspace:*",
-    "@hexo-cms/plugins": "workspace:*",
-    "@hexo-cms/ui": "workspace:*",
     "electron-updater": "^6.8.3",
     "keytar": "^7.9.0"
   },
   "devDependencies": {
+    "@hexo-cms/core": "workspace:*",
+    "@hexo-cms/plugin-comments-overview": "workspace:*",
+    "@hexo-cms/plugins": "workspace:*",
+    "@hexo-cms/ui": "workspace:*",
     "@tanstack/react-router": "catalog:tanstack",
     "@tanstack/router-plugin": "catalog:tanstack",
     "electron": "41.5.0",
