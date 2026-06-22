@@ -37,14 +37,14 @@ catalogs:
     react-dom: ^19.2.0
 
   tanstack:
-    '@tanstack/devtools-vite': ^0.6.0
-    '@tanstack/react-devtools': ^0.10.2
-    '@tanstack/react-query': ^5.100.10
-    '@tanstack/react-router': ^1.169.1
+    '@tanstack/devtools-vite': ^0.8.0
+    '@tanstack/react-devtools': ^0.10.7
+    '@tanstack/react-query': ^5.101.0
+    '@tanstack/react-router': ^1.170.16
     '@tanstack/react-router-devtools': ^1.166.13
-    '@tanstack/react-router-ssr-query': ^1.166.12
-    '@tanstack/react-start': ^1.167.62
-    '@tanstack/router-plugin': ^1.167.32
+    '@tanstack/react-router-ssr-query': ^1.167.1
+    '@tanstack/react-start': ^1.168.26
+    '@tanstack/router-plugin': ^1.168.18
 
   test:
     '@testing-library/jest-dom': ^6.9.1
